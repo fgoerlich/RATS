@@ -1,0 +1,269 @@
+/*
+   LIFETABLEHMDMD                                              May/10 - R0: May/10
+*/
+COM [STRING]               %%LIFETABLEHMDMD = 'LIFETABLEHMDMD - Version R0: May/10'
+
+*********************************************************************************************************************************
+/*
+   Complete LIFETABLEHMDMD to Abridge - NOT FOR GENERAL USE    May/10 - R0: May/10
+*/
+
+PROC MDC2A     CL  L1 L2 L3   AQ   AL   AD
+TYP  RECT[SER] CL            *AQ  *AL  *AD
+TYP       SER      L1 L2 L3
+
+OPTION CHOICE  FINAL 10  65  70  75  80  85  90  95  100  105  110
+
+LOCAL INTEGER  M  N  I  J
+LOCAL SERIES   A  LL
+
+COM   M = %ROWS(CL), N = %COM2ABR(111,FINAL)
+DIM   AQ(M,3)  AL(M,3)  AD(M,3)
+CLE   AQ       AL       AD       A LL
+SET   A 1 111  =  T<=2
+DO I=6,111,5
+   COM A(I) = %IF(I-1<=%ABR2AGE(N),1,0)
+END DO I
+
+DO J=1,3
+   IF      J==1;  SAM(SMP=A) L1 1 111 LL
+   ELSE IF J==2;  SAM(SMP=A) L2 1 111 LL
+   ELSE IF J==3;  SAM(SMP=A) L3 1 111 LL
+   DO I=1,M
+      SAM(SMP=A) CL(I,J) 1 111   AL(I,J)
+      SET        AD(I,J) 1   N = %IF(T==N,AL(I,J),AL(I,J)-AL(I,J){-1})
+      SET        AQ(I,J) 1   N = AD(I,J)/LL
+   END DO I
+END DO J
+
+CLE A LL
+END PROC MDC2A
+
+*********************************************************************************************************************************
+
+PROC   LIFETABLEHMDMD  OUTLTF   OUTLTM   OUTLT
+TYPE   RECT           *OUTLTF  *OUTLTM  *OUTLT
+
+OPTION STRING     HEADERL
+OPTION SWITCH     PRINT      1
+OPTION INTEGER    RADIXL
+OPTION CHOICE     FINAL     10  65  70  75  80  85  90  95  100  105  110
+OPTION LVECT      MDLABELL
+
+LOCAL  SERIES     AGE QF LF DF EXPF DEFF MF  QM LM DM EXPM DEFM MM  Q  L  D  EXPO DEF  M  W   A B C
+LOCAL  STRING     HEADER
+LOCAL  INTEGER    N  K  I F1 M1 
+LOCAL  REAL       RADIX   A0 A1
+LOCAL  RECT       CLTF CLTM CLT  ALTF ALTM ALT
+LOCAL  VECT       G
+LOCAL  VEC[INT]   FLIST  MLIST
+LOCAL  VEC[LAB]   MDLABEL
+LOCAL  VEC[LAB]   ED1 ED2 ED3
+
+*   Globals
+DEC RECT[SERIES]  %%Mi   %%Qi   %%Li   %%Di   %%QiABR   %%LiABR   %%DiABR
+
+ENTER(VAR,ENT=F1)  FLIST
+ENTER(VAR,ENT=M1)  MLIST
+INQ(REG)  * N
+# FLIST MLIST
+
+IF .NOT.(N==101.OR.N==111)
+   {
+   DIS %%LIFETABLEHMDMD; DIS 'Sintax Error: Final age should be at 100+ or 110+ years only'
+   HALT  LIFETABLEHMDMD
+   }
+
+IF .NOT.(F1==M1).AND.(F1<5.AND.M1<5)
+   {
+   DIS %%LIFETABLEHMDMD; DIS 'Sintax Error: Elements in both supplementary cards should be iqual and greater than 4'
+   HALT  LIFETABLEHMDMD
+   }
+
+IF %DEFINED(HEADERL)
+   COM HEADER = HEADERL
+ELSE
+   DIS(STORE=HEADER) 'Mutiple decrement life table. HMD method.'
+
+DIM MDLABEL(F1-4)
+IF %DEFINED(MDLABELL)
+   COM MDLABEL    = MDLABELL
+ELSE
+   EWI MDLABEL(I) = 'Death Cause '+%STRING(I)
+
+COM RADIX = %IF(%DEFINED(RADIXL),FLOAT(RADIXL),100000)
+
+SET AGE  1 111 = T-1
+
+*   Estimating the Life Table first
+@LIFETABLEHMD(NOPRINT,NOINTEGER,RADIX=FIX(RADIX),FINAL=FINAL) * CLTF * CLTM * CLT
+# FLIST(1) FLIST(2) FLIST(3) FLIST(4)
+# MLIST(1) MLIST(2) MLIST(3) MLIST(4)
+
+*   Deaths, exposures and other series to be used.
+SET DEFF 1   N = %%DEATHF    ;   SET DEFM 1   N = %%DEATHM    ;   SET DEF  1   N = %%DEATH
+SET EXPF 1   N = %%EXPOSUREF ;   SET EXPM 1   N = %%EXPOSUREM ;   SET EXPO 1   N = %%EXPOSURE
+SET MF   1 111 = %%DEATHRATEF;   SET MM   1 111 = %%DEATHRATEM;   SET M    1 111 = %%DEATHRATE
+SET QF   1 111 = CLTF(T,2)   ;   SET QM   1 111 = CLTM(T,2)   ;   SET Q    1 111 = CLT(T,2)
+SET LF   1 111 = CLTF(T,3)   ;   SET LM   1 111 = CLTM(T,3)   ;   SET L    1 111 = CLT(T,3)
+SET DF   1 111 = CLTF(T,4)   ;   SET DM   1 111 = CLTM(T,4)   ;   SET D    1 111 = CLT(T,4)
+
+*   Check if causes are exhaustive
+DO K = 5,%ROWS(FLIST)
+   SET %%DEATHF 1 N = %%DEATHF - [series]FLIST(K)
+   SET %%DEATHM 1 N = %%DEATHM - [series]MLIST(K)
+END DO K
+
+*   Establecer condiciones de si hay negativos, ceros o positivos.
+IF %MINVALUE(%%DEATHF)<0.OR.%MINVALUE(%%DEATHM)<0
+   {
+   DIS %%LIFETABLEHMDMD; DIS 'Sintax Error: Causes of deaths are greater than number of deaths at some age'
+   HALT  LIFETABLEHMDMD
+   }
+ELSE IF %SUM(%%DEATHF)==0.AND.%SUM(%%DEATHM)==0
+   DIS(STORE=HEADER) HEADER '- Warning: Causes of deaths exhaust the number of deaths!'
+ELSE
+   DIS(STORE=HEADER) HEADER '- Warning: Causes of deaths do not exhaust the number of deaths!'
+
+DIM %%Mi(F1-4,3) %%Qi(F1-4,3) %%Li(F1-4,3) %%Di(F1-4,3)   %%QiABR(F1-4,3) %%LiABR(F1-4,3) %%DiABR(F1-4,3)
+CLE %%Mi         %%Qi         %%Li         %%Di           %%QiABR         %%LiABR         %%DiABR
+
+COM K = %MINHMDMPv5(DEFF,DEFM)
+
+DO I = 5,F1
+   *   NOTA:   Este es el calculo equivalente al de la HMDv5 implementado en LIFETHABLEHMD.
+   *           El problema es que la suma de tasas/probabilidades por causa no suma la tasa/probabilidad agregada
+   *           a partir de la edad en la que empieza el suavizado
+   *COM G = %DEATHHMDMPv5([series]FLIST(I),EXPF,K) ;   SET %%Mi(I-4,1) 1 111 = %IF(T<=80,[series]FLIST(I)/%MAX(0,EXPF),G(T-80))
+   *   IF .NOT.%CONVERGED;   DIS 'Warning!. MLE Poisson model does not converge for Females. A linear aproximation is used.'
+   *COM G = %DEATHHMDMPv5([series]MLIST(I),EXPM,K) ;   SET %%Mi(I-4,2) 1 111 = %IF(T<=80,[series]MLIST(I)/%MAX(0,EXPM),G(T-80))
+   *   IF .NOT.%CONVERGED;   DIS 'Warning!. MLE Poisson model does not converge for Males.   A linear aproximation is used.'
+   *COM G = %DEATHHMDMPv5W(EXPF,EXPM,K);   SET W  1 111 = %IF(T<=80,EXPF/EXPO,G(T-80));   SET %%Mi(I-4,3) 1 111 = W*%%Mi(I-4,1) + (1-W)*%%Mi(I-4,2)
+
+   *   NOTA:   Como el procedimiento anterior no funciona adecuadamente y 
+   *           un ajuste proporcional de todas las causas para cada edad tiene los problemas de que:
+   *                (1) No es independiente del nivel de desargegacion de causas, y
+   *                (2) Las causas deben ser exahustivas
+   *           Se opta por una solución muy sencilla: a partir de la edad en la que empieza el suavizado:
+   *                                                  m(i,x) = (Sum(for x) D(i,x)/Sum(for x) D(x)) * m(x)
+   *           Supuesto critico: mantiene el mismo perfil de las tasas/probabilidades por encima de la edad a la que empieza el ajuste
+   *           para todas las causas, e identico a la tasa global. Aunque esto sólo para las edades muy avanzadas.
+   SSTAT(SMPL=T>=K) 1 N [series]FLIST(I)>>A0;  SSTAT(SMPL=T>=K) 1 N DEFF>>A1;  SET %%Mi(I-4,1) 1 111 = %IF(T<K,[series]FLIST(I)/%MAX(0,EXPF),(A0/A1)*MF)
+   SSTAT(SMPL=T>=K) 1 N [series]MLIST(I)>>A0;  SSTAT(SMPL=T>=K) 1 N DEFM>>A1;  SET %%Mi(I-4,2) 1 111 = %IF(T<K,[series]MLIST(I)/%MAX(0,EXPM),(A0/A1)*MM)
+   COM G = %DEATHHMDMPv5W(EXPF,EXPM,K);   SET W  1 111 = %IF(T<=80,EXPF/EXPO,G(T-80));   SET %%Mi(I-4,3) 1 111 = W*%%Mi(I-4,1) + (1-W)*%%Mi(I-4,2)
+
+   *   Calculo de las probabilidades por causa de muerte.
+   SET %%Qi(I-4,1) 1 111 = %IF(QF==0,0,QF*(%%Mi(I-4,1)/MF))
+   SET %%Qi(I-4,2) 1 111 = %IF(QM==0,0,QM*(%%Mi(I-4,2)/MM))
+   SET %%Qi(I-4,3) 1 111 = %IF(Q==0 ,0,Q *(%%Mi(I-4,3)/M ))
+
+   *   Calculo de los fallecidos     por causa de muerte a cada edad.
+   SET %%Di(I-4,1) 1 111 = %%Qi(I-4,1)*LF
+   SET %%Di(I-4,2) 1 111 = %%Qi(I-4,2)*LM
+   SET %%Di(I-4,3) 1 111 = %%Qi(I-4,3)*L
+
+   *   Calculo de los supervivientes a cada edad que falleceran por causa de muerte.
+   COM A0 = %SUM(%%Di(I-4,1));   SET(FIRST=A0) %%Li(I-4,1) 1 111 = %MAX(0,%%Li(I-4,1){1} - %%Di(I-4,1){1})
+   COM A0 = %SUM(%%Di(I-4,2));   SET(FIRST=A0) %%Li(I-4,2) 1 111 = %MAX(0,%%Li(I-4,2){1} - %%Di(I-4,2){1})
+   COM A0 = %SUM(%%Di(I-4,3));   SET(FIRST=A0) %%Li(I-4,3) 1 111 = %MAX(0,%%Li(I-4,3){1} - %%Di(I-4,3){1})
+END DO I
+
+@MDC2A(FINAL=FINAL) %%Li LF LM L   %%QiABR %%LiABR %%DiABR
+@LIFETABLEC2A(NOPRINT,FINAL=FINAL) CLTF  ALTF
+@LIFETABLEC2A(NOPRINT,FINAL=FINAL) CLTM  ALTM
+@LIFETABLEC2A(NOPRINT,FINAL=FINAL) CLT   ALT
+
+IF PRINT
+   {
+   DIS HEADER; DIS
+   COM ED1 = %AGE(101), ED2 = %AGE(111), ED3 = %AGE(%COM2ABR(111,FINAL))
+   DO K = 5,F1
+      DIS 'Female population'
+      @S%(NOPRINT) DEFF     1 N A; SET A 1 N = 100*A
+      @S%(NOPRINT) FLIST(K) 1 N B; SET B 1 N = 100*B
+      SET          C        1 N =  [series]FLIST(K)
+      DIS '                                                        Decrement cause  - ' MDLABEL(K-4)
+      DIS '  Age     Deaths   -   %    Death rate x1000     Deaths   -   %       Death rate x1000  -  % Proportion'
+      DO I = 1,101
+         DIS ED1(I)  @@>8 *.  DEFF(I)   @+2  ##.###  A(I)    @-1 '%' @@>16 ####.###### 1000*MF(I)                 @@>14 *. C(I)    $
+	                                @+2  ##.###  B(I)    @-1 '%' @@>19 ####.###### 1000*%%Mi(K-4,1)(I)        @@>19 ##.### 100*C(I)/DEFF(I)    @-1 '%'
+      END DO I
+      DIS
+      DIS ' Total  ' @@>7 *. %SUM(DEFF) @+1 ###.### %SUM(A)  @-1 '%' @@>16 ####.###### 1000*%SUM(DEFF)/%SUM(EXPF) @@>14 *. %SUM(C) $
+                     @+1 ###.### %IF(%SUM(C)==0,%NA,%SUM(B)) @-1 '%' @@>19 ####.###### 1000*%SUM(C)/%SUM(EXPF) @@>19 ##.### 100*%SUM(C)/%SUM(DEFF) @-1 '%'
+      DIS
+      DIS 'Decrement Life Table data - ' MDLABEL(K-4)
+      DIS '  Age       Q(x)x1000        l(x)        d(x)        Qi(x)x1000       li(x)       di(x)      li(x)/l(x)'
+      DO I = 1,111
+         DIS ED2(I) @@>14 ####.###### QF(I)*1000 *. @@>12 LF(I) DF(I) @@>18 ####.###### %%Qi(K-4,1)(I)*1000 *. @@>12 %%Li(K-4,1)(I) %%Di(K-4,1)(I) ##.### @@>14 100*%%Li(K-4,1)(I)/LF(I) @-1 '%'
+      END DO I
+      DIS
+      *   Abridged Multiple Decrement Life Table
+      DIS 'Decrement Life Table data - Abridged - ' MDLABEL(K-4)
+      DIS '  Age       Q(x)x1000        l(x)        d(x)        Qi(x)x1000       li(x)       di(x)      li(x)/l(x)'
+      DO I = 1,%ROWS(ED3)
+         DIS ED3(I) @@>14 ####.###### ALTF(I,2)*1000 *. @@>12 ALTF(I,3) ALTF(I,4) @@>18 ####.###### %%QiABR(K-4,1)(I)*1000 *. @@>12 %%LiABR(K-4,1)(I) %%DiABR(K-4,1)(I) ##.### @@>14 100*%%LiABR(K-4,1)(I)/ALTF(I,3) @-1 '%'
+      END DO I
+      DIS;DIS
+
+      DIS 'Male population'
+      @S%(NOPRINT) DEFM     1 N A; SET A 1 N = 100*A
+      @S%(NOPRINT) MLIST(K) 1 N B; SET B 1 N = 100*B
+      SET          C        1 N =  [series]MLIST(K)
+      DIS '                                                        Decrement cause  - ' MDLABEL(K-4)
+      DIS '  Age     Deaths   -   %    Death rate x1000     Deaths   -   %       Death rate x1000  -  % Proportion'
+      DO I = 1,101
+         DIS ED1(I)  @@>8 *.  DEFM(I)   @+2  ##.###  A(I)    @-1 '%' @@>16 ####.###### 1000*MM(I)                 @@>14 *. C(I)    $
+                                        @+2  ##.###  B(I)    @-1 '%' @@>19 ####.###### 1000*%%Mi(K-4,2)(I)        @@>19 ##.### 100*C(I)/DEFM(I)    @-1 '%'
+      END DO I
+      DIS
+      DIS ' Total  ' @@>7 *. %SUM(DEFM) @+1 ###.### %SUM(A)  @-1 '%' @@>16 ####.###### 1000*%SUM(DEFM)/%SUM(EXPM) @@>14 *. %SUM(C) $
+                     @+1 ###.### %IF(%SUM(C)==0,%NA,%SUM(B)) @-1 '%' @@>19 ####.###### 1000*%SUM(C)/%SUM(EXPM) @@>19 ##.### 100*%SUM(C)/%SUM(DEFM) @-1 '%'
+      DIS
+      DIS 'Decrement Life Table data - ' MDLABEL(K-4)
+      DIS '  Age       Q(x)x1000        l(x)        d(x)        Qi(x)x1000       li(x)       di(x)      li(x)/l(x)'
+      DO I = 1,111
+         DIS ED2(I) @@>14 ####.###### QM(I)*1000 *. @@>12 LM(I) DM(I) @@>18 ####.###### %%Qi(K-4,2)(I)*1000 *. @@>12 %%Li(K-4,2)(I) %%Di(K-4,2)(I) ##.### @@>14 100*%%Li(K-4,2)(I)/LM(I) @-1 '%'
+      END DO I
+      DIS
+      *   Abridged Multiple Decrement Life Table
+      DIS 'Decrement Life Table data - Abridged - ' MDLABEL(K-4)
+      DIS '  Age       Q(x)x1000        l(x)        d(x)        Qi(x)x1000       li(x)       di(x)      li(x)/l(x)'
+      DO I = 1,%ROWS(ED3)
+         DIS ED3(I) @@>14 ####.###### ALTM(I,2)*1000 *. @@>12 ALTM(I,3) ALTM(I,4) @@>18 ####.###### %%QiABR(K-4,2)(I)*1000 *. @@>12 %%LiABR(K-4,2)(I) %%DiABR(K-4,2)(I) ##.### @@>14 100*%%LiABR(K-4,2)(I)/ALTM(I,3) @-1 '%'
+      END DO I
+      DIS;DIS
+
+      DIS 'Total population'
+      @S%(NOPRINT) DEF      1 N A; SET A 1 N = 100*A
+      SET          C        1 N =  [series]FLIST(K) + [series]MLIST(K)
+      @S%(NOPRINT) C        1 N B; SET B 1 N = 100*B
+      DIS '                                                        Decrement cause  - ' MDLABEL(K-4)
+      DIS '  Age     Deaths   -   %    Death rate x1000     Deaths   -   %       Death rate x1000  -  % Proportion'
+      DO I = 1,101
+         DIS ED1(I)  @@>8 *.  DEF(I)    @+2  ##.###  A(I)    @-1 '%' @@>16 ####.###### 1000*M(I)               @@>14 *. C(I)       $
+                                        @+2  ##.###  B(I)    @-1 '%' @@>19 ####.###### 1000*%%Mi(K-4,3)(I)     @@>19 ##.### 100*C(I)/DEF(I)        @-1 '%'
+      END DO I
+      DIS
+      DIS ' Total  ' @@>7 *. %SUM(DEF)  @+1 ###.### %SUM(A)  @-1 '%' @@>16 ####.###### 1000*%SUM(DEF)/%SUM(EXPO)  @@>14 *. %SUM(C) $
+                     @+1 ###.### %IF(%SUM(C)==0,%NA,%SUM(B)) @-1 '%' @@>19 ####.###### 1000*%SUM(C)/%SUM(EXPO) @@>19 ##.### 100*%SUM(C)/%SUM(DEF)  @-1 '%'
+      DIS
+      DIS 'Decrement Life Table data - ' MDLABEL(K-4)
+      DIS '  Age       Q(x)x1000        l(x)        d(x)        Qi(x)x1000       li(x)       di(x)      li(x)/l(x)'
+      DO I = 1,111
+         DIS ED2(I) @@>14 ####.###### Q(I)*1000 *.  @@>12 L(I)  D(I)  @@>18 ####.###### %%Qi(K-4,3)(I)*1000 *. @@>12 %%Li(K-4,3)(I) %%Di(K-4,3)(I) ##.### @@>14 100*%%Li(K-4,3)(I)/L(I)  @-1 '%'
+      END DO I
+      DIS
+      *   Abridged Multiple Decrement Life Table
+      DIS 'Decrement Life Table data - Abridged - ' MDLABEL(K-4)
+      DIS '  Age       Q(x)x1000        l(x)        d(x)        Qi(x)x1000       li(x)       di(x)      li(x)/l(x)'
+      DO I = 1,%ROWS(ED3)
+         DIS ED3(I) @@>14 ####.###### ALT(I,2)*1000  *. @@>12 ALT(I,3)  ALT(I,4)  @@>18 ####.###### %%QiABR(K-4,3)(I)*1000 *. @@>12 %%LiABR(K-4,3)(I) %%DiABR(K-4,3)(I) ##.### @@>14 100*%%LiABR(K-4,3)(I)/ALT(I,3) @-1 '%'
+      END DO I
+      DIS;DIS
+   END DO K
+   }
+
+CLE AGE QF LF DF EXPF DEFF MF  QM LM DM EXPM DEFM MM  Q  L  D  EXPO DEF  M  W   A B C
+CLE %%DEATHF %%EXPOSUREF %%DEATHRATEF %%AxF   %%DEATHM %%EXPOSUREM %%DEATHRATEM %%AxM   %%DEATH %%EXPOSURE %%DEATHRATE %%Ax
+END PROC LIFETABLEHMDMD

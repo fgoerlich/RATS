@@ -1,0 +1,70 @@
+/*
+   LIFEHEALTH                                            May/08 - R1: Jan/12
+*/                      
+COM [STRING]                 %%LIFEHEALTH = 'LIFEHEALTH - Version R1: Jan/12'
+
+PROC  LIFEHEALTH  LT  PRE   OUTDFLE   OUTSEDFLE
+TYPE  SERIES          PRE  *OUTDFLE  *OUTSEDFLE
+TYPE  RECT        LT
+*
+OPTION SWITCH     PRINT  1
+OPTION SER        SAMPLE
+OPTION STRING     HEADERL
+*
+LOCAL  STRING     HEADER
+LOCAL  INTEGER    I  N  N1
+LOCAL  REAL       SLL
+LOCAL  VECT[LAB]  ED
+LOCAL  SERIES     LL TT DFLE SEDFLE
+
+IF %DEFINED(HEADERL)
+   COM HEADER = HEADERL
+ELSE
+   DIS(STORE=HEADER) 'Disability Free Life Expectancy from Life Table' %LABEL(LT)
+
+COM N = %ROWS(LT), ED = %AGE(N)
+INQ(SER=PRE) * N1
+IF (.NOT.(N==N1)).OR.%MAXVALUE(PRE)>1.OR.%MINVALUE(PRE)<0
+   {
+   DIS %%LIFEHEALTH; DIS 'Sintax Error: Ages or values in' %L(PRE) 'do not match'
+   HALT  LIFEHEALTH
+   }
+IF .NOT.((N==19.OR.N==22.OR.N==24.OR.N==86.OR.N==101.OR.N==111).AND.%COLS(LT)==7)
+   {
+   DIS %%LIFEHEALTH; DIS 'Sintax Error: Life Table has NOT the correct dimension - (Edades)x7'
+   HALT  LIFEHEALTH
+   }
+
+SET             LL 1 N =  (1 - PRE)*LT(T,5)
+COM SLL = %SUM(LL)
+SET(FIRST=SLL)  TT 1 N = %IF(T==N,LL,TT{1}-LL{1})
+SET           DFLE 1 N = %IF(LT(T,3)==0,0,TT/LT(T,3))
+
+IF %DEFINED(SAMPLE)
+   {
+   CLE LL TT
+   SET             LL 1 N = (LT(T,5)**2)*PRE*(1 - PRE)/SAMPLE
+   COM SLL = %SUM(LL)
+   SET(FIRST=SLL)  TT 1 N = %IF(T==N,LL,TT{1}-LL{1})
+   SET         SEDFLE 1 N = SQRT(TT/(LT(T,3)**2))
+   }
+
+IF PRINT
+   {
+   DIS HEADER
+   DIS '           Standard      Disable     Disability Free' %STRIF(%DEFINED(SAMPLE),'  Standard','')
+   DIS '  Age         e(x)     Population      e(x)     %   ' %STRIF(%DEFINED(SAMPLE),'    Error ','')
+   DO I = 1,N
+      IF .NOT.%DEFINED(SAMPLE)
+         DIS ED(I) @@>11 ####.## LT(I,7) @+6 100*PRE(I) @-1 '%' @+4 DFLE(I) 100*DFLE(I)/LT(I,7) @-1 '%'
+      ELSE
+         DIS ED(I) @@>11 ####.## LT(I,7) @+6 100*PRE(I) @-1 '%' @+4 DFLE(I) 100*DFLE(I)/LT(I,7) @-1 '%' ####.#### SEDFLE(I)
+   END DO I
+   DIS;DIS
+   }
+
+IF %DEFINED(OUTDFLE)  ;   SET OUTDFLE   1 N =   DFLE
+IF %DEFINED(OUTSEDFLE);   SET OUTSEDFLE 1 N = SEDFLE
+
+CLEAR LL TT DFLE SEDFLE
+END PROC LIFEHEALTH

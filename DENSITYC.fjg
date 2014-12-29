@@ -1,0 +1,157 @@
+/*
+     DENSITYC:                                       May/00 - R3: April/08
+     DENSITY   for [0,1] domains
+*/
+COM [STRING] %%DENSITYC =                 'DENSITYC - Version R2: April/08'
+
+PROC  DENSITYC SERIE  TBEGP  TENDP  OUTX  OUTY
+TYPE  SERIES   SERIE               *OUTX *OUTY
+*
+LOCAL INTEGER  N  TBEG  TEND  NV  I  J
+LOCAL REAL     M  V  H
+LOCAL SERIES   SMPL  S  W  W% P X Y X1 Y1
+LOCAL VECTOR   K
+LOCAL STRING   HEAD  SUBHEAD
+*
+OPTION SWITCH  PRINT       1
+OPTION SWITCH  GRAPH       1
+OPTION SWITCH  INTERPOL    1
+OPTION SWITCH  SILVERMAN   1
+OPTION SWITCH  ADAPTATIVE  0
+OPTION CHOICE  SPREAD      3  SIGMA IQR      ROBUST
+OPTION CHOICE  KERNEL      5  EPANECHNIKOV   BIWEIGHT  3WEIGHT  TRIANGULAR  GAUSSIAN  RECTANGULAR
+OPTION CHOICE  STYLE       3  DOTS  SYMBOLS  LINES
+OPTION SERIES  WEIGHT
+OPTION SERIES  SMPLL
+OPTION REAL    BANDWIDTH
+OPTION REAL    ALPHA        .5
+OPTION INTEGER GRID      100
+*
+INQUIRE(SERIES=SERIE) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(SERIE),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(SERIE)
+
+IF %DEFINED(WEIGHT)
+   SET P    TBEG TEND = WEIGHT
+ELSE
+   SET P    TBEG TEND = 1
+
+SAM(SMPL=SMPL) SERIE TBEG TEND S 1
+SAM(SMPL=SMPL) P     TBEG TEND W 1
+INQUIRE(SERIES=S) *  N
+ORDER          S  1  N  W
+IF S(1)<0.OR.S(N)>1
+   {
+   DIS %%DENSITYC; DIS 'Syntax error:' %L(SERIE) 'contains values outside [0,1]'
+   HALT  DENSITYC
+   }
+COM M = %M(S,W), V = %V(S,W)
+
+*   Bandwidth
+IF %DEFINED(BANDWIDTH)
+   COM H =  BANDWIDTH
+ELSE
+   {
+   IF %DEFINED(WEIGHT)
+      @BWIDTH(KER=KERNEL,SPR=SPREAD,SIL=SILVERMAN,INT=INTERPOL,WEI=W) S 1 N H
+   ELSE
+      @BWIDTH(KER=KERNEL,SPR=SPREAD,SIL=SILVERMAN,INT=INTERPOL)       S 1 N H
+   }
+
+*   Grid
+COM     NV = FIX(%IF((GRID<=1).OR.(ADAPTATIVE==1),N,GRID))
+SET X 1 NV =     %IF((GRID<=1).OR.(ADAPTATIVE==1),S,(1./(NV-1))*(T-1))
+SET Y 1 NV = 0
+
+DIM K(N)
+@S% W 1 N W%
+DO I = 1,NV                                                           
+   IF      KERNEL==1 ;EWI K(J) = EPANECHNIKOV((X(I)-S(J))/H) + EPANECHNIKOV((X(I)+S(J))/H) + EPANECHNIKOV((X(I)+S(J)-2)/H)
+   ELSE IF KERNEL==2 ;EWI K(J) =     BIWEIGHT((X(I)-S(J))/H) +     BIWEIGHT((X(I)+S(J))/H) +     BIWEIGHT((X(I)+S(J)-2)/H)
+   ELSE IF KERNEL==3 ;EWI K(J) =    TRIWEIGHT((X(I)-S(J))/H) +    TRIWEIGHT((X(I)+S(J))/H) +    TRIWEIGHT((X(I)+S(J)-2)/H)
+   ELSE IF KERNEL==4 ;EWI K(J) =   TRIANGULAR((X(I)-S(J))/H) +   TRIANGULAR((X(I)+S(J))/H) +   TRIANGULAR((X(I)+S(J)-2)/H)
+   ELSE IF KERNEL==5 ;EWI K(J) =     %DENSITY((X(I)-S(J))/H) +     %DENSITY((X(I)+S(J))/H) +     %DENSITY((X(I)+S(J)-2)/H)
+   ELSE                ;EWI K(J) =  RECTANGULAR((X(I)-S(J))/H) +  RECTANGULAR((X(I)+S(J))/H) +  RECTANGULAR((X(I)+S(J)-2)/H)
+   EWI K(J) = W%(J)*K(J)
+   COM Y(I) = %SUM(K)/H
+END DO I
+
+IF ADAPTATIVE
+   {
+   IF ALPHA<0.OR.ALPHA>1
+      {
+      DIS %%DENSITYC; DIS 'Syntax error: ALPHA should belong to [0,1]'
+      HALT  DENSITYC
+      }
+   CLEAR        W
+   SET          W 1 N = LOG(Y)
+   STA(NOPRINT) W 1 N
+   SET          W 1 N = H*((Y/EXP(%MEAN))**(-ALPHA))
+
+   *   Grid
+   CLEAR X Y
+   COM     NV = FIX(%IF(GRID<=1,N,GRID))
+   SET X 1 NV =     %IF(GRID<=1,S,(1./(NV-1))*(T-1))
+   SET Y 1 NV = 0
+
+   DO I = 1,NV                                                           
+      IF      KERNEL==1 ;EWI K(J) = EPANECHNIKOV((X(I)-S(J))/W(J)) + EPANECHNIKOV((X(I)+S(J))/W(J)) + EPANECHNIKOV((X(I)+S(J)-2)/W(J))
+      ELSE IF KERNEL==2 ;EWI K(J) =     BIWEIGHT((X(I)-S(J))/W(J)) +     BIWEIGHT((X(I)+S(J))/W(J)) +     BIWEIGHT((X(I)+S(J)-2)/W(J))
+      ELSE IF KERNEL==3 ;EWI K(J) =    TRIWEIGHT((X(I)-S(J))/W(J)) +    TRIWEIGHT((X(I)+S(J))/W(J)) +    TRIWEIGHT((X(I)+S(J)-2)/W(J))
+      ELSE IF KERNEL==4 ;EWI K(J) =   TRIANGULAR((X(I)-S(J))/W(J)) +   TRIANGULAR((X(I)+S(J))/W(J)) +   TRIANGULAR((X(I)+S(J)-2)/W(J))
+      ELSE IF KERNEL==5 ;EWI K(J) =     %DENSITY((X(I)-S(J))/W(J)) +     %DENSITY((X(I)+S(J))/W(J)) +     %DENSITY((X(I)+S(J)-2)/W(J))
+      ELSE              ;EWI K(J) =  RECTANGULAR((X(I)-S(J))/W(J)) +  RECTANGULAR((X(I)+S(J))/W(J)) +  RECTANGULAR((X(I)+S(J)-2)/W(J))
+      EWI K(J) = W%(J)*K(J)/W(J)
+      COM Y(I) = %SUM(K)
+   END DO I
+   }
+
+IF PRINT
+   {
+   DIS 'NON-PARAMETRIC DENSITY ESTIMATION: [0,1] DOMAIN'
+   DIS 'Density for series' %L(SERIE)
+   IF %DEFINED(WEIGHT)
+      DIS 'Weighted by' %L(WEIGHT)
+   IF ADAPTATIVE
+      DIS 'ADAPTATIVE estimate with sensitivity parameter' #.## ALPHA
+   DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS 'Mean       '    M           @34 'Standar deviation' SQRT(V)
+   DIS 'Minimum    '    S(1)        @34 'Maximum          ' S(N)
+   IF .NOT.(GRID<=1)
+      DIS 'Lower limit       0.00000'  @34 'Upper limit             1.00000'
+   ELSE
+      DIS 'Density estimated at sample points'
+   DIS 'Density estimated at' NV 'points with a bandwidth' @52 H
+   IF      KERNEL==1      ;DIS 'using the Epanechnikov kernel'
+   ELSE IF KERNEL==2      ;DIS 'using the biweight kernel'
+   ELSE IF KERNEL==3      ;DIS 'using the triweight kernel'
+   ELSE IF KERNEL==4      ;DIS 'using the triangular kernel'
+   ELSE IF KERNEL==5      ;DIS 'using the Gaussian kernel'
+   ELSE                   ;DIS 'using the rectangular kernel'
+   DIS
+   }
+
+IF GRAPH
+   {
+   COM H =  1./(SQRT(V)*(NV-1))
+   SET X1 1 NV = -M/SQRT(V) + H*(T-1)
+   SET Y1 1 NV = %DENSITY(X1)
+   SET X1 1 NV = M + SQRT(V)*X1
+   SET Y1 1 NV =             Y1/SQRT(V)
+   IF %DEFINED(WEIGHT)
+      DIS(STORE=HEAD) %L(WEIGHT) ' weighted NONPARAMETRIC DENSITY: [0,1]'
+   ELSE
+      DIS(STORE=HEAD)                      'NONPARAMETRIC DENSITY: [0,1]'
+   DIS(STORE=SUBHEAD) %L(SERIE) '  vs  Normal'
+   SCA(HEAD=HEAD,SUBHEAD=SUBHEAD,VLAB='Density',VMIN=0,HMIN=0,HMAX=1,EXT=BOTH,STY=STYLE) 2
+   # X  Y  1 NV
+   # X1 Y1 1 NV
+   }
+
+IF %DEFINED(OUTX)   ;SET OUTX 1 NV = X
+IF %DEFINED(OUTY)   ;SET OUTY 1 NV = Y
+CLEAR  SMPL  S  W  W%  P X  Y  X1  Y1
+END PROC DENSITYC

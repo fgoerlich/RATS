@@ -1,0 +1,55 @@
+/*
+     RANGE STATISTICS                          December/97 - R2: May/14
+*/
+COM [STRING] %%RANGE =                      'RANGE - Version R2: May/14'
+
+PROC  RANGE  Y  TBEGP  TENDP   OUTRANGE   OUTEXT
+TYPE  SER    Y
+TYPE  INT       TBEGP  TENDP
+TYPE  REAL                    *OUTRANGE
+TYPE  VEC                                *OUTEXT
+*
+LOCAL INT    TBEG  TEND
+LOCAL SER    S  W  SMPL
+LOCAL VEC    V
+*
+OPTION SWITCH  PRINT   1
+OPTION SERIES  WEIGHT
+OPTION SERIES  SMPLL
+
+*   Globals
+COM %MEAN = %VARIANCE = %MAXIMUM = %MINIMUM = %NA, %NOBS = %MAXENT = %MINENT = 0
+
+INQUIRE(SERIES=Y) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(Y),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(Y)
+
+IF %DEFINED(WEIGHT)
+   SET W    TBEG TEND = WEIGHT
+ELSE
+   SET W    TBEG TEND = 1
+
+DIM V(5)
+@S%(NOPRINT,SMPL=SMPL)             W  TBEG  TEND
+@MEANVAR(NOPRINT,SMPL=SMPL,WEI=W)  Y  TBEG  TEND;   COM V(3) = %MEAN
+EXT(NOPRINT,SMPL=SMPL)             Y  TBEG  TEND;   COM V(1) = %MINIMUM, V(2) = W(%MINENT), V(4) = W(%MAXENT), V(5) = %MAXIMUM
+
+IF PRINT==1
+   {
+   DIS 'Extreme statistics on' %L(Y) %STRIF(%DEFINED(WEIGHT),'with weights defined by '+%L(WEIGHT),'')
+   DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS 'Sample mean' V(3)
+   DIS 'Minimum    ' V(1)      'relative' ##.## ABS(V(1)/V(3)) 'at entry' @@>7 %MINENT @61 'with weight' ##.## V(2)*100 @-1 '%'
+   DIS 'Maximum    ' V(5)      'relative' ##.## ABS(V(5)/V(3)) 'at entry' @@>7 %MAXENT @61 'with weight' ##.## V(4)*100 @-1 '%'
+   DIS 'Range      ' V(5)-V(1) 'relative' ##.## ABS((V(5)-V(1))/V(3)) 'Minimum/Maximum relative' ABS((V(5)-V(1))/V(1)) @-1 '/' @-1 ABS((V(5)-V(1))/V(5))
+   DIS;DIS
+   }
+
+IF %DEFINED(OUTRANGE);   COM OUTRANGE = V(5) - V(1)
+IF %DEFINED(OUTEXT)  ;   COM OUTEXT   = V
+
+CLE S  W  SMPL
+END PROC RANGE

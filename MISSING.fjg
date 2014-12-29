@@ -1,0 +1,54 @@
+/*
+   MISSING                                       January/00 - R1: February/04
+*/
+COM [STRING]                   %%MISSING = 'MISSING - Version R1: February/04'
+
+PROC  MISSING  S  TBEGP  TENDP  OUTN
+TYPE  SERIES   S
+TYPE  INTEGER                  *OUTN
+*
+LOCAL SERIES   DUMY SMPL
+LOCAL INTEGER  TBEG TEND  N
+*
+OPTION SWITCH  PRINT     1
+OPTION SWITCH  NEGATIVE  0
+OPTION REAL    VALUE
+OPTION SERIES  SMPLL
+
+INQUIRE(SERIES=S) TBEG>>TBEGP TEND>>TENDP
+
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL.NE.0,1,0)
+ELSE
+   SET SMPL TBEG TEND = 1
+
+IF %DEFINED(VALUE)
+   SET DUMY TBEG TEND = %IF(S.EQ.VALUE,1,0)
+ELSE IF NEGATIVE.EQ.1
+   SET DUMY TBEG TEND = %IF(S.LT.0,1,0)
+ELSE
+   SET DUMY TBEG TEND = 1 - %VALID(S)
+
+STA(SMPL=SMPL,NOPRI,NOFRA) DUMY TBEG TEND
+COM N = FIX(%NOBS*%MEAN)
+
+IF PRINT.EQ.1
+   {
+   DIS 'Information on Series' %L(S)
+   DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   IF %DEFINED(VALUE)
+      DIS 'Observations equal to' VALUE @+2 'are' N
+   ELSE IF NEGATIVE.EQ.1
+      DIS 'Negative observations' N
+   ELSE
+      DIS 'Missing observations'  N
+   DIS
+   }
+
+IF %DEFINED(OUTN)
+   COM OUTN = N
+
+CLEAR DUMY SMPL
+END PROC MISSING
+

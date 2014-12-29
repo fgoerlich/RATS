@@ -1,0 +1,78 @@
+/*
+     ZIPF: Efectua tres contrastes de la ley de Zipf:
+           (1) Regresion lineal log(rank) sobre log(size),
+	   (2) MLE estimation of pareto density, y
+	   (3) Parametrico de la distribucion de Burr frente a la de Pareto.
+     
+     Escrito por:  Paco Goerlich.                 Version: Diciembre/2008 (R2)
+     Version RATS: WinRATS 7.10
+
+     Sintaxis:
+
+      @ZIPF S COMIENZO FIN
+
+       S        = Serie.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+
+
+       Opciones:
+
+     [PRINT]/NOPRINT   controla la impresion de los estadisticos.
+     ROBUSTERRORS/[NOROBUSTERRORS] errores robustos frente a heterocedasticidad
+                       en la regresion loglineal del contraste de Zipf.
+     GAMMA   = Desplazamiento en los rangos para reducir el sesgo, [0,1) [0.5]
+               (Gabaix & Ibragimov, 2007, recomiendan 0.5).
+     LSTTEST = LS/[ASYMPTOTIC] Si el t-test de la regresion debe basarse en el 
+               SE de la regresión o en el asintótico.
+     SMPL    = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+               de los calculos (Ver RATS 5.2 UG) [no definido].
+     MIN     = Minimum value to consider = Level parameter = Mu [MINIMUM(S)].
+               If MIN > MINIMUM(S) then the initial observations are discarged.
+
+
+       Variables globales:
+
+       %%ZIPF = STRING, Version actual del procedimiento
+
+       Todas las variables internas de RATS procedentes de la instruccion
+       LINREG para la regresion lineal de log(rank) sobre log(S) (Ver RATS 6.3 RM, p.-245)
+
+       %%ZIPFLSSTAT     = Estadistico de Zipf de la regresion loglineal.
+       %%ZIPFLSSIGNIF   = Nivel de significacion del estadistico de Zipf
+                          de la regresion loglineal.
+                          (Normal, 2 colas).
+
+       %%ZIPFMLESTAT    = Estadistico de Zipf de la estimacion MLE de Pareto.
+       %%ZIPFMLESIGNIF  = Nivel de significacion del estadistico de Zipf
+                          de la estimacion MLE de Pareto.
+                          (Normal, 2 colas).
+
+       %%ZIPFBURRSTAT   = Estadistico LM de Zipf basado en la densidad de Burr.
+       %%ZIPFBURRSIGNIF = Nivel de significacion del estadistico LM de Zipf.
+                          (Chi-Square (2)).
+
+
+*****************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Urzua (2000, EL). Tests de la ley de Zipf mencionados.
+   A partir del MLE de la densidad de Burr, podria implementarse un contraste
+   de la distribucion paretiana, asi como un test de Zipf basado en Wald.
+   Sobre las correcciones en muestra finitas y el error estandar asintotico
+   ver Gabaix y Ibragimov (2007, NBER TWP 342) y Gabaix (2008,NBER WP 14299).
+
+*****************************************************************************
+
+   INFORMACION ADICIONAL
+
+   R1: Abril/2008
+       NV, GRAPH & GRID declarados como INTEGER. No utilizados. Eliminado.
+       SMPL series no declarada como LOCAL.
+
+   R2: Diciembre/2008
+       Change in the MIN option.
+       Se añade el test MLE basado en Pareto.
+       Se añanden las opciones LAGS, SE y GAMMA.
+*/

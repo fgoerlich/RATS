@@ -1,0 +1,46 @@
+/*
+     UNMAKE: reciproco de la instruccion MAKE
+
+     Escrito por:  Paco Goerlich.                    Versi¢n: Marzo/2004 (R1)
+     Version RATS: WinRATS 5.11
+
+     Sintaxis
+
+      @UNMAKE(opciones) M COMIENZO FIN
+      #<supp.card> series en formato de regresion
+
+       M        = matriz rectangular.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+
+
+      Opciones:
+
+     TRANSPOSE/[NOTRANSPOSE] si M debe ser transpuesta antes de obtener las series.
+     SMPL = Serie con valores cero entre COMIENZO y FIN que desean eliminarse al
+            obtener las series. Estas observaciones se fijan a %NA, pero no se
+            eliminan.
+
+
+      Variables globales:
+
+     %%UNMAKE = STRING, version actual del procedimiento.
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Las series en <supp.card> deben estar declaradas previamente por lo que 
+   se recomienda un CLEAR antes de cada instruccion, alternativamente es
+   posible utilizar la función %S(.)
+
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Marzo/2004
+       Actualización a WinRATS 5.11
+
+*/

@@ -1,0 +1,35 @@
+/*
+   POBC2A                                            April/08 - R1: May/10
+*/
+COM [STRING]                       %%POBC2A = 'POBC2A - Version R1: May/10'
+
+PROC   POBC2A  P  OUTP
+TYPE   SER     P *OUTP
+
+LOCAL  INTEGER M N I K
+LOCAL  SERIES  GP GE 
+
+OPTION SWITCH  PRINT   0
+OPTION CHOICE  FINAL   5   65  70  75  80  85  90  95  100  105  110
+
+INQ(SER=P) * M
+IF .NOT.(M==86.OR.M==101.OR.M==111)
+   {
+   DIS %%POBC2A; DIS 'Sintax Error: Final age should be at 85+, 100+ or 110+ years only'
+   HALT  POBC2A
+   }
+
+COM N  = %COM2ABR(M,FINAL), K = 3, I = 6
+SET GP 1 N = %IF(T==1,P,%IF(T==2,P(2)+P(3)+P(4)+P(5),0))
+WHILE K<N
+   COM GP(K) = P(I) + P(I+1) + P(I+2) + P(I+3) + P(I+4), K = K + 1, I = I + 5
+COM %DO(K,I,M,GP(N) = GP(N) + P(K))
+
+SET GE 1 N = %IF(T<=2,T-1,(T-2)*5)
+IF PRINT
+   PRI(NUM=0,NODATES) / P GE GP
+
+IF %DEFINED(OUTP); SET OUTP = GP
+
+CLE GP GE
+END PROC POBC2A

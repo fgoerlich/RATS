@@ -1,0 +1,70 @@
+/*
+     FGT: Indices de pobreza de pobreza de Foster, Greer & Thorbecke (1984).
+
+     Escrito por Paco Goerlich.                    Version: Abril/2012 (R0)
+     Version RATS: WinRATS 8.10
+
+     Sintaxis
+
+      @FGT R COMIENZO FIN INDICE
+
+       R        = Serie de rentas per capita.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       INDICE   = Indice de Foster, Greer & Thorbecke.
+            
+
+       Opciones:
+
+     [PRINT]/NOPRINT controla la impresion del indice.
+     ALPHA      parametro de aversion a la pobreza para el calculo del indice. [2]
+     SMPL     = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+                de los calculos (Ver RATS 5.2 UG) [no definido]
+     WEIGHT   = si el indice deben ponderarse [no definido].
+     PL       = linea de pobreza absoluta o definida por el usuario.
+     [MEDIAN]/NOMEDIAN medida de posicion para el calculo de la linea
+                       de pobreza relativa.
+                       Si no se utiliza la MEDIANA se utiliza la MEDIA.
+     SHARE    = proporcion de la MEDIANA/MEDIA para el calculo de la linea
+                de pobreza relativa (>0). [.6]
+
+     NOTA: Por defecto se utiliza como linea de pobreza el 60% de la mediana.
+
+
+       Variables globales:
+
+       %%FGT = STRING, Version actual del procedimiento
+
+       %MEAN = Sample mean (REAL)
+       %NOBS = Number of observations (INTEGER)
+
+       %%POVERTYLINE - Linea de pobreza
+       %%MEANPOOR    - Media de los pobres
+       %%HEADCOUNT   - Head Count ratio (% de pobres)
+       %%INCOMEGAP   - Income Gap ratio (% de la media de los pobres respecto a la linea de pobreza)
+       %%POVERTYGAP  - Poverty Gap ratio (Head Count ratio * Income Gap ratio)
+       %%FGT2        - FGT index for ALPHA = 2
+       %%GINIPOOR    - Gini index for the poor income
+       %%GINIGAP     - Gini index for the gaps
+       %%CVPOOR      - Coefficiente of variation for the poor income
+       %%CVGAP       - Coefficiente of variation for the gaps
+
+       %%POOR_S(3)   - Vector de series relacionadas con la pobreza:
+                       %%POOR_S(1) = Dummy: 1 si la observacion es pobre
+                       %%POOR_S(2) = R con 0´s para los no pobres
+                                     Distribucion de rentas de los pobres, dimencion = poblacion
+                       %%POOR_S(3) = Gaps normalizados: 0´s para los no pobres
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Foster, Greer & Thorbecke (1984), Econometrica, 52, 3, (May), 761-766.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Mayo/2014 - Cambio de sintaxis de @MEANVAR(NOPRINT,SMPL=%%POOR_S(1),WEI=W) S 1 N.
+   
+*/

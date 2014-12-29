@@ -1,0 +1,153 @@
+/*
+   LIFETABLEHMD                                              April/08 - R2: May/10
+*/
+COM [STRING]                   %%LIFETABLEHMD = 'LIFETABLEHMD - Version R2: May/10'
+
+*****************************************************************************************************************************
+/*
+   Complete LIFETABLE calculations from A & Q - NOT FOR GENERAL USE   April/08 - R0: April/08
+*/                      
+PROC   LTCOMHMD   Q  A  L  D  LL  TT  EV   R  I
+TYPE   SERIES     Q  A *L *D *LL *TT *EV
+TYPE   REAL                                R
+TYPE   INTEGER                                I
+
+LOCAL  REAL       SLL
+
+*  Life table calculations
+SET(FIRST=R)        L  1 111 = %IF(I==1  ,%ROUND(L{1}*(1-Q{1}),0),L{1}*(1-Q{1}))
+SET                 D  1 111 = %IF(T==111,L  ,L-L{-1})
+SET                 LL 1 111 = %IF(T==111,L*A,L-(1-A)*D)
+COM SLL = %SUM(LL)
+SET(FIRST=SLL)      TT 1 111 = %IF(T==111,LL ,TT{1}-LL{1})
+SET                 EV 1 111 = %IF(L==0  ,0  ,TT/L)
+
+END PROC LTCOMHMD
+
+*****************************************************************************************************************************
+
+PROC   LIFETABLEHMD  OUTEVF   OUTLTF   OUTEVM   OUTLTM   OUTEV   OUTLT
+TYPE   SERIES       *OUTEVF           *OUTEVM           *OUTEV
+TYPE   RECT                  *OUTLTF           *OUTLTM          *OUTLT
+
+OPTION STRING     HEADERL
+OPTION SWITCH     PRINT    1
+OPTION SWITCH     INTEGER  0
+OPTION SWITCH     SMOOTH   1
+OPTION INTEGER    RADIXL
+OPTION CHOICE     FINAL   10  65  70  75  80  85  90  95  100  105  110
+
+LOCAL  SERIES     AGE QF AF LF DF LLF TTF EVF EXPF DEFF MF  QM AM LM DM LLM TTM EVM EXPM DEFM MM  Q  A  L  D  LL  TT  EV  EXPO DEF  M  W
+LOCAL  STRING     HEADER
+LOCAL  INTEGER    N  K
+LOCAL  REAL       RADIX  A0
+LOCAL  RECT       CLTF CLTM CLT
+LOCAL  VECT       G
+LOCAL  VECT[INT]  FLIST(4)  MLIST(4)
+
+*   Globals
+COM %%AGEF = %%EVAGEF = %%PVF = %%PVPCF = %%AGEM = %%EVAGEM = %%PVM = %%PVPCM = %%AGE = %%EVAGE = %%PV = %%PVPC = %NA
+CLE %%DEATHF %%EXPOSUREF %%DEATHRATEF %%AxF   %%DEATHM %%EXPOSUREM %%DEATHRATEM %%AxM   %%DEATH %%EXPOSURE %%DEATHRATE %%Ax
+
+ENTER   FLIST
+ENTER   MLIST
+INQ(REG)  * N
+# FLIST MLIST
+
+IF .NOT.(N==101.OR.N==111)
+   {
+   DIS %%LIFETABLEHMD; DIS 'Sintax Error: Final age should be at 100+ or 110+ years only'
+   HALT  LIFETABLEHMD
+   }
+
+IF %DEFINED(HEADERL)
+   COM HEADER = HEADERL
+ELSE
+   DIS(STORE=HEADER) 'Life table. HMD method'
+COM RADIX = %IF(%DEFINED(RADIXL),FLOAT(RADIXL),100000)
+
+SET AGE  1 111 = T-1
+
+*   Deaths and exposures.
+SET DEFF 1 N =  [series]FLIST(3) + [series]FLIST(4)
+SET EXPF 1 N = ([series]FLIST(1) + [series]FLIST(2))/2 + %IF(T==N,0,([series]FLIST(3) - [series]FLIST(4))/6)
+
+SET DEFM 1 N =  [series]MLIST(3) + [series]MLIST(4)
+SET EXPM 1 N = ([series]MLIST(1) + [series]MLIST(2))/2 + %IF(T==N,0,([series]MLIST(3) - [series]MLIST(4))/6)
+
+SET DEF  1 N =  DEFF + DEFM
+SET EXPO 1 N =  EXPF + EXPM
+
+COM K = %MINHMDMPv5(DEFF,DEFM)
+*   Smoothing death rates at older ages - HMDMPv5 adjustment with INE or HMD data.
+COM G = %DEATHHMDMPv5(DEFF,EXPF,K) ;   SET MF 1 111 = %IF(T<=80,DEFF/%MAX(0,EXPF),G(T-80))
+   IF .NOT.%CONVERGED;   DIS 'Warning!. MLE Poisson model does not converge for Females. A linear aproximation is used.'
+COM G = %DEATHHMDMPv5(DEFM,EXPM,K) ;   SET MM 1 111 = %IF(T<=80,DEFM/%MAX(0,EXPM),G(T-80))
+   IF .NOT.%CONVERGED;   DIS 'Warning!. MLE Poisson model does not converge for Males.   A linear aproximation is used.'
+COM G = %DEATHHMDMPv5W(EXPF,EXPM,K);   SET W  1 111 = %IF(T<=80,EXPF/EXPO,G(T-80));   SET M 1 111 = W*MF + (1-W)*MM
+
+*   Average time of death within the period (¡determining A!) & probabilities of death.
+SET(FIRST=%BIRTHHMD(MF(1),3)) AF 1 111 = %IF(T==111,1/MF,0.5);   SET QF 1 111 = %IF(T==111,1,MF/(1+(1-AF)*MF))
+SET(FIRST=%BIRTHHMD(MM(1),2)) AM 1 111 = %IF(T==111,1/MM,0.5);   SET QM 1 111 = %IF(T==111,1,MM/(1+(1-AM)*MM))
+COM A0 = %IF(DEF(1)==0,%BIRTHHMD(0,1),(%BIRTHHMD(MF(1),3)*DEFF(1) + %BIRTHHMD(MM(1),2)*DEFM(1))/DEF(1))
+SET(FIRST=A0)                 A  1 111 = %IF(T==111,1/M, 0.5);   SET Q  1 111 = %IF(T==111,1, M/(1+(1-A)*M)  )
+
+*  Life Tables.
+@LTCOMHMD QF AF LF DF LLF TTF EVF RADIX INTEGER;   MAKE  CLTF 1 111;   # AGE QF LF DF LLF TTF EVF
+@LTCOMHMD QM AM LM DM LLM TTM EVM RADIX INTEGER;   MAKE  CLTM 1 111;   # AGE QM LM DM LLM TTM EVM
+@LTCOMHMD Q  A  L  D  LL  TT  EV  RADIX INTEGER;   MAKE  CLT  1 111;   # AGE Q  L  D  LL  TT  EV
+
+*   Globals
+COM %%AGEF = %MEANAGE(EXPF), %%EVAGEF = %LEATMEANAGE(%%AGEF,EVF), %%PVF = %LIFEPOTENTIAL(EXPF,EVF), %%PVPCF = %LIFEPOTENTIALPC(EXPF,EVF)
+COM %%AGEM = %MEANAGE(EXPM), %%EVAGEM = %LEATMEANAGE(%%AGEM,EVM), %%PVM = %LIFEPOTENTIAL(EXPM,EVM), %%PVPCM = %LIFEPOTENTIALPC(EXPM,EVM)
+COM %%AGE  = %MEANAGE(EXPO), %%EVAGE  = %LEATMEANAGE(%%AGE,EV)  , %%PV  = %LIFEPOTENTIAL(EXPO,EV) , %%PVPC  = %LIFEPOTENTIALPC(EXPO,EV)
+SET %%DEATHF 1 N = DEFF; SET %%EXPOSUREF 1 N = EXPF; SET %%DEATHRATEF 1 111 = MF; SET %%AxF 1 111 = AF
+SET %%DEATHM 1 N = DEFM; SET %%EXPOSUREM 1 N = EXPM; SET %%DEATHRATEM 1 111 = MM; SET %%AxM 1 111 = AM
+SET %%DEATH  1 N = DEF ; SET %%EXPOSURE  1 N = EXPO; SET %%DEATHRATE  1 111 = M ; SET %%Ax  1 111 = A
+
+IF PRINT
+   {
+   DIS HEADER; DIS
+   IF SMOOTH
+      @LIFETABLEPRINT(HEADER='Female data',PRINT,SMOOTH=MF) EXPF DEFF CLTF
+   ELSE
+      @LIFETABLEPRINT(HEADER='Female data',PRINT)           EXPF DEFF CLTF
+   DIS 'Basic Demographic indicators  - Years'
+   DIS 'Mean Age'       @+15  ###.##  %%AGEF  @+1 '- Life Expectacy' @+12       ##.## %%EVAGEF
+   DIS 'Potential Life' @@>12 *.      %%PVF   @+4 '- Potential Life per capita' ##.## %%PVPCF
+   DIS;DIS
+   *   Abridge Life Table
+   @LIFETABLEC2A(HEADER='Life table data - Abridged',PRI,FINAL=FINAL) CLTF
+   DIS;DIS
+
+   IF SMOOTH
+      @LIFETABLEPRINT(HEADER='Male   data',PRINT,SMOOTH=MM) EXPM DEFM CLTM
+   ELSE
+      @LIFETABLEPRINT(HEADER='Male   data',PRINT)           EXPM DEFM CLTM
+   DIS 'Basic Demographic indicators  - Years'
+   DIS 'Mean Age'       @+15  ###.##  %%AGEM  @+1 '- Life Expectacy' @+12       ##.## %%EVAGEM
+   DIS 'Potential Life' @@>12 *.      %%PVM   @+4 '- Potential Life per capita' ##.## %%PVPCM
+   DIS;DIS
+   *   Abridge Life Table
+   @LIFETABLEC2A(HEADER='Life table data - Abridged',PRI,FINAL=FINAL) CLTM
+   DIS;DIS
+
+   IF SMOOTH
+      @LIFETABLEPRINT(HEADER='Total  data',PRINT,SMOOTH=M) EXPO DEF   CLT
+   ELSE
+      @LIFETABLEPRINT(HEADER='Total  data',PRINT)          EXPO DEF   CLT
+   DIS 'Basic Demographic indicators  - Years'
+   DIS 'Mean Age'       @+15  ###.##  %%AGE   @+1 '- Life Expectacy' @+12       ##.## %%EVAGE
+   DIS 'Potential Life' @@>12 *.      %%PV    @+4 '- Potential Life per capita' ##.## %%PVPC
+   DIS;DIS
+   *   Abridge Life Table
+   @LIFETABLEC2A(HEADER='Life table data - Abridged',PRI,FINAL=FINAL) CLT
+   DIS;DIS
+  }
+
+IF %DEFINED(OUTEVF);   SET OUTEVF 1 111 = EVF;   IF %DEFINED(OUTLTF);   COM OUTLTF = CLTF
+IF %DEFINED(OUTEVM);   SET OUTEVM 1 111 = EVM;   IF %DEFINED(OUTLTM);   COM OUTLTM = CLTM
+IF %DEFINED(OUTEV) ;   SET OUTEV  1 111 = EV ;   IF %DEFINED(OUTLT) ;   COM OUTLT  = CLT
+
+CLE AGE QF AF LF DF LLF TTF EVF EXPF DEFF MF  QM AM LM DM LLM TTM EVM EXPM DEFM MM  Q  A  L  D  LL  TT  EV  EXPO DEF  M  W
+END PROC LIFETABLEHMD

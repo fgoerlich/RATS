@@ -1,0 +1,64 @@
+/*
+     BWIDTH calcula el parametro de suavizado para DENSITY y familia.
+
+     Escrito por:  Paco Goerlich.               Versi¢n: Mayo/2014 (R2)
+     Versi¢n RATS: WinRATS 8.30
+
+     Sintaxis
+
+      @BWIDTH(opciones) S COMIENZO FIN H
+
+       S        = serie a partir de la cual estimar el bandwith.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       H        = Bandwidth obtenido.
+
+       Opciones:
+
+     KERNEL = EPANECHNIKOV/BIWEIGHT/3WEIGHT/TRIANGULAR/[GAUSSIAN]/RECTANGULAR
+     [SILVERMAN]/NOSILVERMAN si en el caso de KERNEL=GAUSSIAN el factor de
+              ponderacion se basa en Silverman (1986, (3.31)), 0.9, o en la 
+              normal, Silverman (1986, (3.28)), (4/3)**(1/5).
+     SPREAD = SIGMA/IQR/[ROBUST]. Si como medida de dispersion se utiliza la
+              desviacion tipica, el rango intercuartilico o el minimo de los dos.
+              Lo que se corresponde con (3.28), (3.29) o (3.30) en Silverman (1986).
+              Normal reference bandwidth is: KERNEL=GAUSSIAN, SPREAD=SIGMA &
+              NOSILVERMAN, (3.28).
+    SMPL  = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+            de los calculos (Ver RATS 5.2 UG) [no definido]
+    [INTERPOL]/NOINTERPOL si los quantiles deben ser interpolados o no.
+    WEIGHT  = si la media y el rango inter-cuartilico deben ponderarse [no definido].
+
+   NOTA: Si COMIENZO y FIN no se especifican se toma por defecto el periodo
+         maximo para el cual S esta definida, omitiendo %NA's.
+
+
+       Variables globales:
+
+       %%BWIDTH = STRING, Version actual del procedimiento
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Necesita la compilacion previa de S%, MEANVAR, GPLININT, FRACTILE y IQR.
+
+   Sobre detalles de calculo ver Silverman (1986) Caps.- 2 y 3 y BWIDTH.DOC
+
+   NOTA: Cuando se utiliza IQR como medida de SPREAD hay algunas diferencias
+         respecto a la version 4.## como consecuencia de algunos cambios en
+         la funcion %INVNORMAL(). Ver PROBLEM.004.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Febrero/2004
+       Actualizacion a WinRATS 5.11.
+
+   R2: Mayo/2014
+       Cambio de sintaxis de @MEANVAR(SMPL=SMPL,NOPRI,WEI=W) S TBEG TEND
+
+
+*/

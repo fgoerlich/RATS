@@ -1,0 +1,111 @@
+/*
+     LIFETABLEHMD
+
+     Escrito por:  Paco Goerlich.                   Version: Mayo/2010 (R2)
+     Version RATS: WinRATS 7.30
+
+     Sintaxis
+
+      @LIFETABLEHMD LEF LTF LEM LTM LE LT
+      #<supp. card> PF1 PF2 DF1 DF2
+      #<supp. card> PM1 PM2 DM1 DM2
+
+       LE# = Esperanza de vida a las correspondientes edades, F = Female, M = Male or Total.
+       LT# = Matriz de Tabla de Vida, 111x7, F = Female, M = Male or Total.
+
+      #<supp. card> PF1 PF2 DF1 DF2: Poblacion y defunciones para las Females.
+      #<supp. card> PM1 PM2 DM1 DM2: Poblacion y defunciones para los Males.
+
+      1 y 2 son el principio y el final del periodo para la población y el triangulo
+      de Lexis inferior (1) y superior (2) para las defunciones.
+
+     Opciones:
+
+      [PRINT]/NOPRINT controla la impresion de la tabla de vida.
+      INTEGER/[NOINTEGER] aritmetica de enteros para las personas o de reales.
+      HEADER = Titulo a imprimir.
+      RADIX  = Supervivientes iniciales [100000] (INTEGER).
+      FINAL  = 65/70/75/80/85/90/95/100/101/[110] intervalo final en la tabla abreviada.
+      [SMOOTH]/NOSMOOTH controla si en la impresión las tasas de mortalidad son
+                        las suavizadas.
+
+
+     Variables globales:
+
+      %%LIFETABLEHMD = STRING, Version actual del procedimiento.
+
+      %%AGEF         = REAL,   Edad media de la poblacion
+      %%EVAGEF       = REAL,   Esperanza de vida a la edad media
+      %%PVF          = REAL,   Potencial de Vida
+      %%PVPCF        = REAL,   Potencial de vida per capita
+      %%DEATHF       = SERIES, Defunciones
+      %%EXPOSUREF    = SERIES, Exposicion al riesgo
+      %%DEATHRATEF   = SERIES, Tasa de mortalidad = DEATH/EXPOSURE
+      %%AxF          = SERIES, Tiempo medio vivido de los que fallecen en
+                               el intervalo [x, x+1)
+
+      %%AGEM         = REAL,   Edad media de la poblacion
+      %%EVAGEM       = REAL,   Esperanza de vida a la edad media
+      %%PVM          = REAL,   Potencial de Vida
+      %%PVPCM        = REAL,   Potencial de vida per capita
+      %%DEATHM       = SERIES, Defunciones
+      %%EXPOSUREM    = SERIES, Exposicion al riesgo
+      %%DEATHRATEM   = SERIES, Tasa de mortalidad = DEATH/EXPOSURE
+      %%AxM          = SERIES, Tiempo medio vivido de los que fallecen en
+                               el intervalo [x, x+1)
+
+      %%AGE          = REAL,   Edad media de la poblacion
+      %%EVAGE        = REAL,   Esperanza de vida a la edad media
+      %%PV           = REAL,   Potencial de Vida
+      %%PVPC         = REAL,   Potencial de vida per capita
+      %%DEATH        = SERIES, Defunciones
+      %%EXPOSURE     = SERIES, Exposicion al riesgo
+      %%DEATHRATE    = SERIES, Tasa de mortalidad = DEATH/EXPOSURE
+      %%Ax           = SERIES, Tiempo medio vivido de los que fallecen en
+                               el intervalo [x, x+1)
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Este procedimiento implementa el metodo de la HMD para la elaboración de
+   tablas completas de mortalidad segun a versión 5 (May 31) del MP. Wilmoth (2007).
+   Una version anterior del metodo, Wilmoth (2002, October 1), se implementa en
+   LIFETABLE con la opciones adecuadas.
+
+   Sólo admite poblaciones por edades simples hasta un intervalo abierto
+   final de 100 o 110 años.
+
+   Las defunciones deben estar (necesariamente) clasificadas por triangulos de
+   Lexis. Los datos son pues, periodo-edad.
+
+   El método calcula tasas de mortalidad (= Defunciones / Exposicion) por edades
+   según las formulas (47), (48) y (49) del MPv5. Para la última edad la formula (49)
+   no considera el segundo sumando debida a los triangulos de Lexis.
+
+   A partir de M se sigue la escrupulosamente la metodología del MPv5 p.-34 a 39.
+
+   Para las edades avanzadas se aplica el suavizado de las tasas de la HMD.
+
+   La tabla abreviada se construye segun la HMD y es consistente con la tabla
+   completa.
+
+   Se incluyen algunos indicadores demográficos basicos para cada sexo:
+   - Edad media,
+   - EV del individuo representativo,
+   - Potencial de Vida, agregado y per capita.
+
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Junio/2008 - Inclusion de la opcion SMOOTH, procedente de la modificacion de LIFETABLEPRINT.
+
+   R2: Mayo/2010  - Inclusion de las series globales de defunciones, exposición, tasas de
+                    mortalidad (suavizadas) y a(x).
+		    Posibilidad de que la tabla abreviada agregada de la tabla completa finalice 
+		    entre los 65 y los 110 en intervalos de 5 años.
+
+*/

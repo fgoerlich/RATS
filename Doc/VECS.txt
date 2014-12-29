@@ -1,0 +1,48 @@
+/*
+     VECS vectoriza un conjunto de series en una unica serie.
+
+     Escrito por Paco Goerlich.                    Version: Marzo/2005 (R1)
+     Version RATS: WinRATS 6.02
+
+     Sintaxis
+
+      @VECS SERIE COMIENZO FIN
+      #<supp.card>  series para vectorizar
+
+       SERIE    = serie donde se almacena el resultado
+       COMIENZO = primera observacion a considerar
+       FIN      = ultima  observacion a considerar
+
+
+       Opciones:
+
+     SMPL = Serie con los valores cero entre COMIENZO y FIN que desean eliminarse
+            al vectorizar (Ver RATS 5.2 UG) [no definido]
+
+
+       Variables globales:
+
+     %%VECS = STRING, Version actual del procedimiento.
+
+     %NOBS  = Numero de observaciones antes de vectorizar (INTEGER)
+     %NREG  = Numero de series para vectorizar            (INTEGER)
+
+********************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   La serie vectorizada comienza en la observacion 1, independientemente del
+   valor que se haya fijado en COMIENZO, ello se hace para que no haya huecos
+   con NA cuando COMIENZO y FIN no coinciden con el principio y final de las
+   series en <supp.card>.
+
+   Si COMIENZO y FIN no se especifican se tomara por defecto el maximo rango
+   definido para el conjunto de series en <supp.card>.
+
+********************************************************************************
+
+   REVISIONES
+
+   R1: Marzo/2005 - Traduccion a WinRATS 6.02.
+
+*/

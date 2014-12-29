@@ -1,0 +1,84 @@
+/*
+     FRACTILE                                     February/07 - R1: March/07
+*/ 
+COM [STRING]                   %%FRACTILE = 'FRACTILE - Version R0: March/07'
+
+PROC  FRACTILE  SERIE  TBEGP TENDP   OUTF   OUTFSE
+TYPE  SERIES    SERIE
+TYPE  VECT                          *OUTF  *OUTFSE
+*
+LOCAL INTEGER I J N TBEG TEND
+LOCAL VECTOR  Q F FSE
+LOCAL SERIES  SMPL  S  W  P
+*
+OPTION SWITCH PRINT    1
+OPTION SWITCH SE       0
+OPTION INTEGE REPLICAS 100
+OPTION VECTOR QUANTIL
+OPTION SERIES WEIGHT
+OPTION SERIES SMPLL
+
+INQUIRE(SERIES=SERIE) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(SERIE),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(SERIE)
+
+IF %DEFINED(WEIGHT)
+   SET P TBEG TEND = WEIGHT
+ELSE
+   SET P TBEG TEND = 1.
+
+SAM(SMPL=SMPL) SERIE TBEG TEND S 1
+SAM(SMPL=SMPL) P     TBEG TEND W 1
+INQUIRE(SERIES=S) *  N
+
+IF %DEFINED(QUANTIL)
+   COM  Q = QUANTIL
+ELSE
+   {
+   IF      N.LT.20
+      COM  J =   5
+   ELSE IF N.LT.50
+      COM  J =  11
+   ELSE IF N.LT.200
+      COM  J =  21
+   ELSE
+      COM  J = 101
+   DIM Q(J)
+   EWI Q(I)  = (1./(J-1))*(I-1)
+   }   
+
+IF .NOT.%DEFINED(WEIGHT)
+   {
+          COM F   = %FRACTILES(S,Q)
+   IF SE; COM FSE = %FRACTIL_BOOTSE(S,Q,REPLICAS)
+   }
+ELSE
+   {
+          COM F   = %WFRACTILES(S,W,Q)
+   IF SE; COM FSE = %WFRACTIL_BOOTSE(S,W,Q,REPLICAS)
+   }
+
+IF PRINT
+   {
+   DIS 'Quantile statistics on series' %L(SERIE) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   IF SE;   DIS 'Bootstrap Standard Errors in brackets:' REPLICAS 'replications'
+   DIS '            Quantil'
+   DIS '   %         Value' @+7 %STRIF(SE,'Standard Errors','')
+   DO I = 1,%ROWS(Q)
+      IF .NOT.SE
+         DIS ###.## Q(I)*100 *.* F(I)
+      ELSE
+         DIS ###.## Q(I)*100 *.* F(I) @+5 '(' @-1 FSE(I) @-1 ')'
+   END DO I
+   DIS
+   }
+
+IF %DEFINED(OUTF);    COM  OUTF   = F
+IF %DEFINED(OUTFSE);  COM  OUTFSE = FSE
+
+CLEAR  SMPL  S  W  P
+END PROC FRACTILE

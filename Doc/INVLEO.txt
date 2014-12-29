@@ -1,0 +1,40 @@
+/*
+   El procedimiento INVLEO obtiene la MATRIZ INVERSA DE LEONTIEF.
+
+   Escrito por Paco Goerlich.                  Versi¢n: Junio/2002 (R3)
+   Version RATS: RATS386 5.02
+
+   Sintaxis
+
+    @INVLEO A B
+
+     A = Matriz NxN de coeficientes tecnicos.
+     B = Matriz NxN inversa de Leontief.
+
+
+     Variables globales:
+
+    %%INVLEO = STRING, Version actual del procedimiento.
+
+******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   El procedimiento es la traducci¢n a RATS del correspondiente procedimiento
+   escrito para GAUSS 2.1 (INVLEO.ARC).
+
+******************************************************************************
+
+   REVISIONES
+
+   R1: Abril/1998
+       Introduccion de informacion adicional sobre condiciones de error.
+
+   R2: Septiembre/2001
+       Actualizacion a RATS 5.00.
+
+   R3: Junio/2002
+       Se elimino la variable global %%ERROR al sustituir el RETURN en las
+       condiciones de error por HALT.
+       
+*/

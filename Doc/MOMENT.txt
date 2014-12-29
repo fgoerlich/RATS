@@ -1,0 +1,59 @@
+/*
+     MOMENT calcula el momento de orden r ponderado, centrado en la media
+     o no, absoluto o no, a partir de las observaciones de una serie.
+
+     Escrito por:  Paco Goerlich.               Versi¢n: Mayo/2014 (R2)
+     Version RATS: WinRATS 8.30
+
+     Sintaxis
+
+      @MOMENT S COMIENZO FIN
+
+       S        = Serie sobre la que calcular el momento.
+       COMIENZO = Primera observacion a considerar.
+       FIN      = Ultima  observacion a considerar.
+
+
+     Opciones:
+
+      ORDER = Order of the moment [2] (real)
+      [CENTER]/NOCENTER     si el momento debe ser centrado en la media o no.
+      ABSOLUTE/[NOABSOLUTE] si el momento es absoluto o no.
+      [PRINT]/NOPRINT controla la impresion del output
+      SMPL = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+             de los calculos (Ver RATS 5.2 UG) [no definido]
+      WEIGHT = si el momento debe ponderarse [no definido].
+
+
+   NOTA: Si COMIENZO y FIN no se especifican se toma por defecto el periodo
+         maximo para el cual S esta definida.
+
+
+     Variables globales:
+
+      %%MOMENT  = STRING, Version actual del procedimiento
+      %%MOMENTR   Weighted sample moment (REAL)
+
+      %NOBS       Number of observations (INTEGER)
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Sin la opcion W el momento simple utiliza como divisor el numero
+   de observaciones.
+
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Febrero/2004
+       Actualizacion a WinRATS 5.11. Se a¤aden variables globales y se permiten
+       momentos de orden real.
+
+   R2: Mayo/2014
+       Reconversion a la opcion standard de WEIGHT
+       
+*/

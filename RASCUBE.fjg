@@ -1,0 +1,106 @@
+/*
+     RASCUBE                                       June/2008 - R1: November/09
+*/
+COM [STRING]                  %%RASCUBE   = 'RASCUBE - Version R1: November/09'
+
+PROC RASCUBE  A  B  C  D  E
+TYPE VEC[REC] A          *E
+TYPE RECT        B  C  D
+
+LOCA VEC[REC]             EE
+LOCA INT      I  J
+
+OPTION REAL    CVCRIT        1E-10
+OPTION INTEGER ITERATIONS  100
+OPTION SWITCH  PRINT         0
+OPTION SWITCH  INTEGER       0
+
+*   (1) Checks if all rectangulars in the CUBE are equal
+DO I = 1,%ROWS(A)-1
+   IF %ROWS(A(I))<>%ROWS(A(I+1)).OR.%COLS(A(I))<>%COLS(A(I+1))
+      {
+      DIS %%RASCUBE; DIS 'Sintax error: The cube is NOT perfect'
+      DO J = 1,%ROWS(A)
+         DIS 'Depth' J 'Rows' %ROWS(A(J)) 'Columns' %COLS(A(J))
+      END DO J
+      HALT  RASCUBE
+      }
+END DO I
+
+*   (2) Checks if size of cube and matrices are consistent
+IF %ROWS(B)<>%ROWS(A(1)).OR.%COLS(B)<>%ROWS(A).OR.%COLS(C)<>%COLS(A(1)).OR.%ROWS(C)<>%ROWS(A).OR.%ROWS(D)<>%ROWS(B).OR.%COLS(D)<>%COLS(C)
+   {
+   DIS %%RASCUBE; DIS 'Sintax error: Cube and matrices to adjust are incompatible'
+   DIS %LABEL(A) 'dimension:' ### %ROWS(A(1)) 'rows' %COLS(A(1)) 'columns and' %ROWS(A) 'depth.'
+   DIS %LABEL(B) 'dimension:' ### %ROWS(B)    'rows' %COLS(B)    'columns. Correct dimension:' %ROWS(A(1)) 'rows' %ROWS(A)    'columns.'
+   DIS %LABEL(C) 'dimension:' ### %ROWS(C)    'rows' %COLS(C)    'columns. Correct dimension:' %ROWS(A)    'rows' %COLS(A(1)) 'columns.'
+   DIS %LABEL(D) 'dimension:' ### %ROWS(D)    'rows' %COLS(D)    'columns. Correct dimension:' %ROWS(A(1)) 'rows' %COLS(A(1)) 'columns.'
+   HALT  RASCUBE
+   }
+
+*   (3) Checks if there are negative values
+IF %MINVALUECUBE(A)<0.OR.%MINVALUE(B)<0.OR.%MINVALUE(C)<0.OR.%MINVALUE(D)<0
+   {
+   DIS %%RASCUBE; DIS 'Sintax error: Negative values are not allowed'
+   HALT  RASCUBE
+   }
+
+*   (4) Checks if the sum of matrices elements is equal
+IF ABS(%SUM(B)-%SUM(C))>CVCRIT.OR.ABS(%SUM(B)-%SUM(D))>CVCRIT.OR.ABS(%SUM(C)-%SUM(D))>CVCRIT
+   {
+   DIS %%RASCUBE; DIS 'Sintax error: Sum of matrices to adjust is NOT the same'
+   DIS %LABEL(B) '=' %SUM(B)
+   DIS %LABEL(C) '=' %SUM(C)
+   DIS %LABEL(D) '=' %SUM(D)
+   HALT  RASCUBE
+   }
+
+*   (5) Checks if the sum by rows and columns of the matrices is consistent
+IF %MAX(%MAX(%TESTDIFF(%SUMR(B),%SUMR(D)),%TESTDIFF(%SUMC(B),%SUMR(C))),%TESTDIFF(%SUMC(C),%SUMC(D)))>CVCRIT
+   {
+   DIS %%RASCUBE; DIS 'Sintax error: Sum of rows and columns of matrices to adjust are NOT compatible'
+   IF %TESTDIFF(%SUMR(B),%SUMR(D))>CVCRIT
+      {
+      DIS 'Row of' %LABEL(B) 'Column of' %LABEL(D) 'and difference'
+      DIS %SUMR(B)~%SUMR(D)~(%SUMR(B)-%SUMR(D))
+      }
+   IF %TESTDIFF(%SUMC(B),%SUMR(C))>CVCRIT
+      {
+      DIS 'Column of' %LABEL(B) 'Row of' %LABEL(C) 'and difference'
+      DIS %SUMC(B)~%SUMR(C)~(%SUMC(B)-%SUMR(C))
+      }
+   IF %TESTDIFF(%SUMC(C),%SUMC(D))>CVCRIT
+      {
+      DIS 'Column of' %LABEL(C) 'Column of' %LABEL(D) 'and difference'
+      DIS %SUMC(C)~%SUMC(D)~(%SUMC(C)-%SUMC(D))
+      }
+   HALT  RASCUBE
+   }
+
+IF .NOT.INTEGER
+   COM EE =  %RASCUBE(A,B,C,D,CVCRIT,ITERATIONS)
+ELSE
+   COM EE = %IRASCUBE(A,B,C,D,CVCRIT,ITERATIONS)
+
+IF %CONVERGED
+   {
+   DIS %%RASCUBE; DIS 'Convergence achieved at iteration' %ITERS
+   IF PRINT
+      {
+      IF %DEFINED(E)
+         DIS 'Adjusted cube: ' %LABEL(E)  EE
+      ELSE
+         DIS 'Adjusted cube: '            EE
+      }
+   }
+
+*   Iteration limit
+IF %CONVERGED==0
+   {
+   DIS %%RASCUBE; DIS 'Convergence NOT achieved after' %ITERS 'iterations. Final convergence criterion' %CVCRIT
+   RETURN
+   }
+
+IF %DEFINED(E);   COM E = EE
+
+END PROC RASCUBE

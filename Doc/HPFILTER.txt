@@ -1,0 +1,77 @@
+/*
+     HPFILTER filters a series through the Hodrick-Prescott filter to obtain 
+     the growth (or trend) component of a series. (Hodrick, R. & Prescott, E.
+     (1997) "Post-War U.S. business cycles: An empirical investigation",
+     JCMB, 29, 1, (January), 1-16)
+  
+     Widely used in the RBC literature.
+     
+     Written by RATS and modified by Paco Goerlich.            Version: March/2004 (R2)
+     Version RATS: WinRATS 5.11
+    
+     Sintax:
+  
+       @HPFILTER(options) SERIES GROWTH START END
+  
+       series = series of interest
+       growth = growth component to be calculated (should be specified)
+       start  = first observation to consider
+       end    = last observation to consider
+  
+     Options:
+  
+       LAMBDA = weight on squared 2nd difference of growth component [1600].
+
+
+     Global variables:
+
+       %%HPFILTER = STRING, Version actual del procedimiento.
+
+  
+***************************************************************************************
+  
+     COMPUTATIONAL INFORMATION
+  
+     HPFILTER computes the estimated growth component of a series 
+     using the DP algorithm to solve the problem:
+  
+     Minimize sum over t of
+  
+     (1)     [y(t)-g(t)]**2 + lambda * [g(t)-2g(t-1)+g(t-2)]**2
+  
+     where g is the growth component of y.
+  
+     Defining:            X(t)=(g(t),g(t-1),1)'
+                          u(t)=g(t)-2g(t-1)+g(t-2)
+  
+     Then                 X(t) = A X(t-1) + B u(t), where
+  
+                               2 -1  0        1
+                          A =  1  0  0    B = 0 
+                               0  0  1        0
+  
+     Hence the minimand (1) can be written as
+  
+              [c(t)X(t)]**2 + lambda * u(t)**2
+  
+     where     c(t)=(1,0,-y(t))
+       
+     With cost-to-go functional  X(t)'R(t)X(t), the solution is of the form 
+     u(t)=TEMP1(t)*X(t-1), and X(t)=(A+B*TEMP1(t))*X(t-1)
+  
+     Within this set up we first loop over periods until 2 above beginning
+     of data and thend compute minimizer for the initial two periods.
+  
+***************************************************************************************
+  
+     REVISIONS
+
+     R1: July/1993
+         Sustitucion de TR(D)*R*D por %MQFORM(R,D) tras haber solucionado el bug por RATS.
+
+     R2: March/2004
+         Actualización a WinRATS 5.11.
+         Incorporación de algunas formulas matriciales en el procedimiento.
+
+
+*/

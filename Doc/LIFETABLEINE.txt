@@ -1,0 +1,100 @@
+/*
+     LIFETABLEINE
+
+     Escrito por:  Paco Goerlich.                   Version: Abril/2008 (R0)
+     Version RATS: WinRATS 7.00
+
+     Sintaxis
+
+      @LIFETABLEINE P D1 D2 LE LT
+
+       P  = Poblacion   por edades simples: 0-100+ o 0-110+.
+       D1 = Defunciones periodo 1.
+       D2 = Defunciones periodo 2.
+            Las defunciones son por periodo o por triangulos de Lexis.
+	    En este caso D1: triangulo inferior y D2: triangulo superior
+       LE = Esperanza de vida a las correspondientes edades.
+       LT = Matriz de Tabla de Vida, 111x7.
+
+
+     Opciones:
+
+      [PRINT]/NOPRINT controla la impresion de la tabla de vida.
+      [INTEGER]/NOINTEGER aritmetica de enteros para las personas o de reales.
+      [LEXIS]/NOLEXIS si las defunciones lo dos por triangulos de Lexis o solo
+      por edad para cada periodo.
+      HEADER = Titulo a imprimir.
+      RADIX  = Supervivientes iniciales [100000] (INTEGER).
+      V01    = Defunciones por triangulos de Lexis para las edades 0 y 1, (RECT 2x2).
+      FINAL  = [85]/100/110 intervalo final en la tabla abreviada.
+
+
+     Variables globales:
+
+      %%LIFETABLEINE = STRING, Version actual del procedimiento.
+      %%AGE          = REAL, Edad media de la poblacion
+      %%EVAGE        = REAL, Esperanza de vida a la edad media
+      %%PV           = REAL, Potencial de Vida
+      %%PVPC         = REAL, Potencial de vida per capita
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Este procedimiento implementa el método del INE para la elaboración de
+   tablas completas de mortalidad. Ver INE (2007).
+
+   Sólo admite poblaciones por edades simples hasta un intervalo abierto
+   final de 100 o 110 años.
+
+   El método calcula probabilidades de muerte por edades directamente a 
+   partir de datos observados de población y defunciones clasificadas por
+   edad-generación. 
+   Para ello requiere una serie de población a mitad de los dos años
+   considerados (fechada a 1 de enero) por la estructura de edad-generación
+   de los datos. Este es el periodo t+1.
+   Para las defunciones hay dos posibilidades:
+   1) Si se dispone de triángulos de Lexis (defunciones por edad-periodo
+      generación) estos deben suministrarse en la <supp. card>, 
+      primero las defunciones en t del triángulo de Lexis
+      inferior y luego las defunciones en t+1 del triangulo de Lexis 
+      superior.
+   2) Si solo se dispone de defunciones clasificadas por edad y periodo entonces
+      en la <supp. card> hay que introducir las defunciones de ambos años,
+      primero las de t y luego las de t+1.
+      (Si sólo se dispone de defunciones para un año, introducir esta serie dos
+      veces en la <supp. card>).
+
+   La formula para la probabilidad de muerte es la utilizada por el INE, bien a
+   partir de defunciones o a partir de triángulos de Lexis.
+
+   Para las edades avanzadas se aplica el suavizado de las probabilidades del INE.
+   Si se utilizan defunciones por edad-periodo (opcion 2), entonces hay dos 
+   posibilidades para las edades iniciales: 
+   1) Introducir las defunciones por triángulos de Lexis en la matrix V, RECT 2x2,
+      donde las filas son las edades, 0 y 1, y las columnas los periodos, t y t+1.
+   2) Si esta información no esta disponible se efectuará el ajuste del INE en las
+      tablas de 1970-1971.
+
+   Dadas las probabilidades de muerte el resto de funciones se construye siguiendo
+   al INE, si bien LL (person-years) se hace consistente con la formula que emplea
+   en INE para la EV, .5*(l(x)+l(x+1)), y TT es LL acumulada (como en HMD, Wilmoth
+   2007). El T del INE, probabilidad de supervivencia, no se calcula.
+
+   La tabla abreviada se construye segun la HMD y es consistente con la tabla
+   completa.
+
+   Se incluyen algunos indicadores demográficos basicos:
+   - Edad media,
+   - EV del individuo representativo,
+   - Potencial de Vida, agregado y per capita.
+
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: 
+
+*/

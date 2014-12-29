@@ -1,0 +1,148 @@
+/*
+     PARETO STATISTICS, PARAMETER ESTIMATION & TESTS      July/07 - R4: February/09
+*/
+COM [STRING] %%PARETO =                           'PARETO - Version R4: February/09'
+
+PROC  PARETO   SERIE  TBEGP  TENDP   OUTX   OUTY   OUTMLE   OUTMLEVAR
+TYPE  SER      SERIE                *OUTX  *OUTY
+TYPE  INT             TBEGP  TENDP
+TYPE  REAL                                        *OUTMLE  *OUTMLEVAR
+*
+LOCAL INT   TBEG   TEND  NV N
+LOCAL SER   S X Y ZEROS  SMPL GI
+LOCAL VEC   MLE
+LOCAL REAL  MA  X0 SIGMA THETA RLL Z2
+LOCAL FRML  LOGLIK
+*
+OPTION SWITCH  PRINT  1
+OPTION SWITCH  GRAPH  1
+OPTION SWITCH  BURR   1
+OPTION SERIES  SMPLL
+OPTION REAL    MAX
+OPTION REAL    MIN
+OPTION INTEGER GRID   1000
+
+INQUIRE(SERIES=SERIE) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(LOG(SERIE)),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(LOG(SERIE))
+
+SAM(SMPL=SMPL) SERIE TBEG TEND S 1
+COM X0  = %IF(%DEFINED(MIN),MIN,%MINVALUE(S)), N = %NOBS
+SST(SMPL=S>=X0) 1 N 1>>MA
+COM  NV = FIX(MA)
+
+*   Note: We have 3 kinds of observations:
+*            1) N      = Number of valid/selected observations in S = SERIES (Integer)
+*            2) NV     = Number of observations for which S(i) >= X0         (Integer)
+*            3) MLE(3) = Number of observations for which S(i) >  X0         (Real)
+*                        These are the observations that enter into ML estimation.
+*         If X0 is = to a value of S(i) then MLE(3) = NV-1.
+*         For calculating statistics we use NV, for MLE estimation we use MLE(3).
+*         W, LR & LM tests are based on MLE(3).
+
+LABEL S
+#  %L(SERIE)
+
+*   Globals
+COM %%PMEAN       = %%PMEDIAN       = %%PMODE        = %%PVARIANCE      = %%PCV          = %%PGINI          =  %NA
+COM %%ZIPFMLESTAT = %%ZIPFMLESIGNIF =                                                                          %NA
+COM %%WPARETOSTAT = %%WPARETOSIGNIF = %%LRPARETOSTAT = %%LRPARETOSIGNIF = %%LMPARETOSTAT = %%LMPARETOSIGNIF =  %NA
+
+COM   MLE   = %PARETOMLE(S,X0),       %%ZIPFMLESTAT  = (MLE(1)-1)/SQRT(MLE(2)),    %%ZIPFMLESIGNIF  = %ZTEST(%%ZIPFMLESTAT)
+COM %%PMEAN = %PARETOMEAN(X0,MLE(1)), %%PMEDIAN      = %PARETOMEDIAN(X0,MLE(1)),   $
+    %%PMODE =  X0,                    %%PVARIANCE    = %PARETOVARIANCE(X0,MLE(1)), $
+    %%PCV   = %PARETOCV(MLE(1)),      %%PGINI        = %PARETOGINI(MLE(1))
+*   LM test
+SST(SMPL=S>X0,MEAN) 1 N X0/S>>Z2
+COM Z2 = (MLE(1)/(MLE(1)+1)) - Z2,    %%LMPARETOSTAT = (MLE(3)*(MLE(1)+2)*(MLE(1)+1)**4*Z2**2)/MLE(1), %%LMPARETOSIGNIF = %CHISQR(%%LMPARETOSTAT,1)
+
+IF PRINT
+   {
+   DIS 'PARETO Statistics, Parameter estimation and Test on Series' %L(SERIE)
+   DIS 'Observations' NV @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-NV 'Skipped/Missing)'
+   IF N>NV
+      DIS 'Not from Pareto pdf  (Lower than' *.## X0 @-1 ')' N-NV '(' @-1 *.## 100.*(N-NV)/N @-1 '%)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS
+   DIS 'Sample Statistics'
+   DIS '*****************'
+   STA(SMPL=S>=X0,MOMENTS,FRACTILES)  S
+   SAM(SMPL=S>=X0) S 1 N GI 1
+   SET ZEROS         1 NV = 1
+   DIS 'Gini Index' @18 %GINI(GI,ZEROS)
+   DIS
+   DIS 'MLE of Pareto density - Lower bound =' *.## X0 '- Observations' FIX(MLE(3))
+   DIS 'Theta'        @18 MLE(1)         @38 'Standard Error'  @53  SQRT(MLE(2))
+   DIS 'Zipf test - H0: Theta = 1'
+   DIS 't-Statistic'  @18 %%ZIPFMLESTAT  @38 'Signif Level'    @53 %%ZIPFMLESIGNIF
+   DIS
+   DIS 'Population Statistics for a Pareto distribution'
+   DIS '***********************************************'
+   DIS 'Lower bound =' *.## X0 @+2 'Scale parameter =' * MLE(1)
+   DIS '(Note: Mean     & Gini            exist only for Theta > 1'
+   DIS '       Variance & Coef. Variation exist only for Theta > 2)'
+   DIS
+   DIS 'Mean'        @18 %%PMEAN         @38 'Variance'        @53 %%PVARIANCE
+   DIS 'Median'      @18 %%PMEDIAN       @38 'Coef. Variation' @53 %%PCV
+   DIS 'Mode'        @18 %%PMODE         @38 'Gini'            @53 %%PGINI
+   }
+
+IF BURR
+   {
+   NONLIN SIGMA THETA
+   FRML   LOGLIK = LOG(THETA) - LOG(SIGMA) - (THETA+1)*LOG(1+((S-X0)/SIGMA))
+   COM    SIGMA = X0, THETA = MLE(1)
+   MAX(PRINT=PRINT,SMPL=S>X0,PMETHOD=BHHH,PITER=5,TITLE='MLE of Burr density') LOGLIK 1 N
+   IF %CONVERGED
+      {
+      *   Wald
+      COM %%WPARETOSTAT  = (%BETA(1)-X0)**2/%XX(1,1), %%WPARETOSIGNIF  = %CHISQR(%%WPARETOSTAT,1)
+      *   LR
+      SST(SMPL=S>X0) 1 N                              %LOGPARETODENSIT(S(T),X0,MLE(1))>>RLL
+      COM %%LRPARETOSTAT = 2*(%FUNCVAL-RLL),          %%LRPARETOSIGNIF = %CHISQR(%%LRPARETOSTAT,1)
+      }
+   }
+
+IF PRINT
+   {
+   DIS;DIS 'Test of Pareto against Burr pdf - H0: Sigma = Mu (Chi-Squared(1))'
+   IF BURR
+      {
+      IF .NOT.%CONVERGED
+         DIS 'Burr MLE estimation has not converged'
+      ELSE
+         {
+         DIS 'Wald Statistic'  @18 %%WPARETOSTAT    @38 'Signif Level'    @53 %%WPARETOSIGNIF
+         DIS 'LR   Statistic'  @18 %%LRPARETOSTAT   @38 'Signif Level'    @53 %%LRPARETOSIGNIF
+	 }
+      }
+   DIS       'LM   Statistic'  @18 %%LMPARETOSTAT   @38 'Signif Level'    @53 %%LMPARETOSIGNIF
+   DIS;DIS
+}
+
+*   Preparing for Graphics
+COM MA = %IF(%DEFINED(MAX),MAX,%MAXVALUE(S))
+ORD S
+COM      NV = FIX(%IF(GRID<=1,N,GRID)), N = N-%NGT(S,MA)
+SET X  1 NV = %IF(GRID<=1,S,X0 + ((MA-X0)/(NV-1))*(T-1))
+SET Y  1 NV = %PARETODENSITY(X(T),X0,MLE(1))
+
+IF GRAPH
+   {
+   CLE ZEROS
+   SET ZEROS 1  N = 0
+   SCA(HMIN=0,HMAX=MA,VMIN=0,STYLE=LINES,HLABEL='Values',HEADER='Pareto Density',  $
+       SUBHEAD=%L(SERIE),OVERLAY=DOTS,OVSAME,OMIN=0,OMAX=MA,HSHADE=||0,X0||)  2
+   # X Y     1  NV  1
+   # S ZEROS 1  N
+   }
+
+IF %DEFINED(OUTX);       SET OUTX 1 NV = X
+IF %DEFINED(OUTY);       SET OUTY 1 NV = Y
+IF %DEFINED(OUTMLE);     COM OUTMLE    = MLE(1)
+IF %DEFINED(OUTMLEVAR);  COM OUTMLEVAR = MLE(2)
+
+CLE S X Y ZEROS SMPL GI
+END PROC PARETO

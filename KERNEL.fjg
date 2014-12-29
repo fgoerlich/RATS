@@ -1,0 +1,90 @@
+*   This file contains Rats FUNCTIONs for various KERNELS
+*   Paco Goerlich   18/2/2004
+
+********************************************************************************
+
+*   EPANECHNIKOV
+
+FUNCTION   EPANECHNIKOV  Z
+TYPE REAL  EPANECHNIKOV  Z
+
+COMPUTE    EPANECHNIKOV  =  %IF(ABS(Z).LE.1,.75*(1-Z**2),0)
+
+END        EPANECHNIKOV
+
+********************************************************************************
+
+*   BIWEIGHT (QUARTIC)
+
+FUNCTION   BIWEIGHT  Z
+TYPE REAL  BIWEIGHT  Z
+
+COMPUTE    BIWEIGHT  =  %IF(ABS(Z).LE.1,.9375*(1-Z**2)**2,0)
+
+END        BIWEIGHT
+
+********************************************************************************
+
+*   TRIWEIGHT
+
+FUNCTION   TRIWEIGHT  Z
+TYPE REAL  TRIWEIGHT  Z
+
+COMPUTE    TRIWEIGHT  =  %IF(ABS(Z).LE.1,(35./32)*(1-Z**2)**3,0)
+
+END        TRIWEIGHT
+
+********************************************************************************
+
+*   TRIANGULAR
+
+FUNCTION   TRIANGULAR  Z
+TYPE REAL  TRIANGULAR  Z
+
+COMPUTE    TRIANGULAR  =  %IF(ABS(Z).LE.1,1-ABS(Z),0)
+
+END        BIWEIGHT
+
+********************************************************************************
+
+*   GAUSSIAN
+
+*   This is implemented throuh the RATS function %DENSITY(.)
+
+********************************************************************************
+
+*   RECTANGULAR
+
+FUNCTION   RECTANGULAR  Z
+TYPE REAL  RECTANGULAR  Z
+
+COMPUTE    RECTANGULAR  =  %IF(ABS(Z).LE.1,.5,0)
+
+END        RECTANGULAR
+
+********************************************************************************
+
+*   LOGISTIC
+
+FUNCTION   LOGISTIC  Z
+TYPE REAL  LOGISTIC  Z
+
+COMPUTE    LOGISTIC  =  EXP(Z)/((1+EXP(Z))**2)
+
+END        LOGISTIC
+
+********************************************************************************
+
+*   PARZEN
+
+*FUNCTION   PARZEN  Z
+*TYPE REAL  PARZEN  Z
+
+*COMPUTE    PARZEN  =  %IF(,,)
+
+*END        PARZEN
+
+********************************************************************************
+
+
+

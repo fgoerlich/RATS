@@ -1,0 +1,170 @@
+/*
+   LIFECHANGE                                        March/04 - R2: May/12
+*/                      
+COM [STRING]               %%LIFECHANGE = 'LIFECHANGE - Version R2: May/12'
+
+PROC  LIFECHANGE  L1  LL1  L2  LL2  OUTS  OUTC
+TYPE  SERIES      L1  LL1  L2  LL2 *OUTS *OUTC
+*
+LOCAL SERIES      T1  T2   S1  S2   S   SC
+LOCAL VECT        EDAD AC
+LOCAL VECT[LAB]   ED
+LOCAL VECT[LAB]   LABEL
+LOCAL VECT[LAB]   MDLABEL
+LOCAL VECT[INT]   LIST1 LIST2
+LOCAL VECT[SER]   MSER
+LOCAL INTEGER     I   N    C   E   N0   N1   N2
+LOCAL STRING      HEADER
+*
+OPTION SWITCH     PRINT 1
+OPTION SWITCH     MD    0
+OPTION INT        AGE   0
+OPTION VEC[LAB]   LABELL
+OPTION VEC[LAB]   MDLABELL
+OPTION REAL       EPS   1e-10
+
+*   Globals
+DEC RECT %%AC
+
+INQ(REG) *  N
+# L1 LL1 L2 LL2
+IF      N==86.OR.N==101.OR.N==111
+   COM C = 1
+ELSE IF N==19.OR.N==22.OR.N==24
+   COM C = 0
+ELSE
+   {
+   DIS %%LIFECHANGE; DIS 'Sintax Error: Ages do not match'
+   HALT  LIFECHANGE
+   }
+
+IF %DEFINED(LABELL)
+   COM LABEL = LABELL
+ELSE
+   COM LABEL = || 'Period 1' | 'Period 2' ||
+
+SET T1 1 N = %IF(T==N,LL1(N),0)
+SET T2 1 N = %IF(T==N,LL2(N),0)
+DO I = N-1,1,-1
+   COM T1(I) = T1(I+1) + LL1(I), T2(I) = T2(I+1) + LL2(I)
+END DO I
+
+DIM EDAD(N)
+EWI EDAD(I) = %IF(C==1,I-1,%IF(I<=2,I-1,(I-2)*5))
+COM E       = %BIN(AGE,EDAD), ED = %AGE(N)
+
+SET S1 E N =            (L1    /L1(E))*((LL2/L2)-(LL1   /L1    ))
+SET S2 E N = %IF(T==N,0,(T2{-1}/L1(E))*((L1 /L2)-(L1{-1}/L2{-1})))
+SET S  E N = S1 + S2
+
+IF PRINT
+   {
+   DIS 'Age decomposition of diferences in life expectancies at age' ### EDAD(E)
+   DIS '    Life expectancy - '+LABEL(1)                     @40 ##.##  T1(E)/L1(E)
+   DIS '    Life expectancy - '+LABEL(2)                     @40 ##.##  T2(E)/L2(E)
+   DIS '    Diference ('+LABEL(2) @-1 ' - '+LABEL(1) @-1 ')' @40 ##.## (T2(E)/L2(E))-(T1(E)/L1(E)) 'years'
+   DIS
+   DIS ' Age     Direct    effect    Indirect  effect       Total  effect'
+   DO I = E,N
+      DIS ED(I) @10 ##.###  S1(I)   @20 ##.## 100*S1(I)/%SUM(S1)   @-1 '%' $
+                @30 ##.###  S2(I)   @40 ##.## 100*S2(I)/%SUM(S2)   @-1 '%' @52 ##.###  S(I)    @60   ##.## 100*S(I)/%SUM(S) @-1 '%'
+   END DO I
+   DIS ' Sum'   @10 ##.### %SUM(S1) @20 ##.## 100*%SUM(S1)/%SUM(S) @-1 '%' $
+                @30 ##.### %SUM(S2) @40 ##.## 100*%SUM(S2)/%SUM(S) @-1 '%' @52 ##.### %SUM(S)  @59 '100.00%'
+   DIS
+   }
+
+**********   If MD is ON, i.e. age-cause decomposition   **********
+
+IF MD
+   {
+   ENTER(VAR,ENT=N0) LIST1
+   ENTER(VAR,ENT=N1) LIST2
+   
+   IF .NOT.(N0==N1.AND.N0>1.AND.N1>1)
+      {
+      DIS %%LIFECHANGE; DIS 'Sintax Error: Causes do not match'
+      HALT  LIFECHANGE
+      }
+      
+   INQ(REG) * N2
+   # LIST1 LIST2
+   IF .NOT.N==N2
+      {
+      DIS %%LIFECHANGE; DIS 'Sintax Error: Ages for causes do not match'
+      HALT  LIFECHANGE
+      }
+
+   *   Check if causes are exhaustive
+   CLE S1 S2
+   SET S1 1 N = [series]LIST1(1)
+   SET S2 1 N = [series]LIST2(1)
+   DO I = 2,%ROWS(LIST1)
+      SET S1 1 N = S1 - [series]LIST1(I)
+      SET S2 1 N = S2 - [series]LIST2(I)
+   END DO I
+
+   *   Establecer condiciones de si hay negativos, ceros o positivos... y generar la matriz de reparto de los age effects (AC)
+   IF %MINVALUE(S1)<-EPS.OR.%MINVALUE(S2)<-EPS
+      {
+      DIS %%LIFECHANGE; DIS 'Sintax Error: Mortality rates by causes of death are greater than the global mortality rate at some age'
+      HALT  LIFECHANGE
+      }
+   ELSE IF ABS(%SUM(S1))<EPS.AND.ABS(%SUM(S2))<EPS
+      {
+      DIS(STORE=HEADER) 'Warning: Causes of deaths are exhaustive!'
+      DIM MDLABEL(%ROWS(LIST1)-1) MSER(%ROWS(LIST1)-1)
+      DO I = 1,%ROWS(LIST1)-1
+         SET MSER(I) 1 N = ([series]LIST2(I+1) - [series]LIST1(I+1))/([series]LIST2(1) - [series]LIST1(1))
+      END DO I
+      IF %DEFINED(MDLABELL)
+         COM MDLABEL = MDLABELL
+      ELSE
+         EWI MDLABEL(I) = 'Cause '+%STRING(I)
+      }
+   ELSE
+      {
+      DIS(STORE=HEADER) 'Warning: Causes of deaths are NOT exhaustive!'
+      DIM MDLABEL(%ROWS(LIST1))   MSER(%ROWS(LIST1))
+      DO I = 1,%ROWS(LIST1)
+         IF I==%ROWS(LIST1)
+            SET MSER(I) 1 N = (           S2      -            S1     )/([series]LIST2(1) - [series]LIST1(1))
+	 ELSE
+            SET MSER(I) 1 N = ([series]LIST2(I+1) - [series]LIST1(I+1))/([series]LIST2(1) - [series]LIST1(1))
+      END DO I
+      IF %DEFINED(MDLABELL)
+         EWI MDLABEL(I) = %STRIF(I==%ROWS(LIST1),'Rest',MDLABELL(I))
+      ELSE
+         EWI MDLABEL(I) = %STRIF(I==%ROWS(LIST1),'Rest','Cause '+%STRING(I))
+      }
+
+   DO I = 1,%ROWS(MSER)
+      SET MSER(I) E N = MSER(I)*S
+   END DO I
+   MAKE %%AC E N
+   # MSER
+   COM AC = %SUMC(%%AC)
+   SET SC 1 %ROWS(MSER) = AC(T)
+
+   IF PRINT
+      {
+      DIS 'Cause decomposition of diferences in life expectancies at age' ### EDAD(E)
+      DIS '    Life expectancy - '+LABEL(1)                     @40 ##.##  T1(E)/L1(E)
+      DIS '    Life expectancy - '+LABEL(2)                     @40 ##.##  T2(E)/L2(E)
+      DIS '    Diference ('+LABEL(2) @-1 ' - '+LABEL(1) @-1 ')' @40 ##.## (T2(E)/L2(E))-(T1(E)/L1(E)) 'years'
+      DIS; DIS HEADER
+      DIS
+      DIS '  Cause             Total    effect'
+      DO I = 1,%ROWS(MSER)
+         DIS MDLABEL(I) @20 ##.###  SC(I)   @30    ##.## 100*SC(I)/%SUM(SC) @-1 '%'
+      END DO I
+      DIS 'Sum'         @20 ##.### %SUM(SC) @29 '100.00%'
+      DIS
+      }
+   }
+
+IF %DEFINED(OUTS);   SET OUTS = S
+IF %DEFINED(OUTC);   SET OUTC = SC
+
+CLEAR S1 S2 S SC T1 T2
+END PROC LIFECHANGE

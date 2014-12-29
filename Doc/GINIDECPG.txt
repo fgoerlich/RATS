@@ -1,0 +1,54 @@
+/*
+     GINIDECPG descomposicion del indice de Gini por subgrupos de poblacion.
+
+     Escrito por Paco Goerlich.                 Version: Octubre/2014 (R2)
+     Version RATS: WinRATS 8.30
+
+     Sintaxis
+
+      @GINIDECPG S A COMIENZO FIN EXT INT OVL
+
+       R        = Serie de rentas per capita.
+       A        = Serie de correspondencias de las agrupaciones (enteros).
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       EXT      = Componente externo  del indice de Gini.
+       INT      = Componente interno  del indice de Gini.
+       OVL      = Componente residual del indice de Gini
+
+
+       Opciones:
+
+     [PRINT]/NOPRINT controla la impresion del indice.
+     NEGATIVE/[NONEGATIVE] se permiten rentas negativas
+     SMPL   = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+              de los calculos (Ver RATS 5.2 UG) [no definido]
+     WEIGHT = si el indice deben ponderarse [no definido].
+     GROUP Vector de etiquetas con los nombres de las agrupaciones.
+
+
+       Variables globales:
+
+     %%GINIDECPG = STRING, Version actual del procedimiento.
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Lambert & Aronson (1993) "Inequality decomposition analysis and the Gini
+   coefficient revisited", Economic Journal, 103, 420, (september), 1221-1227.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Febrero/2007 - Correccion de un bug. La opcion WEIGTH podia dar errores junto
+                      con la opcion SMP.
+   
+   R2: Octubre/2014 - Opcion NEGATIVE.
+                      Se permiten rentas negativas con tal que MEAN>=0 para la renta.
+		      Esta opción se pasa directamente sobre el proc %S, que antes no
+		      permitía valores negativos, pero con esta opcion si.
+
+*/

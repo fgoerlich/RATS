@@ -1,0 +1,42 @@
+/*
+     POBC2A
+
+     Escrito por:  Paco Goerlich.                   Version: Mayo/2010 (R1)
+     Version RATS: WinRATS 7.30
+
+     Sintaxis
+
+      @POBC2A CP AP
+
+      CP = Serie de Poblaciones/Defunciones Completa,  Observaciones 86, 101 o 111.
+      AP = Serie de Poblaciones/Defunciones Abreviada, Observaciones 15,     a  24.
+
+     Opciones:
+
+      PRINT/[NOPRINT] controla la impresion de la serie.
+      FINAL  = 65/70/75/80/[85]/90/95/100/105/110 intervalo final en la serie abreviada.
+
+
+     Variables globales:
+
+      %%POBC2A = STRING, Version actual del procedimiento
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Este procedimiento agrega una serie de poblaciones/defunciones por edades
+   simple (hasta 85, 100 o 110 y +) en grupos quinquenales de edades, 
+   manteniento separado el grupo de 0 años.
+
+   Esta pensado para su utilización con el conjunto de procedimientos LIFE.
+   
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Mayo/2010 - Se extiende la posibilidad de finalizar la serie entre los 65 y
+                   los 110 en intervalos de 5 años.
+
+*/

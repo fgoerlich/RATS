@@ -1,0 +1,71 @@
+/*
+     GINI: GINI, (1/2 de) Desviacion Absoluta Media Relativa y Curva de Lorenz.
+     
+     Escrito por:  Paco Goerlich.                 Version: Marzo/2007 (R8)
+     Version RATS: WinRATS 6.30
+
+     Sintaxis:
+
+      @GINI R COMIENZO FIN GINI MAD LX LY GINISE MADSE
+
+       R        = Serie de rentas per capita.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       GINI     = Indice de Gini.
+       MAD      = (1/2 de) Desviación Absoluta Media relativa.
+       LX       = Abcisa   de Lorenz en las observaciones muestrales.
+       LY       = Ordenada de Lorenz en las observaciones muestrales.
+       GINISE   = Error Standar del Indice de Gini.
+       MADSE    = Error Standar de (1/2 de) MAD.
+
+
+       Opciones:
+
+     [PRINT]/NOPRINT   controla la impresion de los indices.
+     LPRINT/[NOLPRINT] controla la impresion de las curvas de Lorenz.
+     [GRAPH]/NOGRAPH   controla la visualizacion de las curvas de Lorenz.
+     SE/[NOSE] si se calcula el Error Estandar.
+     REPLICAS  numero de replicas en el Error Estandar [100]
+     SMPL    = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+               de los calculos (Ver RATS 5.2 UG) [no definido]
+     WEIGHT  = si el indice deben ponderarse [no definido].
+
+
+       Variables globales:
+
+       %%GINI = STRING, Version actual del procedimiento
+
+       %MEAN = Sample mean (REAL)
+       %NOBS = Number of observations (INTEGER)
+
+
+*****************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   J. M. Esteban "La desigualdad interregional en Europa y en España:
+   Descripci¢n y analisis", Capitulo I. IAE.
+
+   Formula: Pagina 22. Indice G, dividida por 2.
+   La MAD relativa se divide por 2 y coincide con la distancia maxima entre 
+   la linea de igualdad perfecta y la curva de Lorenz.
+
+   Curvas de Lorenz: Procedimiento procede de Villar (19??) mimeo y las 
+   curvas se obtienen en los valores muestrales.
+   El procedimiento LORENZ las estima en los percentiles de poblacion.
+
+   Indice de bienestar: Sen, A. (1974) "Informational bases of alternative
+   welfare approaches", Journal of Public Economics, 3, 387-403.
+
+*****************************************************************************
+
+   INFORMACION ADICIONAL
+
+   R6: Septiembre/2004 - Traduccion a WinRATS 6.00 y definicion en terminos de 
+                         rentas per capita y ponderaciones.
+
+   R7: Abril/2006 - Introduccion de BOOTSTRAP simple para errores standar.
+
+   R8: Marzo/2007 - BOOTSTRAP como una funcion especifica.
+
+*/

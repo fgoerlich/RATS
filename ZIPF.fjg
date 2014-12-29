@@ -1,0 +1,92 @@
+/*
+     ZIPF TEST                                            July/07 - R2: December/08
+*/
+COM [STRING] %%ZIPF =                               'ZIPF - Version R2: December/08'
+
+PROC  ZIPF  SERIE  TBEGP  TENDP
+TYPE  SER   SERIE
+TYPE  INT          TBEGP  TENDP
+*
+LOCAL INTEGER  TBEG   TEND  NV N
+LOCAL SERIES   S  LS LRANK  UNOS  SMPL
+LOCAL REAL     X0 Z1 Z2  G
+LOCAL VEC      MLE
+*
+OPTION SWITCH  PRINT          1
+OPTION SWITCH  ROBUSTERRORS   0
+OPTION SERIES  SMPLL
+OPTION REAL    MIN
+OPTION REAL    GAMMA          .5
+OPTION CHOICE  LSTTEST        2  LS  ASYMPTOTIC
+
+INQUIRE(SERIES=SERIE) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(LOG(SERIE)),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(LOG(SERIE))
+
+SAM(SMPL=SMPL) SERIE TBEG TEND S 1
+COM X0 = %IF(%DEFINED(MIN),MIN,%MINVALUE(S)), N = %NOBS
+SST(SMPL=S>=X0) 1 N 1>>G
+COM NV = FIX(G), G = %IF(GAMMA>=0.AND.GAMMA<1,GAMMA,.5)
+
+*   Note: We have 3 kinds of observations:
+*            1) N      = Number of valid/selected observations in S = SERIES (Integer)
+*            2) NV     = Number of observations for which S(i) >= X0         (Integer)
+*            3) MLE(3) = Number of observations for which S(i) >  X0         (Real)
+*                        These are the observations that enter into ML estimation.
+*         If X0 is = to a value of S(i) then MLE(3) = NV-1.
+
+LABEL S        LS                   LRANK
+#  %L(SERIE)  'Log('+%L(SERIE)+')' 'Log(Rank-'+%STRVAL(G,'#.#')+')'
+
+*   Globals
+COM %%ZIPFLSSTAT = %%ZIPFLSSIGNIF = %%ZIPFMLESTAT = %%ZIPFMLESIGNIF = %%ZIPFBURRSTAT = %%ZIPFBURRSIGNIF = %NA
+
+*   LS
+ORDER(DECREASING) S 1 NV
+LOG               S 1 NV LS
+SET           LRANK 1 NV = LOG(T-G)
+LINREG(NOPRINT,ROBUSTERRORS=ROBUSTERRORS)  LRANK
+# CONSTANT LS
+COM %%ZIPFLSSTAT = (-%BETA(2)-1)/%IF(LSTTEST==1,%STDERRS(2),-%BETA(2)*SQRT(2./%NOBS)), %%ZIPFLSSIGNIF   = %ZTEST(%%ZIPFLSSTAT)
+
+*   MLE
+COM MLE = %PARETOMLE(S,X0), %%ZIPFMLESTAT = (MLE(1)-1)/SQRT(MLE(2)),                   %%ZIPFMLESIGNIF  = %ZTEST(%%ZIPFMLESTAT)
+
+*   BURR
+SST(MEAN) 1 NV   1-LOG(S/X0)>>Z1   .5-(X0/S)>>Z2
+COM %%ZIPFBURRSTAT = 4*NV*(Z1**2 + 6*Z1*Z2 + 12*Z2**2),                                %%ZIPFBURRSIGNIF = %CHISQR(%%ZIPFBURRSTAT,2)
+
+IF PRINT
+   {
+   DIS 'ZIPF Test on Series' %L(SERIE)
+   DIS 'Observations' NV @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-NV 'Skipped/Missing)'
+   IF N>NV
+      DIS 'Not from Pareto pdf  (Lower than' *.## X0 @-1 ')' N-NV '(' @-1 *.## 100.*(N-NV)/N @-1 '%)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS
+   DIS 'Rank-Size log-linear regression'
+   LINREG(ROBUSTERRORS=ROBUSTERRORS)  LRANK
+   # CONSTANT LS
+   DIS 'Ordinary Least Squares estimation'
+   DIS 'Theta'           @18 -%BETA(2)                                @38 'Standard error'  @53  %STDERRS(2)
+   DIS                   @27                                   'Asymptotic Standard error'  @53 -%BETA(2)*SQRT(2./%NOBS)
+   DIS 'Zipf test based on log linear OLS regression - H0: Theta = 1'
+   DIS 'Based on Standard Error of the regression'
+   DIS 't-Statistic'     @18 (-%BETA(2)-1)/%STDERRS(2)                @38 'Signif level'    @53 %ZTEST((-%BETA(2)-1)/%STDERRS(2))
+   DIS 'Based on Asymptotic Standard Error aproximation'
+   DIS 't-Statistic'     @18 (-%BETA(2)-1)/(-%BETA(2)*SQRT(2./%NOBS)) @38 'Signif level'    @53 %ZTEST((-%BETA(2)-1)/(-%BETA(2)*SQRT(2./%NOBS)))
+   DIS
+   DIS 'MLE estimation of Pareto exponent'
+   DIS 'Theta'           @18 MLE(1)                                   @38 'Standard error'  @53 SQRT(MLE(2))
+   DIS 'Zipf test based on MLE of the Pareto density - H0: Theta = 1'
+   DIS 't-Statistic'     @18 %%ZIPFMLESTAT                            @38 'Signif level'    @53 %%ZIPFMLESIGNIF
+   DIS
+   DIS 'LM Parametric test based on the Burr density - H0: Sigma = Mu & Theta = 1'
+   DIS 'Chi-Square (2)'  @18 %%ZIPFBURRSTAT                           @38 'Signif level'    @53 %%ZIPFBURRSIGNIF
+   DIS;DIS
+   }
+
+CLE S LS LRANK UNOS SMPL
+END PROC ZIPF

@@ -1,0 +1,50 @@
+/*
+     ATKINSONDECPG descomposicion multiplicativa del indice de igualdad de
+     Atkinson (1970) por subgrupos de poblacion.
+
+     Escrito por Paco Goerlich.                 Version: Marzo/2006 (R1)
+     Version RATS: WinRATS 6.10
+
+     Sintaxis
+
+      @ATKINSONDECPG S A COMIENZO FIN EXT INT
+
+       R        = Serie de rentas per capita.
+       A        = Serie de correspondencias de las agrupaciones (enteros).
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       EXT      = Componente externo del indice de igualdad de Atkinson.
+       INT      = Componente interno del indice de igualdad de Atkinson.
+
+
+       Opciones:
+
+     EXTENDED/[NOEXTENDED] si se utiliza la familia estandar o extendida.
+     EPSILON parametro para el calculo del indice. [1]
+             1 ponderaciones segun % de poblacion.
+     [PRINT]/NOPRINT controla la impresion del indice.
+     SMPL   = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+              de los calculos (Ver RATS 5.2 UG) [no definido]
+     WEIGHT = si el indice deben ponderarse [no definido].
+     GROUP Vector de etiquetas con los nombres de las agrupaciones.
+
+
+       Variables globales:
+
+     %%ATKINSONDECPG = STRING, Version actual del procedimiento.
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Lasso de la Vega y Urrutia (2003) "A new factorial decomposition for the
+   Atkinson meassure", Economics Bulletin, 4, 29, 1-12.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Marzo/2006 - Incorporacion de la familia extendida.
+
+*/

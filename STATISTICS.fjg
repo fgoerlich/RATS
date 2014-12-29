@@ -1,0 +1,1027 @@
+*   This file contains Rats FUNCTIONs for various STATISTICS
+*   WinRATS 8.30
+*   Paco Goerlich    16/12/2014
+
+********************************************************************************
+
+*   %M - Weighted Arithmetic Mean
+
+FUNCTION   %M  X  P
+TYPE REAL  %M
+TYPE SER       X  P
+
+LOCAL REAL A B
+LOCAL INT  I N
+
+*  P = Unnormalized weights
+INQ(SER=X) * N
+COM  A = B = %M = 0, %DO(I,1,N,A = A + P(I)*X(I)), %DO(I,1,N,B = B + P(I)), %M = A/B
+
+END        %M
+
+********************************************************************************
+
+*   %MLOG - Weighted Mean of Logarithms
+
+FUNCTION   %MLOG  X  P
+TYPE REAL  %MLOG
+TYPE SER          X  P
+
+LOCAL SER  LX
+
+LOG   X    /    LX
+COM  %MLOG = %M(LX,P)
+
+CLE   LX
+END  %MLOG
+
+********************************************************************************
+
+*   %MGEOMETRIC - Weighted Geometric Mean
+
+FUNCTION   %MGEOMETRIC  X  P
+TYPE REAL  %MGEOMETRIC
+TYPE SER                X  P
+
+COM        %MGEOMETRIC = EXP(%MLOG(X,P))
+
+END        %MGEOMETRIC
+
+********************************************************************************
+
+*   %MHARMONIC - Weighted Harmonic Mean
+
+FUNCTION   %MHARMONIC  X  P
+TYPE REAL  %MHARMONIC
+TYPE SER               X  P
+
+LOCAL SER  Z
+
+SET   Z = 1/X
+COM  %MHARMONIC = 1./%M(Z,P)
+
+CLE   Z
+END  %MHARMONIC
+
+********************************************************************************
+
+*   %MPOWER - Weighted Non-Centered Moment (Weighted Power Mean)
+
+FUNCTION   %MPOWER  X  P  E
+TYPE REAL  %MPOWER        E
+TYPE SER            X  P
+
+LOCAL SER  Z
+
+SET   Z = X**E
+COM  %MPOWER = %M(Z,P)
+
+CLE   Z
+END  %MPOWER
+
+********************************************************************************
+
+*   %MORDER - Weighted Order Mean
+
+FUNCTION   %MORDER  X  P  E
+TYPE REAL  %MORDER        E
+TYPE SER            X  P
+
+COM  %MORDER = ABS(%MPOWER(X,P,E))**(1./E)
+
+END  %MORDER
+
+********************************************************************************
+
+*   %MABS - Weighted Absolute Mean
+
+FUNCTION   %MABS  X  P
+TYPE REAL  %MABS
+TYPE SER          X  P
+
+LOCAL SER  Z
+
+SET   Z    = ABS(X)
+COM  %MABS = %M(Z,P)
+
+CLE   Z
+END  %MABS
+
+********************************************************************************
+
+*   %V - Weighted Variance
+
+FUNCTION   %V  X  P
+TYPE REAL  %V
+TYPE SER       X  P
+
+LOCAL REAL A
+LOCAL SER  Z
+
+COM   A = %M(X,P)
+SET   Z = (X - A)**2
+COM  %V = %M(Z,P)
+
+CLE   Z
+END  %V
+
+********************************************************************************
+
+*   %VLOG - Weighted Variance of Logarithms
+
+FUNCTION   %VLOG  X  P
+TYPE REAL  %VLOG
+TYPE SER          X  P
+
+LOCAL SER  LX
+
+LOG   X    /    LX
+COM  %VLOG = %V(LX,P)
+
+CLE   LX
+END  %VLOG
+
+********************************************************************************
+
+*   %MOM - Weighted (Mean) Centered Moment
+
+FUNCTION   %MOM  X  P  R
+TYPE REAL  %MOM        R
+TYPE SER         X  P
+
+LOCAL REAL A
+LOCAL SER  Z
+
+COM   A   = %M(X,P)
+SET   Z   = (X - A)**R
+COM  %MOM = %M(Z,P)
+
+CLE   Z
+END  %MOM
+
+********************************************************************************
+
+*   %MOMABS - Weighted (Mean) Centered Absolute Moment
+
+FUNCTION   %MOMABS  X  P  R
+TYPE REAL  %MOMABS        R
+TYPE SER            X  P
+
+LOCAL REAL A
+LOCAL SER  Z
+
+COM   A      = %M(X,P)
+SET   Z      = ABS(X - A)**R
+COM  %MOMABS = %M(Z,P)
+
+CLE   Z
+END  %MOMABS
+
+********************************************************************************
+
+*   %STD - Weighted Standard Deviation
+
+FUNCTION   %STD  X  P
+TYPE REAL  %STD
+TYPE SER         X  P
+
+COMPUTE    %STD = SQRT(%V(X,P))
+
+END        %STD
+
+********************************************************************************
+
+*   %STDLOG - Weighted Standard Deviation of Logarithms
+
+FUNCTION   %STDLOG  X  P
+TYPE REAL  %STDLOG
+TYPE SER            X  P
+
+COM  %STDLOG = SQRT(%VLOG(X,P))
+
+END  %STDLOG
+
+********************************************************************************
+
+*   %CV - Weighted Coefficient of Variation
+
+FUNCTION   %CV  X  P
+TYPE REAL  %CV
+TYPE SER        X  P
+
+COMPUTE    %CV = %STD(X,P)/ABS(%M(X,P))
+
+END        %CV
+
+********************************************************************************
+
+*   %CVLOG - Weighted Coefficient of Variation of Logarithms
+
+FUNCTION   %CVLOG  X  P
+TYPE REAL  %CVLOG
+TYPE SER           X  P
+
+COMPUTE    %CVLOG = %STDLOG(X,P)/ABS(%MLOG(X,P))
+
+END        %CVLOG
+
+********************************************************************************
+
+*   %F - Simple Fractile - Ordered sample
+
+FUNCTION   %F  X  F  K
+TYPE REAL  %F     F
+TYPE SER       X
+TYPE INT             K
+
+LOCA INT   N  NP
+
+INQ(SER=X) * N
+
+* K: 1 = Interpol / 0 = No Interpol
+IF      F.LT.0.OR.F.GT.1;   COM %F = %NA
+ELSE IF F.EQ.0          ;   COM %F = X(1)
+ELSE IF           F.EQ.1;   COM %F = X(N)
+ELSE IF N.EQ.1          ;   COM %F = X(1)
+ELSE
+   {
+   IF      K==1;   COM NP = FIX(F*(N-1)+1), %F = X(NP) + ((F*(N-1)+1)-NP)*(X(NP+1)-X(NP))
+   ELSE IF K==0;   COM NP = FIX(F*N)      , %F = %IF(NP==N*F,(X(NP)+X(NP+1))/2,X(NP+1))
+   ELSE        ;   COM                      %F = %NA
+   }
+
+END   %F
+
+********************************************************************************
+
+*   %FRACT - Simple Fractile
+
+FUNCTION   %FRACT  X  F  K
+TYPE REAL  %FRACT     F
+TYPE SER           X
+TYPE INT                 K
+
+LOCA SER  S
+
+SET   S = X
+ORDER S
+
+* K: 1 = Interpol / 0 = No Interpol
+COM  %FRACT = %F(S,F,K)
+
+CLE   S
+END  %FRACT
+
+********************************************************************************
+
+*   %FW - Weighted Fractile - Ordered sample
+
+FUNCTION   %FW  X  P  F  K
+TYPE REAL  %FW        F
+TYPE SER        X  P
+TYPE INT                 K
+
+LOCA INT  N  I
+LOCA SER  W
+
+INQ(SER=X)  * N
+
+* K: 1 = Interpol / 0 = No Interpol
+IF      F.LT.0.OR.F.GT.1;   COM %FW = %NA
+ELSE IF F.EQ.0          ;   COM %FW = X(1)
+ELSE IF           F.EQ.1;   COM %FW = X(N)
+ELSE IF N.EQ.1          ;   COM %FW = X(1)
+ELSE
+   {
+   ACC(SCALE) P 1 N W
+   COM I = 1
+   WHILE W(I).LT.F;   COM I = I + 1
+   IF      K==1   ;   COM %FW = %GPLININT(%IF(I==1,0,W(I-1)),%IF(I==1,X(1),.5*(X(I-1)+X(I))),W(I),%IF(I==N,X(N),.5*(X(I)+X(I+1))),F)
+   ELSE IF K==0   ;   COM %FW = %IF(W(I)==F,.5*(X(I)+X(I+1)),X(I))
+   ELSE           ;   COM %FW = %NA
+   }
+
+CLE   W
+END  %FW
+
+********************************************************************************
+
+*   %FRACTW - Weighted Fractile
+
+FUNCTION   %FRACTW  X  P  F  K
+TYPE REAL  %FRACTW        F
+TYPE SER            X  P
+TYPE INT                     K
+
+LOCA SER  S  W
+
+SET   S = X
+SET   W = P
+ORDER S / W
+
+* K: 1 = Interpol / 0 = No Interpol
+COM   %FRACTW = %FW(S,W,F,K)
+
+CLE    S W
+END   %FRACTW
+
+
+********************************************************************************
+*                                                                              *
+*   DISTRIBUTION/PROBABILITY FUNCTIONS                                         *
+*                                                                              *
+********************************************************************************
+
+*   %NORMALDENSITY - Normal density function with Mean and Variance
+
+FUNCTION   %NORMALDENSITY  X  M  V
+TYPE REAL  %NORMALDENSITY  X  M  V
+
+COM        %NORMALDENSITY = %IF(V<=0,%NA,%DENSITY((X-M)/SQRT(V))/SQRT(V))
+
+END        %NORMALDENSITY
+
+********************************************************************************
+
+*   %LOGNORMALDENSITY - Lognormal density function with parameters M and V
+*                       Note that M and V are the Mean and Variance of the
+*                       corresponding normal distribution (log(X)).
+
+FUNCTION   %LOGNORMALDENSITY  X  M  V
+TYPE REAL  %LOGNORMALDENSITY  X  M  V
+
+COM        %LOGNORMALDENSITY = %IF(V<=0.OR.X<0,%NA,%IF(X==0,0,%NORMALDENSITY(LOG(X),M,V)/X))
+
+END        %LOGNORMALDENSITY
+
+********************************************************************************
+
+*   %LOGNORMALMEAN - MEAN of a Lognormal distribution with parameters M and V
+
+FUNCTION   %LOGNORMALMEAN  M  V
+TYPE REAL  %LOGNORMALMEAN  M  V
+
+COM        %LOGNORMALMEAN = EXP(M + .5*V)
+
+END        %LOGNORMALMEAN
+
+********************************************************************************
+
+*   %LOGNORMALMEDIAN - MEDIAN of a Lognormal distribution with parameters M and V
+*                      Note that V is irrelevant for the median
+
+FUNCTION   %LOGNORMALMEDIAN  M
+TYPE REAL  %LOGNORMALMEDIAN  M
+
+COM        %LOGNORMALMEDIAN = EXP(M)
+
+END        %LOGNORMALMEDIAN
+
+********************************************************************************
+
+*   %LOGNORMALMODE - MODE of a Lognormal distribution with parameters M and V
+
+FUNCTION   %LOGNORMALMODE  M  V
+TYPE REAL  %LOGNORMALMODE  M  V
+
+COM        %LOGNORMALMODE = EXP(M - V)
+
+END        %LOGNORMALMODE
+
+********************************************************************************
+
+*   %LOGNORMALMOMENT - MOMENT about the origin of order J of a Lognormal 
+*                             distribution with parameters M and V
+
+FUNCTION   %LOGNORMALMOMENT  M  V  J
+TYPE REAL  %LOGNORMALMOMENT  M  V
+TYPE INT                           J
+
+COM        %LOGNORMALMOMENT = EXP(J*M + .5*(J**2)*V)
+
+END        %LOGNORMALMOMENT
+
+********************************************************************************
+
+*   %LOGNORMALVARiance - VARIANCE of a Lognormal distribution with parameters M and V
+
+FUNCTION   %LOGNORMALVAR  M  V
+TYPE REAL  %LOGNORMALVAR  M  V
+
+COM        %LOGNORMALVAR = EXP(2*M + V)*(EXP(V)-1)
+
+END        %LOGNORMALVAR
+
+********************************************************************************
+
+*   %LOGNORMALCoeficientVariation - COEFICIENT of VARIATION of a Lognormal 
+*                                   distribution with parameters M and V
+*                                   Note that M is irrelevant for the Coeficient of Variation
+
+FUNCTION   %LOGNORMALCV  V
+TYPE REAL  %LOGNORMALCV  V
+
+COM        %LOGNORMALCV = SQRT(EXP(V)-1)
+
+END        %LOGNORMALCV
+
+********************************************************************************
+
+*   %LOGNORMALGINI - GINI coeficient of a Lognormal distribution with parameters M and V
+*                    Note that M is irrelevant for the Gini coeficient
+*                    Cowell (1995), p.-142
+
+FUNCTION   %LOGNORMALGINI  V
+TYPE REAL  %LOGNORMALGINI  V
+
+COM        %LOGNORMALGINI = 2*%CDF(SQRT(V/2)) - 1
+
+END        %LOGNORMALGINI
+
+********************************************************************************
+
+*   %PARETODENSITY - Pareto density with parameter THeta and lower bound X0
+
+FUNCTION   %PARETODENSITY  X  X0  TH
+TYPE REAL  %PARETODENSITY  X  X0  TH
+
+COM        %PARETODENSITY = %IF(TH<=0.OR.X0<=0.OR.X<=0,%NA,%IF(X<X0,0,(TH/X0)*(X0/X)**(TH+1)))
+
+END        %PARETODENSITY
+
+********************************************************************************
+
+*   %LOGPARETODENSITy - Log of the Pareto density with parameter THeta and lower bound X0
+
+FUNCTION   %LOGPARETODENSIT  X  X0  TH
+TYPE REAL  %LOGPARETODENSIT  X  X0  TH
+
+COM        %LOGPARETODENSIT = LOG(%PARETODENSITY(X,X0,TH))
+
+END        %LOGPARETODENSIT
+
+********************************************************************************
+
+*   %PARETOCDF - Pareto cdf with parameter THeta and lower bound X0
+
+FUNCTION   %PARETOCDF  X  X0  TH
+TYPE REAL  %PARETOCDF  X  X0  TH
+
+COM        %PARETOCDF = %IF(TH<=0.OR.X0<=0.OR.X<=0,%NA,%IF(X<=X0,0,1-(X0/X)**TH))
+
+END        %PARETOCDF
+
+********************************************************************************
+
+*   %PARETOMEAN - MEAN of a Pareto distribution with parameter THeta and lower bound X0
+
+FUNCTION   %PARETOMEAN  X0  TH
+TYPE REAL  %PARETOMEAN  X0  TH
+
+COM        %PARETOMEAN = %IF(TH<=1.OR.X0<=0,%NA,(TH*X0)/(TH-1))
+
+END        %PARETOMEAN
+
+********************************************************************************
+
+*   %PARETOMEDIAN - MEDIAN of a Pareto distribution with parameter THeta and lower bound X0
+
+FUNCTION   %PARETOMEDIAN  X0  TH
+TYPE REAL  %PARETOMEDIAN  X0  TH
+
+COM        %PARETOMEDIAN = %IF(X0<=0,%NA,X0*2**(1./TH))
+
+END        %PARETOMEDIAN
+
+********************************************************************************
+
+*   %PARETOMODE - MODE of a Pareto distribution with parameter THeta and lower bound X0 is X0
+
+********************************************************************************
+
+*   %PARETOVARIANCE - VARIANCE of a Pareto distribution with parameter THeta and lower bound X0
+
+FUNCTION   %PARETOVARIANCE  X0  TH
+TYPE REAL  %PARETOVARIANCE  X0  TH
+
+COM        %PARETOVARIANCE = %IF(TH<=2.OR.X0<=0,%NA,(TH*X0**2)/((TH-1)**2*(TH-2)))
+
+END        %PARETOVARIANCE
+
+********************************************************************************
+
+*   %PARETOCoeficientVariation - COEFICIENT of VARIATION of a Pareto distribution
+*                                with parameter THeta and lower bound X0
+*                                Note that X0 is irrelevant for the Coeficient of Variation
+
+FUNCTION   %PARETOCV  TH
+TYPE REAL  %PARETOCV  TH
+
+COM        %PARETOCV = %IF(TH<=2,%NA,1/SQRT(TH*(TH-2)))
+
+END        %PARETOCV
+
+********************************************************************************
+
+*   %PARETOGINI - GINI coeficient of a Pareto distribution with parameter THeta and lower bound X0
+*                 Note that X0 is irrelevant for the GINI coeficient
+
+FUNCTION   %PARETOGINI  TH
+TYPE REAL  %PARETOGINI  TH
+
+COM        %PARETOGINI = %IF(TH<1,%NA,1/(2*TH-1))
+
+END        %PARETOGINI
+
+********************************************************************************
+
+*   %ZIPFDENSITY - Zipf density = Pareto density with parameter THeta = 1 and lower bound X0
+
+FUNCTION   %ZIPFDENSITY  X  X0
+TYPE REAL  %ZIPFDENSITY  X  X0
+
+COM        %ZIPFDENSITY = %PARETODENSITY(X,X0,1)
+
+END        %ZIPFDENSITY
+
+********************************************************************************
+
+*   %LOGZIPFDENSITY - Log of Zipf density = Log of Pareto density with parameter THeta = 1 and lower bound X0
+
+FUNCTION   %LOGZIPFDENSITY  X  X0
+TYPE REAL  %LOGZIPFDENSITY  X  X0
+
+COM        %LOGZIPFDENSITY = LOG(%ZIPFDENSITY(X,X0))
+
+END        %LOGZIPFDENSITY
+
+********************************************************************************
+
+*   %ZIPFCDF - Zipf cdf = Pareto cdf with parameter THeta = 1 and lower bound X0
+
+FUNCTION   %ZIPFCDF  X  X0
+TYPE REAL  %ZIPFCDF  X  X0
+
+COM        %ZIPFCDF = %PARETOCDF(X,X0,1)
+
+END        %ZIPFCDF
+
+********************************************************************************
+
+*   %BURRDENSITY - Burr density with parameters SIGma and THeta and lower bound X0
+*                  Urzua (2000,EL).
+
+FUNCTION   %BURRDENSITY  X  X0  TH  SIG
+TYPE REAL  %BURRDENSITY  X  X0  TH  SIG
+
+COM        %BURRDENSITY = %IF(TH<=0.OR.SIG<=0.OR.X0<=0.OR.X<=0,%NA,%IF(X<X0,0,(TH/SIG)/((1+(X-X0)/SIG)**(TH+1))))
+
+END        %BURRDENSITY
+
+********************************************************************************
+
+*   %LOGBURRDENSITY - Log of the Burr density with parameters SIGma and THeta and lower bound X0
+*                     Urzua (2000,EL).
+
+FUNCTION   %LOGBURRDENSITY  X  X0  TH  SIG
+TYPE REAL  %LOGBURRDENSITY  X  X0  TH  SIG
+
+COM        %LOGBURRDENSITY = LOG(%BURRDENSITY(X,X0,TH,SIG))
+
+END        %LOGBURRDENSITY
+
+********************************************************************************
+
+*   %BURRCDF - Burr cdf with parameters SIGma and THeta and lower bound X0
+*              Goerlich y Mas (2008,FBBVA-DT6-08,p.-54).
+
+FUNCTION   %BURRCDF  X  X0  TH  SIG
+TYPE REAL  %BURRCDF  X  X0  TH  SIG
+
+COM        %BURRCDF = %IF(TH<=0.OR.SIG<=0.OR.X0<=0.OR.X<=0,%NA,%IF(X<=X0,0,1-(1+(X-X0)/SIG)**(-TH)))
+
+END        %BURRCDF
+
+********************************************************************************
+
+*   %EXPonentialDENSITY - Exponential density with parameter THeta
+*                         Notation as in Mood, Graybill & Boes (1974).
+
+FUNCTION   %EXPDENSITY  X  TH
+TYPE REAL  %EXPDENSITY  X  TH
+
+COM        %EXPDENSITY = %IF(TH<=0.OR.X<0,%NA,TH*EXP(-TH*X))
+
+END        %EXPDENSITY
+
+********************************************************************************
+
+*   %LOGEXPonentialDENSITY - Log of the Exponential density with parameter THeta
+
+FUNCTION   %LOGEXPDENSITY  X  TH
+TYPE REAL  %LOGEXPDENSITY  X  TH
+
+COM        %LOGEXPDENSITY = LOG(%EXPDENSITY(X,TH))
+
+END        %LOGEXPDENSITY
+
+********************************************************************************
+
+*   %EXPonentialCDF - Exponential CDF with parameter THeta
+
+FUNCTION   %EXPCDF  X  TH
+TYPE REAL  %EXPCDF  X  TH
+
+COM        %EXPCDF = %IF(TH<=0.OR.X<0,%NA,1-EXP(-TH*X))
+
+END        %EXPCDF
+
+********************************************************************************
+
+*   %EXPonentialMEAN - Exponential MEAN with parameter THeta
+
+FUNCTION   %EXPMEAN  TH
+TYPE REAL  %EXPMEAN  TH
+
+COM        %EXPMEAN = %IF(TH<=0,%NA,1./TH)
+
+END        %EXPMEAN
+
+********************************************************************************
+
+*   %EXPonentialVARIANCE - Exponential VARIANCE with parameter THeta
+
+FUNCTION   %EXPVARIANCE  TH
+TYPE REAL  %EXPVARIANCE  TH
+
+COM        %EXPVARIANCE = %IF(TH<=0,%NA,1./(TH**2))
+
+END        %EXPVARIANCE
+
+
+********************************************************************************
+*                                                                              *
+*   DISTRIBUTION/PROBABILITY INVERSE CDF´S FUNCTIONS                           *
+*                                                                              *
+********************************************************************************
+
+*   %INVPARETO - Inverse of Pareto CDF with parameter THeta and lower bound X0
+
+FUNCTION   %INVPARETO  P  X0  TH
+TYPE REAL  %INVPARETO  P  X0  TH
+
+COM        %INVPARETO = %IF(TH<=0.OR.X0<=0.OR.P<0.OR.P>=1,%NA,%IF(P==0,X0,X0/((1-P)**(1./TH))))
+
+END        %INVPARETO
+
+********************************************************************************
+
+*   %INVZIPF - Inverse of Zipf CDF = Inverse of Pareto CDF with parameter THeta = 1 and lower bound X0
+
+FUNCTION   %INVZIPF  P  X0
+TYPE REAL  %INVZIPF  P  X0
+
+COM        %INVZIPF = %IF(X0<=0.OR.P<0.OR.P>=1,%NA,%IF(P==0,X0,X0/(1-P)))
+
+END        %INVZIPF
+
+********************************************************************************
+
+*   %INVBURR - Inverse of Burr CDF with parameters THeta, SIGma and lower bound X0
+
+FUNCTION   %INVBURR  P  X0  TH  SIG
+TYPE REAL  %INVBURR  P  X0  TH  SIG
+
+COM        %INVBURR = %IF(TH<=0.OR.SIG<=0.OR.X0<=0.OR.P<0.OR.P>=1,%NA,%IF(P==0,X0,X0-SIG+%INVPARETO(P,SIG,TH)))
+
+END        %INVBURR
+
+********************************************************************************
+
+*   %INVEXPonential - Inverse of a Exponential CDF with parameter THeta
+
+FUNCTION   %INVEXP  P  TH
+TYPE REAL  %INVEXP  P  TH
+
+COM        %INVEXP = %IF(TH<=0.OR.P<0.OR.P>=1,%NA,%IF(P==0,0,-LOG(1-P)/TH))
+
+END        %INVEXP
+
+
+********************************************************************************
+*                                                                              *
+*   RANDOM NUMBER GENERATING FUNCTIONS                                         *
+*                                                                              *
+********************************************************************************
+
+*   %U01 - Random draw from a [0,1] uniform distribution.
+
+FUNCTION   %U01
+TYPE REAL  %U01
+
+COM        %U01 = %UNIFORM(0.0,1.0)
+
+END        %U01
+
+********************************************************************************
+
+*   %RANNORMAL - Random draw from a normal distribution with mean M and Standard
+*                Deviation S.
+
+FUNCTION   %RANNORMAL  M  S
+TYPE REAL  %RANNORMAL  M  S
+
+COM        %RANNORMAL = M + %RAN(S)
+
+END        %RANNORMAL
+
+********************************************************************************
+
+*   %RANLOGNORMAL - Random draw from a Lognormal distribution with parameters
+*                   M and S, corresponding to the mean and standard deviation
+*                   of the normal distribution.
+
+FUNCTION   %RANLOGNORMAL  M  S
+TYPE REAL  %RANLOGNORMAL  M  S
+
+COM        %RANLOGNORMAL = EXP(%RANNORMAL(M,S))
+
+END        %RANLOGNORMAL
+
+
+********************************************************************************
+
+*   %RANPARETO - Random draw from a Pareto distribution with parameter THeta and lower bound X0
+
+FUNCTION   %RANPARETO  X0  TH
+TYPE REAL  %RANPARETO  X0  TH
+
+COM        %RANPARETO = %INVPARETO(%U01(),X0,TH)
+
+END        %RANPARETO
+
+********************************************************************************
+
+*   %RANZIPF - Random draw from a Zipf distribution = Random draw from a Pareto distribution with parameter THeta = 1 and lower bound X0
+
+FUNCTION   %RANZIPF  X0
+TYPE REAL  %RANZIPF  X0
+
+COM        %RANZIPF = %INVZIPF(%U01(),X0)
+
+END        %RANZIPF
+
+********************************************************************************
+
+*   %RANBURR - Random draw from a Burr distribution with parameters THeta, SIGma and lower bound X0
+
+FUNCTION   %RANBURR  X0  TH  SIG
+TYPE REAL  %RANBURR  X0  TH  SIG
+
+COM        %RANBURR = %INVBURR(%U01(),X0,TH,SIG)
+
+END        %RANBURR
+
+********************************************************************************
+
+*   %RANEXPonential - Random draw from an Exponential distribution with parameter THeta
+
+FUNCTION   %RANEXP  TH
+TYPE REAL  %RANEXP  TH
+
+COM        %RANEXP = %INVEXP(%U01(),TH)
+
+END        %RANEXP
+
+
+********************************************************************************
+*                                                                              *
+*   DISTRIBUTION/PROBABILITY PARAMETER ESTIMATION (MLE)                        *
+*                                                                              *
+********************************************************************************
+*
+*   These functions offer MLE estimation of parameters from parametric
+*   density functions.
+*   Only simple (unweighted) data are considered.
+*   Contrary to the general rule used in functions the data series can
+*   contains %NA, defined and undefined ranges and not necessarily begin at
+*   obsevation 1.
+*   The %NA´s are handled by the usual rules in RATS.
+*   All the funtions return a VECTOR of dimension equal to the number of
+*   parameters in the density + 1, the last entry is the %NOBS used in
+*   the calculations.
+*
+********************************************************************************
+
+*   %NORMALMLE - MLE from a Normal density
+*                3x1: Mean, Variance & Nobs
+
+FUNCTION  %NORMALMLE  X
+TYPE VEC  %NORMALMLE
+TYPE SER              X
+
+LOCA INT  N1 N2
+
+DIM %NORMALMLE(3)
+INQ(SER=X) N1 N2
+STA(NOPRINT,MOMENTS,NOFRACTILES) X N1 N2
+
+COM       %NORMALMLE(1) = %MEAN,                              $
+          %NORMALMLE(2) = ((%NOBS-1)/FLOAT(%NOBS))*%VARIANCE, $
+	  %NORMALMLE(3) = %NOBS
+
+END       %NORMALMLE
+
+********************************************************************************
+
+*   %LOGNORMALMLE - MLE from a LogNormal density
+*                   3x1: Mean & Variance of the corresponging normal 
+*                        distribution (log(X)) & Nobs
+*                   Ref: Nelson (1973), p.-162
+
+FUNCTION  %LOGNORMALMLE  X
+TYPE VEC  %LOGNORMALMLE
+TYPE SER                 X
+
+LOCA SER  LX
+LOCA INT  N1 N2
+
+LOG  X N1 N2 LX
+COM %LOGNORMALMLE = %NORMALMLE(LX)
+
+CLE     LX
+END    %LOGNORMALMLE
+
+********************************************************************************
+
+*   %PARETOMLE - MLE from a Pareto density
+*                3x1: Theta, Var(Theta) & Nobs (effective)
+*                X0 is the lower bound:
+*                   If X(i)<=X0 then these observations are dropped.
+*                Ref: Spanos (1986), p.-341.
+*                     Aban & Meerschaert (2004), p.-342.
+
+FUNCTION  %PARETOMLE  X  X0
+TYPE VEC  %PARETOMLE
+TYPE SER              X
+TYPE REA                 X0
+
+LOCA SER  LX
+LOCA INT  N1 N2
+
+DIM %PARETOMLE(3)
+INQ(SER=X) N1 N2
+SET    LX  N1 N2 = %IF(X>X0,LOG(X/X0),%NA)
+STA(NOPRINT,MOMENTS,NOFRACTILES) LX N1 N2
+
+COM  %PARETOMLE(1) = 1./%MEAN, %PARETOMLE(3) =  %NOBS
+COM  %PARETOMLE(2) =           %PARETOMLE(1)**2/%NOBS
+
+CLE   LX
+END  %PARETOMLE
+
+
+********************************************************************************
+*                                                                              *
+*   NON-PARAMETRIC MOMENTS: CALCULATIONS FROM KERNEL DENSITIES                 *
+*                                                                              *
+*   Functions below offer calculations after non-parametric density            *
+*   estimators:                                                                *
+*   All functions take as arguments two series: X & Y = f(X)                   *
+*   All begin by %NPD... from Non Parametric Density                           *
+*                                                                              *
+*   Nota: Las funciones utilizan %itrapezoid(X,F) para evitar la necesidad de  *
+*         que X tenga que estar equi-espaciado, pero esto debería generalizase *
+*                                                                              *
+********************************************************************************
+
+*   %NPDArea - Calculates the area under Y = f(X)
+
+FUNCTION  %NPDArea  X  Y
+TYPE SER            X  Y
+
+COM       %NPDArea = %itrapezoid(X,Y)
+
+END       %NPDArea
+
+********************************************************************************
+
+*   %NPDMean - Calculates the mean of Y = f(X)
+
+FUNCTION  %NPDMean  X  Y
+TYPE SER            X  Y
+
+LOCAL SER XY
+
+SET  XY = X*Y
+
+COM       %NPDMean = %itrapezoid(X,XY)
+
+END       %NPDMean
+
+********************************************************************************
+
+*   %NPDVariace - Calculates the variance of Y = f(X)
+
+FUNCTION  %NPDVariance  X  Y
+TYPE SER                X  Y
+
+LOCAL SER  XY
+LOCAL REAL M
+
+COM  M  = %NPDMean(X,Y)
+SET  XY = ((X - M)**2)*Y
+
+COM       %NPDVariance = %itrapezoid(X,XY)
+
+END       %NPDVariance
+
+********************************************************************************
+
+
+*   List of functions
+
+*   %M          - Weighted Arithmetic Mean
+*   %MLOG       - Weighted Mean of Logarithms
+*   %MGEOMETRIC - Weighted Geometric Mean
+*   %MHARMONIC  - Weighted Harmonic Mean
+*   %MPOWER     - Weighted Non-Centered Moment (Weighted Power Mean)
+*   %MORDER     - Weighted Order Mean
+*   %MABS       - Weighted Absolute Mean
+*   %V          - Weighted Variance
+*   %VLOG       - Weighted Variance of Logarithms
+*   %MOM        - Weighted (Mean) Centered Moment
+*   %MOMABS     - Weighted (Mean) Centered Absolute Moment
+*   %STD        - Weighted Standard Deviation
+*   %STDLOG     - Weighted Standard Deviation of Logarithms
+*   %CV         - Weighted Coefficient of Variation
+*   %CVLOG      - Weighted Coefficient of Variation of Logarithms
+*   %F          - Simple   Fractile - Ordered sample
+*   %FRACT      - Simple   Fractile
+*   %FW         - Weighted Fractile - Ordered sample
+*   %FRACTW     - Weighted Fractile
+
+
+*   DISTRIBUTION/PROBABILITY FUNCTIONS
+
+*   %NORMALDENSITY    - Normal    density function with Mean and Variance
+*   %LOGNORMALDENSITY - Lognormal density function with parameters M and V
+*   %LOGNORMALMEAN    - MEAN     of a Lognormal distribution with parameters M and V
+*   %LOGNORMALMEDIAN  - MEDIAN   of a Lognormal distribution with parameters M and V
+*   %LOGNORMALMODE    - MODE     of a Lognormal distribution with parameters M and V
+*   %LOGNORMALMOMENT  - MOMENT J of a Lognormal distribution with parameters M and V
+*   %LOGNORMALVAR     - VARIANCE of a Lognormal distribution with parameters M and V
+*   %LOGNORMALCV      - CV       of a Lognormal distribution with parameters M and V
+*   %LOGNORMALGINI    - GINI     of a Lognormal distribution with parameters M and V
+*   %PARETODENSITY    -        Pareto density with parameter THeta and lower bound X0
+*   %LOGPARETODENSIT  - Log of Pareto density with parameter THeta and lower bound X0
+*   %PARETOCDF        -        Pareto cdf     with parameter THeta and lower bound X0
+*   %PARETOMEAN       - MEAN     of a Pareto distribution with parameters THeta and lower bound X0
+*   %PARETOMEDIAN     - MEDIAN   of a Pareto distribution with parameters THeta and lower bound X0
+*   %PARETOVARIANCE   - VARIANCE of a Pareto distribution with parameters THeta and lower bound X0
+*   %PARETOCV         - CV       of a Pareto distribution with parameters THeta and lower bound X0
+*   %PARETOGINI       - GINI     of a Pareto distribution with parameters THeta and lower bound X0
+*   %ZIPFDENSITY      -        Zipf density =        Pareto density with parameter THeta = 1 and lower bound X0
+*   %LOGZIPFDENSITY   - Log of Zipf density = Log of Pareto density with parameter THeta = 1 and lower bound X0
+*   %ZIPFCDF          - Zipf cdf            =        Pareto cdf     with parameter THeta = 1 and lower bound X0
+*   %BURRDENSITY      -        Burr density with parameters SIGma and THeta and lower bound X0
+*   %LOGBURRDENSITY   - Log of Burr density with parameters SIGma and THeta and lower bound X0
+*   %BURRCDF          - Burr cdf            with parameters SIGma and THeta and lower bound X0
+*   %EXPDENSITY       -               Exponential density with parameter THeta
+*   %LOGEXPDENSITY    - Log of    the Exponential density with parameter THeta
+*   %EXPCDF           -               Exponential cdf     with parameter THeta
+*   %EXPMEAN          - MEAN     of a Exponential density with parameter THeta
+*   %EXPVARIANCE      - VARIANCE of a Exponential density with parameter THeta
+
+
+*   DISTRIBUTION/PROBABILITY INVERSE CDF´S FUNCTIONS
+
+*   %INVPARETO - Inverse of Pareto      CDF                         with parameter  THeta        and lower bound X0
+*   %INVZIPF   - Inverse of Zipf        CDF = Inverse of Pareto CDF with parameter  THeta = 1    and lower bound X0
+*   %INVBURR   - Inverse of Burr        CDF                         with parameters THeta, SIGma and lower bound X0
+*   %INVEXP    - Inverse of Exponential CDF with parameter THeta
+
+
+*   RANDOM NUMBER GENERATING FUNCTIONS
+
+*   %U01          - Random draw from a  [0,1] uniform distribution.
+*   %RANNORMAL    - Random draw from a  Normal        distribution with mean M and Standard Deviation S.
+*   %RANLOGNORMAL - Random draw from a  Lognormal     distribution with parameters M and S (mean and standard deviation of the normal).
+*   %RANPARETO    - Random draw from a  Pareto        distribution with parameter THeta          and lower bound X0.
+*   %RANZIPF      - Random draw from a  Zipf          distribution = Random draw from a Pareto distribution with parameter THeta = 1 and lower bound X0.
+*   %RANBURR      - Random draw from a  Burr          distribution with parameters THeta, SIGma and lower bound X0.
+*   %RANEXP       - Random draw from an Exponential   distribution with parameter  THeta.
+
+
+*   DISTRIBUTION/PROBABILITY PARAMETER ESTIMATION
+
+*   %NORMALMLE    - MLE from a    Normal density
+*   %LOGNORMALMLE - MLE from a LogNormal density
+*   %PARETOMLE    - MLE from a Pareto    density
+
+
+*   NON-PARAMETRIC STATISTICS
+
+*   %NPDArea     - Calculates the area under  Y = f(X)
+*   %NPDMean     - Calculates the mean of     Y = f(X)
+*   %NPDVariance - Calculates the variance of Y = f(X)

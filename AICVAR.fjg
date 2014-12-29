@@ -1,0 +1,112 @@
+/*
+     VAR ORDER SELECTION USING INFORMATION CRITERION
+                                                   November/92 - R1: June/02
+*/
+COM [STRING]                        %%AICVAR = 'AICVAR - Version R1: June/02'
+DEC  RECT                           %%INDEX
+
+PROC AICVAR MLAGP TBEGP TENDP
+*
+LOCAL INT        MLAG  TBEG  TEND  I  V  D
+LOCAL VECT[INT]  VLIST DLIST
+*
+OPTION SWITCH REGRES  0
+OPTION SWITCH PRINT   1
+OPTION SWITCH DETER   1
+OPTION SWITCH SAME    1
+
+ENTER(VARYING,ENTRIES=V)    VLIST
+IF DETER.EQ.1
+   ENTER(VARYING,ENTRIES=D) DLIST
+ELSE
+   COM D = 0
+
+*  Setting sample size
+IF DETER.EQ.1
+   {
+   INQUIRE(REGRESSORLIST) TBEG>>TBEGP  TEND>>TENDP
+   # VLIST DLIST
+   }
+ELSE
+   {
+   INQUIRE(REGRESSORLIST) TBEG>>TBEGP  TEND>>TENDP
+   # VLIST
+   }
+
+*  Setting maximum lag
+IF     (MLAGP.GT.(FIX((0.5*(TEND-TBEG+1)-D)/V))).OR.(.NOT.%DEFINED(MLAGP))
+   COM  MLAG =    FIX((0.5*(TEND-TBEG+1)-D)/V)
+ELSE IF MLAGP.LT.0
+   {
+   DIS %%AICVAR; DIS 'Syntax error: MAXLAG should be a positive number'
+   HALT  AICVAR
+   }
+ELSE
+   COM MLAG = MLAGP
+
+*   Globals
+DIM %%INDEX(MLAG+1,6)
+
+DO I=0,MLAG
+   IF I.EQ.0
+      {
+      IF DETER.EQ.1
+         {
+         SYS  1 TO V
+         VAR  VLIST
+         DET  DLIST
+         END(SYSTEM)
+         }
+      ELSE
+         {
+         SYS  1 TO V
+         VAR  VLIST
+         END(SYSTEM)
+         }
+      }
+   ELSE
+      {
+      IF DETER.EQ.1
+         {
+         SYS  1 TO V
+         VAR  VLIST
+         DET  DLIST
+         LAG  1 TO I
+         END(SYSTEM)
+         }
+      ELSE
+         {
+         SYS  1 TO V
+         VAR  VLIST
+         LAG  1 TO I
+         END(SYSTEM)
+         }
+      }
+   IF SAME.EQ.1
+      ESTIMATE(PRI=REGRES) TBEG+MLAG TEND
+   ELSE
+      ESTIMATE(PRI=REGRES) TBEG+I    TEND
+   COM %%INDEX(I+1,1) = I,           %%INDEX(I+1,6) = %LOGDET,              $
+       %%INDEX(I+1,2) = %LOGDET + (2.                *V*(V*I+D))/%NOBS,     $
+       %%INDEX(I+1,3) = %LOGDET + (       LOG(%NOBS) *V*(V*I+D))/%NOBS,     $
+       %%INDEX(I+1,4) = %LOGDET + (2.*LOG(LOG(%NOBS))*V*(V*I+D))/%NOBS,     $
+       %%INDEX(I+1,5) = %DET(%SIGMA)*((FLOAT(%NOBS)+V*I+D)/(%NOBS-V*I-D))**V
+END DO I
+
+IF PRINT.EQ.1
+   {
+   DIS  %%AICVAR
+   DIS 'Information criteria for various lags: Choose model with minimum IC'
+   IF MLAGP.GT.(FIX((0.5*(TEND-TBEG+1)-D)/V))
+      DIS 'Degrees of freedom exhausted by MAXLAG - Maximum lag is reduced to' MLAG
+   IF SAME.EQ.1
+      DIS 'All regressions are run from' %DATELABEL(TBEG+MLAG) 'to' %DATELABEL(TEND)
+   DIS
+   DIS 'LAG' @12 'AIC' @26 'BIC' @40 'HQ ' @53 'FPE' @63 '|' @68 'Ln(|SIGMA|)'
+   DO I = 1,%ROWS(%%INDEX)
+      DIS ### I-1 * %%INDEX(I,2) %%INDEX(I,3) %%INDEX(I,4) %%INDEX(I,5) @63 '|' %%INDEX(I,6)
+   END DO I
+   DIS
+   }
+
+END PROC AICVAR

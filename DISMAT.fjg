@@ -1,0 +1,82 @@
+/*
+     Displaying matrices                         January/98 - R1: October/02
+*/
+COM [STRING]                     %%DISMAT = 'DISMAT - Version R1: October/02'
+
+PROC DISMAT  A
+TYPE RECT    A
+
+LOCAL  RECT    B
+LOCAL  LVECT   RLABEL
+LOCAL  LVECT   CLABEL
+LOCAL  STRING  HEADER  S
+LOCAL  INTEGER M N I J K
+
+OPTION STRING  HEADERL
+OPTION LVECT   RLABELL
+OPTION LVECT   CLABELL
+OPTION CHOICE  SUM    1 NONE COL ROW ALL
+
+IF %DEFINED(HEADERL)
+   COM HEADER = HEADERL
+ELSE
+   DIS(STORE=HEADER) 'Matrix: ' %LABEL(A)
+
+COM M = FIX( %IF(SUM==2.OR.SUM==4,%ROWS(A)+1,%ROWS(A)) ), $
+    N = FIX( %IF(SUM==3.OR.SUM==4,%COLS(A)+1,%COLS(A)) )
+DIM B(M,N) RLABEL(M) CLABEL(N)
+EWI CLABEL(I) = %STRING(I)
+EWI RLABEL(I) = %STRING(I)
+
+IF %DEFINED(RLABELL).AND.%ROWS(RLABELL)==%ROWS(A)
+   COM %DO(I,1,%ROWS(A),RLABEL(I) = RLABELL(I))
+IF M==%ROWS(A)+1
+   COM RLABEL(M) = 'Total sum'
+
+IF %DEFINED(CLABELL).AND.%ROWS(CLABELL)==%COLS(A)
+   COM %DO(I,1,%COLS(A),CLABEL(I) = CLABELL(I))
+IF N==%COLS(A)+1
+   COM CLABEL(N) = 'Total sum'
+
+IF      SUM==1
+   COM B      = A
+ELSE IF SUM==2
+   EWI B(I,J) = %IF(I==M,%SUM(%XCOL(A,J)),A(I,J))
+ELSE IF SUM==3
+   EWI B(I,J) = %IF(J==N,%SUM(%XROW(A,I)),A(I,J))
+ELSE
+   {
+   EWI B(I,J) = %IF( (I==M).OR.(J==N),0.,A(I,J) )
+   COM %DO(J,1,N-1,B(M,J) = %SUM(%XCOL(A,J))), $
+       %DO(I,1,M-1,B(I,N) = %SUM(%XROW(A,I))), B(M,N) = %SUM(A)
+   }
+
+*   Printing is done each four columns
+DIS HEADER
+COM J = 1
+WHILE J.LT.(%COLS(B)/4.)
+   {
+   DIS @16 CLABEL((J-1)*4+1) @32 CLABEL((J-1)*4+2) @48 CLABEL((J-1)*4+3) @64 CLABEL((J-1)*4+4)
+   DO I = 1,%ROWS(B)
+      DIS RLABEL(I) @16 B(I,(J-1)*4+1) @32 B(I,(J-1)*4+2) @48 B(I,(J-1)*4+3) @64 B(I,(J-1)*4+4)
+   END DO I
+   DIS
+   COM J = J + 1
+   }
+*   Printing remaining
+DO K = 1,%COLS(B)-(J-1)*4
+   DIS(HOLD) @16*K CLABEL((J-1)*4+K)
+END DO K
+DIS(STORE=S)
+DIS S
+DO I = 1,%ROWS(B)
+   DIS(HOLD) RLABEL(I) 
+   DO K = 1,%COLS(B)-(J-1)*4
+      DIS(HOLD) @16*K B(I,(J-1)*4+K)
+   END DO K
+   DIS(STORE=S)
+   DIS S
+END DO I
+DIS
+
+END PROC DISMAT

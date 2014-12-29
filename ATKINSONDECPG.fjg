@@ -1,0 +1,99 @@
+/*
+     ATKINSON EQUALITY INDEX DECOMPOSITION           March/2005 - R1: March/2006
+*/
+COM [STRING] %%ATKINSONDECPG =           'ATKINSONDECPG - Version R1: March/2006'
+
+PROC   ATKINSONDECPG  Y  A  TBEGP  TENDP   OUTEXT   OUTINT
+TYPE   SER            Y  A
+TYPE   INT                  TBEGP  TENDP  
+TYPE   REAL                               *OUTEXT  *OUTINT
+*
+LOCAL  VEC[LAB]  GROUP
+LOCAL  INTEGER   TBEG  TEND  I  N  NG
+LOCAL  SERIES    S  W  SMPL  B  SM TY TP P
+LOCAL  VEC[SER]  TH
+LOCAL  REAL      TG TE TI
+*
+OPTION SWITCH    PRINT    1
+OPTION SWITCH    EXTENDED 0
+OPTION REAL      EPSILON  1.
+OPTION SERIES    WEIGHT
+OPTION SERIES    SMPLL
+OPTION VEC[LAB]  GROUPL
+
+INQUIRE(REG) TBEG>>TBEGP TEND>>TENDP
+# Y A
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(Y),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(Y)
+
+IF %DEFINED(WEIGHT)
+   SET P TBEG TEND = WEIGHT
+ELSE
+   SET P TBEG TEND = 1
+
+SAM(SMPL=SMPL) Y  TBEG TEND S 1
+SAM(SMPL=SMPL) P  TBEG TEND W 1
+SAM(SMPL=SMPL) A  TBEG TEND B 1
+INQ(SER=S) *   N
+
+SET          TY 1 N = S*W
+@S%(NOPRINT) TY 1 N   TY
+@S%(NOPRINT) W  1 N   TP
+COM NG = FIX(%MAXVALUE(B))
+DIM GROUP(NG) TH(5)
+IF %DEFINED(GROUPL)
+   COM GROUP    =  GROUPL
+ELSE
+   EWI GROUP(I) = %CONCAT('Sub-Group_',%STRING(I))
+
+*   Indexes
+DO I=1,5
+   SET TH(I) 1 NG = %NA
+END DO I
+DO I=1,NG
+   CLE SM
+   SET SM 1 N  = %IF(FIX(B)==I,1,0)
+   @ATKINSON(NOPRI,SMPL=SM,WEI=W,EPSILON=EPSILON,EXTENDED=EXTENDED) S 1 N TH(3)(I)
+   COM TH(1)(I) = %MEAN, TH(2)(I) = %DOT(SM,W),  TH(5)(I) = FLOAT(%NOBS),  TH(3)(I) = 1-TH(3)(I),  $
+       TH(4)(I) = %IF(EPSILON==1,%DOT(SM,TP),%IF(EPSILON==0,%DOT(SM,TY),%DOT(SM,TP)**EPSILON*%DOT(SM,TY)**(1-EPSILON)))
+END DO I
+COM TG = 1-%IF(EXTENDED,%ATKINSONEXT(S,W,EPSILON),%ATKINSON(S,W,EPSILON)), $
+    TE = 1-%IF(EXTENDED,%ATKINSONEXT(TH(1),TH(2),EPSILON),%ATKINSON(TH(1),TH(2),EPSILON))
+
+IF      EPSILON< 0;   COM TI = %IF(EXTENDED,%MORDER(TH(3),TH(4),EPSILON-1),%NA)
+ELSE IF EPSILON==0;   COM TI = %IF(EXTENDED,%MGEOMETRIC(TH(3),TH(4)),%M(TH(3),TH(4)))
+ELSE IF EPSILON==1;   COM TI = %MGEOMETRIC(TH(3),TH(4))
+ELSE              ;   COM TI = %MORDER(TH(3),TH(4),1-EPSILON)
+
+IF PRINT==1
+   {
+   DIS 'Atkinson Equality Index decomposition by population subgroups on' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%L(WEIGHT),'')
+   IF EXTENDED
+      DIS 'Extended family'
+   DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS 'Inequality Aversion' ###.## EPSILON @41 * 'Atkinson index' 1-TG
+   DIS 'Equality Decomposition:      Global      External      Internal'
+   DIS                       @23       TG        @+1   TE      @+1   TI
+   DIS  ###.##               @28 '(100.00%)' @+5 '(' @-1 100*TE/TG @-1 '%)' @+5 '(' @-1 100*TI/TG @-1 '%)'
+   DIS                                                                    @69 'Interaction'
+   DIS 'Inequality Indexes:' @23     1-TG        @+1 1-TE      @+1 1-TI   @+1 -(1-TE)*(1-TI)
+   DIS  ###.##               @42 '(' @-1  100*(1-TE)/(1-TG) @-1 '%)'      @+5 '(' @-1 100*(1-TI)/(1-TG) @-1 '%)'  $
+                             @+5 '(' @-1 -100*(1-TE)*(1-TI)/(1-TG) @-1 '%)'
+   DIS 
+   DIS 'Decomposition of the Internal Index - Agreggated groups =' NG
+   DIS '                            Internal      Weight'
+   DIS '   Group    Observations     Index     in the index   Inequality'
+   DO I = 1,NG
+      DIS  GROUP(I) @18 FIX(TH(5)(I)) @23 TH(3)(I) TH(4)(I)/%SUM(TH(4)) 1-TH(3)(I)
+   END DO I
+   DIS;DIS
+   }
+
+IF %DEFINED(OUTEXT);   COM OUTEXT = TE
+IF %DEFINED(OUTINT);   COM OUTINT = TI
+
+CLE S  W  SMPL  B  SM  TY  TP  TH  P
+END PROC ATKINSONDECPG

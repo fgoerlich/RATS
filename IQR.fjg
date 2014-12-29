@@ -1,0 +1,60 @@
+/*
+     IQR                                        February/00 - R2: February/07
+*/
+COM [STRING]                           %%IQR = 'IQR - Version R2: February/07'
+
+PROC  IQR     SERIE  TBEGP  TENDP  OUTP
+TYPE  SERIES  SERIE
+TYPE  REAL                        *OUTP
+*
+LOCAL INTEGER N  TBEG  TEND
+LOCAL REAL    A1 A2
+LOCAL SERIES  SMPL  S  W  P
+*
+OPTION SWITCH INTERPOL  1
+OPTION SWITCH PRINT     1
+OPTION SERIES WEIGHT
+OPTION SERIES SMPLL
+OPTION REAL   Q        .25
+
+IF Q<0.OR.Q>=.5
+   {
+   DIS %%IQR; DIS 'Syntax error: Quantil should be between [0,.5)'
+   HALT  IQR
+   }
+
+INQUIRE(SERIES=SERIE) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(SERIE),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(SERIE)
+
+IF %DEFINED(WEIGHT)
+   SET P TBEG TEND = WEIGHT
+ELSE
+   SET P TBEG TEND = 1
+
+SAM(SMPL=SMPL) SERIE  TBEG TEND S 1
+SAM(SMPL=SMPL) P      TBEG TEND W 1
+INQUIRE(SERIES=S) *  N
+ORDER S 1 N W
+
+COM A1 = %IF(.NOT.%DEFINED(WEIGHT),%F(S,  Q,INTERPOL),%FW(S,W,  Q,INTERPOL)), $
+    A2 = %IF(.NOT.%DEFINED(WEIGHT),%F(S,1-Q,INTERPOL),%FW(S,W,1-Q,INTERPOL))
+
+IF PRINT==1
+   {
+   IF Q==.25
+      DIS 'Inter-Quartile range on Series' %L(SERIE) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   ELSE
+      DIS 'Inter-' @-1 ## Q*100 @-1 '-' @-1 (1-Q)*100 @-1 '% range on Series' %L(SERIE) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS  ## Q*100 @-1 '%-ile' @11  * A1 @27 ## (1-Q)*100 @-1 '%-ile' * A2
+   DIS 'IQ-range '           @11 A2-A1
+   DIS
+   }
+
+IF %DEFINED(OUTP);   COM OUTP = A2-A1
+CLEAR SMPL S W P
+END PROC IQR

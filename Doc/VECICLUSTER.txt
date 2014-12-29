@@ -1,0 +1,46 @@
+/*
+     VECICLUSTER genera un identificador de cluster de "vecinos" de acuerdo
+     con un determinado criterio.
+
+     Escrito por Paco Goerlich.                    Version: Marzo/2013 (R0)
+     Version RATS: WinRATS 8.20
+
+     Sintaxis
+
+      @VECICLUSTER SERIE1 SERIE2 CLUSTER
+
+       SERIE1   = serie 1 con codigos
+       SERIE2   = serie 2 con codigos que son vecinos de los correspondientes
+                  en la serie 1.
+       CLUSTER  = serie que identifica el cluster correspondiente (secuencial)
+
+
+       Opciones:
+
+     PRINT = Imprime el identificado de CLUSTER y las series que enlazan los vecinos
+
+
+       Variables globales:
+
+     %%VECICLUSTER = STRING, Version actual del procedimiento.
+
+********************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   El procedimiento está pensado para generar un identificador de cluster de
+   poligonos vecinos a partir de la opcion: "Convert Spatial Weights Matrix to
+   Table" de ArcGIS 9.3, generada con "Generate Spatial Weights Matrix".
+
+   Se ha probado con polygon contiguity (edges and corners), aunque debe funcionar
+   más generalmente.
+
+   Los weights no se tienen en consideración.
+
+********************************************************************************
+
+   REVISIONES
+
+   R1: / - 
+
+*/

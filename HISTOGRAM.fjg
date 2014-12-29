@@ -1,0 +1,127 @@
+/*
+     HISTOGRAM                                 February/00 - R2: May/08
+*/
+COM [STRING] %%HISTOGRAM =              'HISTOGRAM - Version R2: May/08'
+
+PROC  HISTOGRAM  SERIE    TBEGP  TENDP   OUTX   OUTY   OUTH
+TYPE  SERIES     SERIE                  *OUTX  *OUTY
+TYPE  INT                 TBEGP  TENDP
+TYPE  RECT                                            *OUTH
+*
+LOCAL INTEGER I  K  N  TBEG   TEND NI
+LOCAL REAL    M  V  MI MA MIS MAS
+LOCAL SERIES  SMPL  S  P  W   W% DUMY H X Y X1 Y1 X2 Y2
+LOCAL STRING  HEAD
+*
+OPTION SWITCH PRINT    1
+OPTION SWITCH GRAPH    1
+OPTION SWITCH LEFT     1
+OPTION SERIES WEIGHT
+OPTION SERIES SMPLL
+OPTION VECTOR BREAK
+OPTION REAL   MIN
+OPTION REAL   MAX
+OPTION INTEGE INTERVALS
+*
+INQUIRE(SERIES=SERIE) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL<>0.AND.%VALID(SERIE),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(SERIE)
+
+IF %DEFINED(WEIGHT)
+   SET P    TBEG TEND = WEIGHT
+ELSE
+   SET P    TBEG TEND = 1.
+
+SAM(SMPL=SMPL) SERIE TBEG TEND S 1
+SAM(SMPL=SMPL) P     TBEG TEND W 1
+INQ(SER=S)  *  N
+@S%  W    1 N  W%
+COM MIS = %MINVALUE(S), MAS = %MAXVALUE(S), M = %M(S,W), V = %STD(S,W)
+
+IF %DEFINED(BREAK)
+   {
+   IF      %MINVALUE(BREAK).GT.MIS.AND.%MAXVALUE(BREAK).LT.MAS
+      SET X1 1 %ROWS(BREAK)+2 = %IF(T==1,MIS,%IF(T==%ROWS(BREAK)+2,MAS,BREAK(T-1)))
+   ELSE IF %MINVALUE(BREAK).GT.MIS
+      SET X1 1 %ROWS(BREAK)+1 = %IF(T==1,MIS,                          BREAK(T-1) )
+   ELSE IF                             %MAXVALUE(BREAK).LT.MAS
+      SET X1 1 %ROWS(BREAK)+1 =              %IF(T==%ROWS(BREAK)+1,MAS,BREAK(T)   )
+   ELSE
+      SET X1 1 %ROWS(BREAK)   =                                        BREAK(T)
+   ORDER  X1                                           ;*   The boxes limits
+   INQ(SER=X1) * NI
+   COM    NI =   NI-1, MI = X1(1), MA = X1(NI+1)
+   SET    H    1 NI = X1{-1} - X1                      ;*   The box   width
+   }
+ELSE
+   {
+   COM MI =     %IF(%DEFINED(MIN),%MIN(MIS,MIN),MIS)
+   COM MA =     %IF(%DEFINED(MAX),%MAX(MAS,MAX),MAS)
+   COM NI = FIX(%IF(%DEFINED(INTERVALS),%MAX(1,INTERVALS),(4.*N)**(2./5.)))
+   SET H  1 NI   = (MA-MI)/NI                          ;*   The box   width
+   SET X1 1 NI+1 = %IF(T==NI+1,MA,MI+H*(T-1))          ;*   The boxes limits
+   }
+
+*   Binning & Counting
+CLE W
+SET X  1 NI   = (X1+X1{-1})/2                          ;*   The boxes midpoints (X in SCATTER)
+SET Y1 1 NI   = 0                                      ;*   Number of # in boxes
+SET W  1 NI   = 0                                      ;*   Number of % in boxes
+SET Y  1 NI   = 0                                      ;*   Density             (Y in SCATTER)
+DO I = 1,NI
+   IF LEFT
+      SET DUMY 1 N = %IF(I==NI,%IF(S.GE.X1(I).AND.S.LE.X1(I+1),1,0),%IF(S.GE.X1(I).AND.S.LT.X1(I+1),1,0))
+   ELSE
+      SET DUMY 1 N = %IF(I==1 ,%IF(S.GE.X1(I).AND.S.LE.X1(I+1),1,0),%IF(S.GT.X1(I).AND.S.LE.X1(I+1),1,0))
+   COM Y1(I) = %SUM(DUMY), %DO(K,1,N,W(I) = W(I) + DUMY(K)*W%(K)), Y(I) = W(I)/H(I)
+END DO I
+
+IF PRINT
+   {
+   DIS 'Histogram for series' %L(SERIE) %STRIF(%DEFINED(WEIGHT),'weighted with series '+%L(WEIGHT),'')
+   DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
+   DIS 'Mean       '  M            @30 'Standar deviation'  V
+   DIS 'Minimum    '  MIS          @30 'Maximum          '  MAS
+   IF %DEFINED(BREAK)
+      DIS 'Number of intervals' NI @30 'Variable interval width'
+   ELSE
+      DIS 'Number of intervals' NI @30 'Interval width   '  H(1)
+   DIS '         Interval limits        Observations             X               Y'
+   DIS '       Lower         Upper      ###   Weight    |     Midpoint        Density'
+   DO I = 1,NI
+      IF LEFT==1
+         DIS '[' @-1 X1(I) @-1 ',' @-1 X1(I+1) @-1 %STRIF(I==NI,']',')') ##### Y1(I) @+2 ###.## W(I)*100 @-1 '%' @+4 '|' * X(I) Y(I)
+      ELSE
+         DIS %STRIF(I==1,'[','(') @-1 X1(I) @-1 ',' @-1 X1(I+1) @-1 ']'  ##### Y1(I) @+2 ###.## W(I)*100 @-1 '%' @+4 '|' * X(I) Y(I)
+   END DO I
+   DIS
+   }
+
+IF %DEFINED(OUTX);   SET OUTX 1 NI = X
+IF %DEFINED(OUTY);   SET OUTY 1 NI = Y
+IF %DEFINED(OUTH)
+   MAK OUTH 1 NI
+   # X1 X1{-1} Y1 W X Y
+
+IF GRAPH
+   {
+   SET X2 1 3*NI+1 = 0
+   SET Y2 1 3*NI+1 = 0
+   COM K = 1
+   DO I = 1,3*NI,3
+      COM X2(I) =    X2(I+1) = X1(K), X2(I+2) = X1(K+1),           $
+          Y2(I) = 0, Y2(I+1) =        Y2(I+2) = Y(K),    K = K + 1
+   END DO I
+   COM X2(3*NI+1) = MA
+   SET X1 1 100 = MI + (MA-MI)*(T-1)/99
+   SET Y1 1 100 = %NORMALDENSITY(X1,M,V**2)
+   DIS(STOR=HEAD) %STRIF(%DEFINED(WEIGHT),%L(WEIGHT)+' weighted','') 'HISTOGRAM'
+   SCA(HEAD=HEAD,SUB=%CONCAT(%L(SERIE),' vs Normal'),VLAB='Density',VTIC=5,VMIN=0,HMIN=MI,HMAX=MA,STYLE=BAR,OVE=LINE,OVS) 2
+   # X2 Y2 / 5
+   # X1 Y1
+   }
+
+CLE SMPL  S  P W  W% DUMY H X Y X1 Y1 X2 Y2
+END PROC HISTOGRAM

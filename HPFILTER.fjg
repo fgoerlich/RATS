@@ -1,0 +1,95 @@
+/*
+     Hodrick-Prescott Filter                          November/1992 - R2: March/2004
+  
+     HPFILTER computes the estimated growth component of a series 
+     using the DP algorithm to solve the problem:
+  
+     Minimize sum over t of
+  
+     (1)     [y(t)-g(t)]**2 + lambda * [g(t)-2g(t-1)+g(t-2)]**2
+  
+     where g is the growth component of y.
+  
+     Defining:            X(t)=(g(t),g(t-1),1)'
+                          u(t)=g(t)-2g(t-1)+g(t-2)
+  
+     Then                 X(t) = A X(t-1) + B u(t), where
+  
+                               2 -1  0        1
+                          A =  1  0  0    B = 0 
+                               0  0  1        0
+  
+     Hence the minimand (1) can be written as
+  
+              [c(t)X(t)]**2 + lambda * u(t)**2
+  
+     where     c(t)=(1,0,-y(t))
+       
+     With cost-to-go functional  X(t)'R(t)X(t), the solution is of the form 
+     u(t)=TEMP1(t)*X(t-1), and X(t)=(A+B*TEMP1(t))*X(t-1)
+*/
+COM [STRING] %%HPFILTER =                        'HPFILTER - Version R2: March/2004'
+
+PROC HPFILTER SERIES  GROWTH TBEGP TENDP
+TYPE SERIES   SERIES *GROWTH
+*
+LOCAL  INTEGER TBEG  TEND  I
+LOCAL  RECT    A  B  C  D  DMATS TEMP1
+LOCAL  SYMM    R  RR
+LOCAL  VECT    RB X
+LOCAL  REAL    SCALAR
+*
+OPTION REAL    LAMBDA 1600
+
+IF .NOT.%DEFINED(GROWTH)
+   {
+   DIS %%HPFILTER; DIS 'Syntax error: A series for the growth component should be specified!'
+   HALT  HPFILTER
+   }
+INQUIRE(SERIES=SERIES) TBEG>>TBEGP  TEND>>TENDP
+
+DIM A(3,3) B(3,1) C(1,3) R(3,3) X(3) DMATS(9,TEND-TBEG)
+COM A = || 2, -1,  0 | 1, 0, 0 | 0, 0, 1 ||
+COM B = || 1 | 0 | 0 ||
+COM C = || 1,  0,  0 ||
+COM R = %CONST(0.0)
+
+*   DP transition matrices are set up. Loop over periods until 2 above beginning of data.
+
+DO I = TEND,TBEG+2,-1
+   COM     C(1,3) = -SERIES(I)
+   OVERLAY DMATS(1,I-TBEG) WITH D(3,3)
+   COM     R = R + %INNERXX(C)
+   COM     SCALAR = LAMBDA + %QFORM(R,B)
+   COM     TEMP1 = (-1./SCALAR)*TR(B)*R*A
+   COM     D = A + B*TEMP1
+   COM     R = %MQFORM(R,D) + LAMBDA*%INNERXX(TEMP1)
+END DO I
+
+/*
+   Compute minimizer for the initial two periods.  Since g(1) and g(0)
+   are free initial parameters, u(1) and u(2) can be set equal to zero.
+   Thus, we only need to deal with the (y(t)-g(t))**2 terms.
+*/
+
+COM C(1,3) = -SERIES(TBEG+1)
+COM R = R + %INNERXX(C)
+COM C = || 0.0, 1.0, -SERIES(TBEG) ||
+COM R = R + %INNERXX(C)
+
+OVERLAY R(1,1) WITH RR(2,2)
+OVERLAY R(3,1) WITH RB(2)
+
+SET GROWTH TBEG TEND = 0.0
+COM RB = INV(RR)*RB
+COM X(1) = GROWTH(TBEG+1) = -RB(1)
+COM X(2) = GROWTH(TBEG)   = -RB(2)
+COM X(3) = 1.0
+
+DO I = TBEG+2,TEND
+   OVERLAY DMATS(1,I-TBEG) WITH D(3,3)
+   COM     X = D*X
+   COM     GROWTH(I) = X(1)
+END DO I
+
+END PROC HPFILTER

@@ -1,0 +1,61 @@
+/*
+     CDF: ECDF de una SERIE.
+
+     Escrito por:  Paco Goerlich.                     Version: Abril/08 (R3)
+     Version RATS: WinRATS 7.00
+
+     Sintaxis:
+
+      @CDF(opciones) SERIE COMIENZO FIN X Y
+
+       SERIE    = Serie de interes.
+       COMIENZO = Primera observacion a considerar.
+       FIN      = Ultima  observacion a considerar.
+       X        = Serie de estadisticos de orden (X en SCATTER)
+       Y        = Serie de probabilidades        (Y en SCATTER)
+
+      Opciones:
+
+    PRINT/[NOPRINT] controla la impresion.
+    GRAPH/[NOGRAPH] controla la realizacion de un grafico.
+    [INTERPOL]/NOINTERPOL si los fractiles deben ser interpolados o no.
+    SMPL   = serie con ceros en las observaciones que se desean eliminar en el
+             calculo de los quantiles (Ver RATS Section 5.1) [no definido]
+    WEIGHT = serie de ponderaciones [no definido]
+
+      Variables globales:
+
+      %%CDF = STRING, Version actual del procedimiento
+
+      %MEAN     = Sample mean (REAL)
+      %VARIANCE = Sample variance (REAL)
+      %NOBS     = Number of observations (INTEGER)
+      %FRACT01  = 1st  percentile (REAL)
+      %FRACT05  = 5th  percentile (REAL)
+      %FRACT10  = 10th percentile (REAL)
+      %FRACT25  = 25th percentile (REAL)
+      %FRACT75  = 75th percentile (REAL)
+      %FRACT90  = 90th percentile (REAL)
+      %FRACT95  = 95th percentile (REAL)
+      %FRACT99  = 99th percentile (REAL)
+      %MINIMUM  = minimum value (REAL)
+      %MAXIMUM  = maximum value (REAL)
+      %MEDIAN   = median (REAL)
+
+ 
+*****************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+*****************************************************************************
+
+   REVISIONES
+
+   R1: Agosto/00 - M y V que aparecen en @MEANVAR no aparecian como locales.
+                   Observaciones para el grafico fue reducido a 100.
+
+   R2: Octubre/04 - Traduccion a WinRATS 6.01.
+
+   R3: Abril/08 - GRID declarado como rela y no utilizado. Eliminado.
+
+*/

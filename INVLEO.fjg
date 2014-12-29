@@ -1,0 +1,46 @@
+/*
+     LEONTIEF INVERSE MATRIX.                 December/97 - R2: June/02
+*/
+COM [STRING]                   %%INVLEO = 'INVLEO - Version R2: June/02'
+
+PROC INVLEO A  B
+TYPE RECT   A *B
+*
+LOCAL INTEGER  I
+
+IF %ROWS(A).NE.%COLS(A)
+   {
+   DIS %%INVLEO; DIS 'Sintax error:' %LABEL(A) 'is NOT square'
+   HALT INVLEO
+   }
+IF (%MAXVALUE(A).GT.1.).OR.(%MINVALUE(A).LT.0.)
+   {
+   DIS %%INVLEO; DIS 'Sintax error:' %LABEL(A) 'is NOT a technical coefficient matrix'
+                 DIS '              Some values are greater than one or negative' 
+   HALT INVLEO
+   }
+DO I = 1,%COLS(A)
+   IF %SUM(%XCOL(A,I)).GT.1.
+      {
+      DIS %%INVLEO; DIS 'Sintax error:' %LABEL(A) 'is NOT a technical coefficient matrix'
+                    DIS '              Some columns sum more than 1'
+      HALT INVLEO
+      }
+END DO I
+
+COM B = INV(%IDENTITY(%ROWS(A)) - A)
+
+IF %MINVALUE(B).LT.0.
+   {
+   DIS %%INVLEO; DIS 'Sintax error:' %LABEL(A) 'is NOT a technical coefficient matrix'
+                 DIS '              Leontief inverse contains negative elements'
+   HALT INVLEO
+   }
+IF %MINVALUE(%XDIAG(B)).LT.1.
+   {
+   DIS %%INVLEO; DIS 'Sintax error:' %LABEL(A) 'is NOT a technical coefficient matrix'
+                 DIS '              Some diagonal elements of Leontief inverse are less than 1'
+   HALT INVLEO
+   }
+
+END PROC INVLEO

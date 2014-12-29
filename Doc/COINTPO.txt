@@ -1,0 +1,69 @@
+/*
+     COINTPO: Calcula el estadistico "traza multivariante" (PZ) propuesto
+              por Phillips y Oularis (1990, p.-171) como contraste de
+              cointegracion a partir de los residuos de un VAR(1).
+              Estima ademas el vector de cointegracion por minimos cuadrados
+              ortogonales (PLS).
+  
+     Escrito por:  Paco Goerlich.                    Version: March/2003 (R1)
+     Versi¢n RATS: RATS386 5.02
+  
+  
+     Sintaxis:
+  
+       @COINTPO(opciones) COMIENZO FIN
+       #<supp.card> variables de interes
+  
+        COMIENZO = primera observacion a considerar.
+        FIN      = ultima  observacion a considerar.
+
+      NOTA: Si COMIENZO y FIN no es especificado el programa toma como
+            valores por defecto el periodo maximo para el cual todas las
+            variables estan definidas.
+
+
+       Opciones:
+  
+        PRINT/[NOPRINT] controla la impresion del output del VAR(1).
+        N1WINDOW = numero inicial de ancho de ventana a considerar en las 
+                   correcciones no-parametricas [0].
+        N2WINDOW = numero final   de ancho de ventana a considerar en las
+                   correcciones no-parametricas [4].
+        REGRESS  = TREND/[CTE]/NONE componentes deterministas en la 
+                   estimacion del VAR.
+
+
+       Variables globales:
+
+      %%COINTPO  = STRING, Version actual del procedimiento.
+                                                                              
+
+       Variables definidas por RATS:
+
+      %BETA      = VECTOR de cointegracion normalizado a la primera variable.
+
+
+******************************************************************************
+                                                                                
+     INFORMACION COMPUTACIONAL
+  
+     Para background general ver EM: COINTEGRACION
+  
+     La formula programada es exactamente la de Phillips y Oularis (1990)
+     pag.-171. No se han efectuado correciones por grados de libertad.
+     La ventaja de este estadistico frente a otros es que es invariante
+     respecto a la normalizacion.
+  
+     El regresor tendencia comienza en t=0 y no se le ha eliminado la media,
+     ello no afecta a los estadisticos presentados.
+
+
+******************************************************************************
+
+   REVISIONES
+
+   R1: Marzo/2003
+       Actualizacion a RATS 5.02.
+
+
+*/

@@ -1,0 +1,91 @@
+/*
+     GINI INEQUALITY INDEX                         April/97 - R8: March/07
+*/
+COM [STRING] %%GINI =                         'GINI - Version R8: March/07'
+
+PROC  GINI  Y  TBEGP  TENDP   OUTGINI   OUTMAD   OUTLX   OUTLY   OUTGINISE   OUTMADSE
+TYPE  SER   Y                                   *OUTLX  *OUTLY
+TYPE  INT      TBEGP  TENDP
+TYPE  REAL                   *OUTGINI  *OUTMAD                  *OUTGINISE  *OUTMADSE
+*
+LOCAL INTEGER  TBEG   TEND  I
+LOCAL SERIES   S  W P SMPL  LX  LY  TY  TP
+LOCAL REAL     G  M 
+local VEC      GSE
+*
+OPTION SWITCH  PRINT    1
+OPTION SWITCH LPRINT    0
+OPTION SWITCH  GRAPH    1
+OPTION SWITCH  SE       0
+OPTION INTEGE  REPLICAS 100
+OPTION SERIES  WEIGHT
+OPTION SERIES  SMPLL
+
+INQUIRE(SERIES=Y) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(Y),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(Y)
+
+IF %DEFINED(WEIGHT)
+   SET P    TBEG TEND = WEIGHT
+ELSE
+   SET P    TBEG TEND = 1
+
+SAM(SMPL=SMPL) Y  TBEG TEND S 1
+SAM(SMPL=SMPL) P  TBEG TEND W 1
+IF SE;   COM GSE = %GINI_BOOTSE(S,W,REPLICAS)
+
+*   Globals
+COM %MEAN = %NA, %NOBS = 0
+INQ(SER=S)  *    %NOBS
+
+COM G = %GINI(S,W), M = %MAD(S,W), %MEAN = %M(S,W)
+
+*   Lorenz Curves
+ORDER         S  1 %NOBS       W
+SET           TY 1 %NOBS   = S*W
+ACC(SCALE)    TY 1 %NOBS     TY 1
+ACC(SCALE)    W  1 %NOBS     TP 1
+SET(FIRST=0.) LX 1 %NOBS+1 = TP{1}
+SET(FIRST=0.) LY 1 %NOBS+1 = TY{1}
+
+IF PRINT
+   {
+   DIS 'Gini Inequality index on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   IF SE;   DIS 'Bootstrap Standard Errors in brackets:' REPLICAS 'replications'
+   DIS 'Gini index    '             G      @41 'Welfare Gini index' %MEAN*(1-G)
+   IF SE;   DIS @21 #.##### '(' @-1 GSE(2) @-1 ')'
+   DIS 'MAD  index    '             M      @41 'Welfare MAD  index' %MEAN*(1-M)
+   IF SE;   DIS @21 #.##### '(' @-1 GSE(3) @-1 ')'
+   DIS 'Sample mean   '            %MEAN
+   IF SE;   DIS @15         '(' @-1 GSE(1) @-1 ')'
+   DIS;DIS
+   IF LPRINT
+      {
+      DIS 'Lorenz curve at sample points'
+      DIS '  Abcisa (%)   Ordinate (%)  '
+      DO I = 1,%NOBS+1
+         DIS @3 ###.#### LX(I)*100 @+5 LY(I)*100
+      END DO I
+      DIS;DIS
+      }
+   }
+
+IF GRAPH
+   SCA(HMAX=1.0,HMIN=0.0,VMAX=1.0,VMIN=0.0,STYLE=LINES,VLABEL='Cumulative income', $
+       HLABEL='Cumulative population',HEADER='Lorenz Curve',SUBHEAD=%L(Y)) 2
+   # LX LX 1 %NOBS+1 1
+   # LX LY 1 %NOBS+1 1
+
+IF %DEFINED(OUTGINI);     COM OUTGINI   = G
+IF %DEFINED(OUTMAD);      COM OUTMAD    = M
+IF %DEFINED(OUTLX);       SET OUTLX 1 %NOBS+1 = LX
+IF %DEFINED(OUTLY);       SET OUTLY 1 %NOBS+1 = LY
+IF %DEFINED(OUTGINISE);   COM OUTGINISE = GSE(2)
+IF %DEFINED(OUTMADSE);    COM OUTMADSE  = GSE(3)
+
+CLE S  W  SMPL  LX  LY  TY  TP P
+END PROC GINI

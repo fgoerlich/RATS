@@ -1,0 +1,56 @@
+/*
+     BOXPLOT calcula los datos para dibujar un BOXPLOT.
+
+     Escrito por:  Paco Goerlich.               Version: Septiembre/2004 (R1)
+     Version RATS: WinRATS 6.00
+
+     Sintaxis
+
+      @BOXPLOT(opciones) S COMIENZO FIN BOX BOXDOWN BOXUP
+
+       S        = serie sobre la que calcular el quantil.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       BOX      = vector 10x1 que contiene la siguiente informacion:
+                  ( 1) Elemento  1: Numero de outliers por debajo.
+                  ( 2) Elemento  2: Minimo.
+                  ( 3) Elemento  3: Valor adyacente inferior.
+                  ( 4) Elemento  4: Quantil 25%.
+                  ( 5) Elemento  5: Media.
+                  ( 6) Elemento  6: Mediana.
+                  ( 7) Elemento  7: Quantil 75%.
+                  ( 8) Elemento  8: Valor adyacente superior.
+                  ( 9) Elemento  9: Maximo.
+                  (10) Elemento 10: Numero de outliers por arriba.
+       BOXDOWN Vector de outliers inferiores, BOX( 1)x1.
+       BOXUP   Vector de outliers superiores, BOX(10)x1.
+                Si BOX(1)/BOX(10) = 0 entonces BOXDOWN/BOXUP = %NA.
+
+       Opciones:
+
+     [PRINT]/NOPRINT controla la impresion de los quantiles o no.
+     SMPL   = serie con ceros en las observaciones que se desean eliminar en el
+              calculo de los quantiles (Ver RATS Section 5.1) [no definido]
+     [INTERPOL]/NOINTERPOL si los quantiles deben ser interpolados o no.
+     WEIGHT = si los quantiles deben ponderarse con esta serie [no definido].
+
+
+       Variables globales:
+
+       %%BOXPLOT = STRING, Version actual del procedimiento
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   BOXPLOT no realiza calculos, solo organiza la informacion y su impresion.
+
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Septiembre/2004 - Traduccion a WinRATS 6.00
+
+*/

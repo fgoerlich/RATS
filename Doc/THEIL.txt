@@ -1,0 +1,65 @@
+/*
+     THEIL: Indices de desigualdad de Theil (1967).
+
+     Escrito por Paco Goerlich.                    Version: Marzo/2007 (R6)
+     Version RATS: WinRATS 6.30
+
+     Sintaxis
+
+      @THEIL R COMIENZO FIN INDICE INDICESE
+
+       R        = Serie de rentas per capita.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       INDICE   = Indice de Theil.
+       INDICESE = Error Standar del Indice.
+            
+
+       Opciones:
+
+     [PRINT]/NOPRINT controla la impresion del indice.
+     SE/[NOSE] si se calcula el Error Estandar.
+     REPLICAS numero de replicas en el Error Estandar [100]
+     BETA     parametro para el calculo del indice. [0]
+     SMPL     = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+                de los calculos (Ver RATS 5.2 UG) [no definido]
+     WEIGHT   = si el indice deben ponderarse [no definido].
+
+
+       Variables globales:
+
+       %%THEIL = STRING, Version actual del procedimiento
+
+       %MEAN = Sample mean (REAL)
+       %NOBS = Number of observations (INTEGER)
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   J. M. Esteban "La desigualdad interregional en Europa y en Espa¤a:
+   Descripcion y analisis", Capitulo I. IAE.
+
+   Para  BETA = 1 se implementa la formula (5.1), J. M. Esteban p.- 54. 
+   Para  BETA = 0 se implementa la formula (4.3), J. M. Esteban p.- 41.
+   Otros BETA     se implementa la formula (2.1), J. M. Esteban p.- 22.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Abril/1997 - Utilizacion de la funcion %XCOL(.,.) en lugar de DO loops.
+
+   R2: Septiembre/1997 - Eliminacion de la restriccion de que BETA pertenezaca
+                         a [0,1].
+
+   R3: Julio/2004 - Traduccion a WinRATS 6.00 y definicion en terminos de 
+                    rentas per capita y ponderaciones.
+
+   R4: Abril/2006 - Introduccion de BOOTSTRAP simple para errores standar.
+
+   R5: Febrero/2007 - Cambio de la funcion de %THEIL a %THEIL_INEQ.
+
+   R6: Marzo/2007 - BOOTSTRAP función especifica.
+
+*/

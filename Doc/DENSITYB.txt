@@ -1,0 +1,110 @@
+/*
+     DENSITYB estima no parametricamente la densidad, simple o ponderada, 
+     de una serie, mediante el metodo KERNEL, suponiendo un dominio positivo.
+
+     Escrito por:  Paco Goerlich.               Versi¢n: Abril/2008 (R6)
+     Versi¢n RATS: WinRATS 7.00
+
+     Sintaxis
+
+      @DENSITYB(opciones) S COMIENZO FIN X Y 
+
+       S        = serie sobre la que estimar la funcion de densidad.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       X        = serie sobre la que se calcula la densidad (X en SCATTER).
+       Y        = serie de densidades                       (Y en SCATTER).
+
+       Opciones:
+
+     [PRINT]/NOPRINT   controla la impresion de la densidad.
+     [GRAPH]/NOGRAPH   controla el grafico   de la densidad.
+     STYLE     = DOTS/SYMBOLS/[LINES] estilo del grafico.
+     MAX       = Maximum value to consider [MAX(S)].
+     GRID      = Numero de puntos en los que se estima la densidad [100].
+                 Para GRID = 1 se estima en los valores muestrales.
+     BANDWIDTH = bandwidth [## real].
+                 Si BANDWIDTH no esta definido una serie de opciones controlan
+                 la obtencion del bandwidth.
+     [SILVERMAN]/NOSILVERMAN si en el caso de KERNEL=GAUSSIAN el factor de
+                 ponderacion se basa en Silverman (1986, (3.31)), 0.9, o en la 
+                 normal, Silverman (1986, (3.28)), (4/3)**(1/5).
+     SPREAD    = SIGMA/IQR/[ROBUST]. Si como medida de dispersion se utiliza la
+                 desviacion tipica, el rango intercuartilico o el minimo de los dos.
+                 Lo que se corresponde con (3.28), (3.29) o (3.30) en Silverman (1986).
+                 Normal reference bandwidth is: KERNEL=GAUSSIAN, SPREAD=SIGMA &
+                 NOSILVERMAN, (3.28).
+     KERNEL    = EPANECHNIKOV/BIWEIGHT/3WEIGHT/TRIANGULAR/[GAUSSIAN]/RECTANGULAR
+     SMPL      = serie con ceros en las observaciones que se desean eliminar en la
+                 estimacion de la densidad (Ver RATS Section 5.1) [no definido]
+     [INTERPOL]/NOINTERPOL si los quantiles deben ser interpolados o no en el
+                 calculo del rango intercuartilico simple.
+     WEIGHT    = si la densidad deben ponderarse con esta serie [no definido].
+     ADAPTATIVE/[NOADAPTATIVE] si la estimacion debe ser adaptativa o no.
+     ALPHA     = parametro de sensibilidad en la adaptacion, entre 0 y 1. [0.5]
+     
+
+       Variables globales:
+
+       %%DENSITYB = STRING, Version actual del procedimiento
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Necesita la compilacion previa de S%, MISSING, MEANVAR, GPLININT, FRACTILE, 
+   IQR y BWIDTH y el fichero de funciones KERNEL.FJG
+
+   Se supone que el dominio de S es positivo (no-negativo) y por tanto el
+   procedimiento emitira un mensaje de error si S tiene valores negativos
+   (nulos son aceptables).
+   Si GRID.GT.1 el minimo valor para el que se estima la densidad es CERO.
+
+   Sobre detalles de calculo ver Silverman (1986) Caps.- 2.
+   El estimador se implementa en la practica reflectando el kernel.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Abril/2000
+       Se han reportado 2 bugs sobre la funcion %DENSITY(.),
+       (i)  el que aparece en la pagina de ESTIMA, valores incorrectos en el
+            entorno de 0, y
+       (ii) uno detectado por mi en Abril/2000, y que de %NA o valores
+            incorrectos por encima de 213.
+       Ambos errores aparecen en SOLO en algunas maquinas, al parecer depende
+       del procesador/compilador, pero ESTIMA no da una solucion clara.
+       La version R0 tomaba en cuenta (i) pero no (ii). Esta version se
+       asegura que cuando se utiliza la funcion %DENSITY(.) el argumento esta
+       dentro del rango que produce valores correctos.
+       Tambien se soluciona un problema con la longitud de SUBHEAD en SCATER.
+
+   R2: Mayo/2000
+       Introduccion de la posibilidad de que la estimacion sea adaptativa.
+       Usa como estimacion inicial la estimacion NO adaptativa estimada en
+       los puntos muestrales y mantiene h constante en ambas estimaciones.
+       Silverman (1986,5.3,p.-100).
+
+   R3: Mayo/2000
+       El parametro de suavizado se obtiene en un procedimiento a parte que debe
+       ser compilado previamente. El bandwidth es ahora optimo para todos los 
+       kernels (BWIDTH.DOC), previamente lo era solo para el kernel GAUSSIAN y
+       aproximadamente para EPANECHNIKOV.
+       Se a¤adio un kernel nuevo: 3WEIGHT.
+
+   R4: Febrero/2004
+       Actualizacion a WinRATS 5.11.
+       Los KERNELs se incluyen como funciones en un fichero aparte.
+       Cambios en la funcion %INVNORMAL() pueden afectar al valor del BANDWIDTH.
+       Los bugs reportados en R1 han sido solucionados en WinRATS 5.11 de forma
+       que se utiliza %DENSITY(.) sin precauciones.
+
+   R5: Junio/2007
+       Actualizacion a WinRATS 6.35.
+       Correcction de un problema con %IF(%DEFINED(WEIGHT),,).
+
+   R6: Abril/2008
+       IQ declarado como REAL y no utilizado. Eliminado.
+*/

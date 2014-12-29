@@ -1,0 +1,48 @@
+/*
+     DISMAT imprime por columnas una matriz rectangular.
+
+     Escrito por Paco Goerlich.                   Versi¢n: Octubre/2002 (R1)
+     Version RATS: RAST386 5.02
+
+     Sintaxis
+
+      @DISMAT A
+
+       A = Matr¡z MxN que se desea imprimir.
+
+       Opciones:
+
+     HEADER  = Titulo a imprimir [Matrix: %LABEL(A)].
+     CLABEL  = Vector de etiquetas Nx1 con los nombres de las columnas.
+     RLABEL  = Vector de etiquetas Mx1 con los nombres de las filas.
+     SUM     = [NONE]/COL/ROW/ALL controla si se debe imprimir la suma de 
+               columnas, filas o ambas, en este £ltimo caso se imprime
+               tambien el total de los elementos de A.
+
+     Variables globales:
+
+    %%DISMAT = STRING, Version actual del procedimiento.
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Si las dimensiones de CLABEL/RLABEL no coinciden con las de A entonces se
+   utilizan numeros como etiquetas.
+
+   La impresion se realiza cada 4 columnas en formato standar determinado por
+   RATS.
+
+   El procedimiento trata de ser una traduccion del procedimiento PRINTMAT de
+   GAUSS (Version 3.1.4)
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Octubre/2002
+       Cambio de nombre de PRINTMAT a DISMAT.
+       Actualizacion a RATS 5.02.
+
+
+*/

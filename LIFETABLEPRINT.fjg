@@ -1,0 +1,72 @@
+/*
+   LIFETABLEPRINT                                     April/08 - R1: June/08
+*/
+COM [STRING]        %%LIFETABLEPRINT = 'LIFETABLEPRINT - Version R1: June/08'
+
+PROC   LIFETABLEPRINT  P  F   L   OUTM
+TYPE   SERIES          P  F      *OUTM
+TYPE   RECT                   L
+
+OPTION STRING     HEADERL
+OPTION SWITCH     PRINT    1
+OPTION SERIES     SMOOTH
+
+LOCAL  SERIES     A B M E
+LOCAL  STRING     HEADER
+LOCAL  INTEGER    N N1 I
+LOCAL  VEC[LAB]   ED
+
+IF %DEFINED(HEADERL)
+   COM HEADER = HEADERL
+ELSE
+   DIS(STORE=HEADER) 'Life table from' %L(P) 'population data and' %L(F) 'mortality data'
+
+IF PRINT; DIS HEADER
+
+IF %DEFINED(P).AND.%DEFINED(F)
+   {
+   INQ(REG) * N
+   # P F
+   SET E    1 N =   %MAX(0,P)
+   SET M    1 N = F/E
+   IF .NOT.(N==19.OR.N==22.OR.N==24.OR.N==86.OR.N==101.OR.N==111)
+      {
+      DIS %%LIFETABLEPRINT; DIS 'Sintax Error: Final age should be at 85+, 100+ or 110+ years only'
+      HALT  LIFETABLEPRINT
+      }
+   IF PRINT
+      {
+      @S%(NOPRINT) E 1 N A; SET A 1 N = 100*A
+      @S%(NOPRINT) F 1 N B; SET B 1 N = 100*B
+      COM ED = %AGE(N)
+      DIS
+      DIS '  Age      Population  -  %       Deaths   -   %       Death rate x1000'
+      DO I = 1,N
+         DIS ED(I)   @@>11 *.  E(I)   @+2  ##.###  A(I)   @-1 '%' @@>12 *.  F(I)   @+2  ##.###  B(I)   @-1 '%' @+8 ####.###### 1000*%IF(%DEFINED(SMOOTH),SMOOTH(I),M(I))
+      END DO I
+      DIS
+      DIS ' Total  ' @@>10 *. %SUM(E) @+1 ###.### %SUM(A) @-1 '%' @@>12 *. %SUM(F) @+1 ###.### %SUM(B) @-1 '%' @+8 ####.###### 1000*%SUM(F)/%SUM(E)
+      }
+   }
+
+IF %DEFINED(L).AND.PRINT
+   {
+   COM N1 = %ROWS(L)
+   IF .NOT.((N1==19.OR.N1==22.OR.N1==24.OR.N1==86.OR.N1==101.OR.N1==111).AND.%COLS(L)==7)
+      {
+      DIS %%LIFETABLEPRINT; DIS 'Sintax Error: Life Table has NOT the correct dimension - (Edades)x7'
+      HALT  LIFETABLEPRINT
+      }
+   COM ED = %AGE(N1)
+   DIS;DIS 'Life table data'
+   DIS '  Age       Q(x)x1000          l(x)          d(x)          L(x)          T(x)          e(x)'
+   DO I = 1,N1
+      DIS ED(I) @@>14 ####.###### L(I,2)*1000 *. L(I,3) L(I,4) %ROUND(L(I,5),0) %ROUND(L(I,6),0) ###.## L(I,7)
+   END DO I
+   DIS;DIS
+   }
+
+IF %DEFINED(OUTM);  SET OUTM 1 N1 = M
+
+CLE A B M E SMOOTH
+END PROC LIFETABLEPRINT

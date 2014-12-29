@@ -1,0 +1,78 @@
+/*
+     VECICLUSTER                                            March/13 - R0: March/13
+*/
+COM [STRING] %%VECICLUSTER =                  '%%VECICLUSTER - Version R0: March/13'
+
+PROC  VECICLUSTER  S1  S2   CLUSTER
+TYPE  SERIE        S1  S2  *CLUSTER
+*
+LOCAL INTEGER  CN I I1 I2  N
+LOCAL SERIES   P1 D C1 C2  CLST
+*
+OPTION SWITCH  PRINT   1
+
+*   Comprobamos si las dos series tienen las mismas observaciones
+INQUIRE(SERIES=S1) * I1
+INQUIRE(SERIES=S2) * I2
+IF I1!=I2; HALT 'Both series should have the same number of observations'
+COM N = I1
+
+*   Comprobamos que todos los elementos del código en S2 tienen su correspodencia en S1:
+*   Si A es vecino de B, entonces B debe ser vecino de A
+DO I = 1,N
+   IF %NUMVALUE(S1,S2(I))==0
+      HALT 'Element '+I+', in the second series does not have a correspondence in the first series'
+END DO I2
+
+SET P1   1 N = 0
+SET C1   1 N = 0
+SET C2   1 N = 0
+SET CLST 1 N = 0
+COM CN = 0
+CLE D
+INFOBOX(ACTION=DEFINE)
+{
+WHILE %NZEROS(P1)>0
+   {
+   INFOBOX 'Calculating cluster: '+CN+1
+
+   *   Initialization of one cluster
+   COM I = 1, CN = CN + 1
+   WHILE P1(I)>0
+      COM I = I + 1
+   SET C1 1 N = S1==S1(I)
+   SET P1 1 N = %IF(C1==1,S1,P1)
+
+   *   Adding neighbours until none is added
+   COM I1 = 1, I2 = 2
+   WHILE I1<I2
+      {
+      SAM(SMPL=C1) S2 1 N D 1
+      SET C2 1 N = C1
+      DO I = 1,%NOBS
+         IF %NUMVALUE(P1,D(I))==0
+            {
+            SET C1 1 N = (C1==1).OR.(S1==D(I))
+            SET P1 1 N = %IF(C1==1,S1,P1)
+            }
+      END DO I
+      CLE D
+      COM I1 = %NONES(C2), I2 = %NONES(C1)
+      }
+   SET CLST 1 N = %IF(C1==1,CN,CLST)
+   SET C1   1 N = 0
+   }
+}
+INFOBOX(ACTION=REMOVE)
+
+IF PRINT
+   {
+   DIS 'Cluster ID from contiguity table for series' %L(S1) 'and' %L(S2)
+   DIS 'Number of clusters' #### %MAXVALUE(CLST)
+   PRI 1 N CLST S1 S2
+   }
+
+IF %DEFINED(CLUSTER);  SET CLUSTER 1 N = CLST
+
+CLE P1 CLST C1 C2 D
+END PROC VECICLUSTER

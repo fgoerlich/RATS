@@ -1,0 +1,90 @@
+/*
+     GINI INEQUALITY INDEX DECOMPOSITION          November/05 - R2: October/2014
+*/
+COM [STRING] %%GINIDECPG =                 'GINIDECPG - Version R2: October/2014'
+
+PROC   GINIDECPG  Y  A  TBEGP  TENDP   OUTEXT   OUTINT   OUTOVL
+TYPE   SER        Y  A
+TYPE   INT              TBEGP  TENDP
+TYPE   REAL                           *OUTEXT  *OUTINT  *OUTOVL
+*
+LOCAL  VEC[LAB]  GROUP
+LOCAL  INTEGER   TBEG  TEND  I  N  NG
+LOCAL  SERIES    S  W  SMPL  B  SM TY TP P
+LOCAL  VEC[SER]  TH
+LOCAL  REAL      TG TE TI
+LOCAL  STRING    STR
+*
+OPTION SWITCH    PRINT    1
+OPTION SWITCH    NEGATIVE 0
+OPTION SERIES    WEIGHT
+OPTION SERIES    SMPLL
+OPTION VEC[LAB]  GROUPL
+
+INQUIRE(REG) TBEG>>TBEGP TEND>>TENDP
+# Y A
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(Y),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(Y)
+
+IF %DEFINED(WEIGHT)
+   SET P TBEG TEND = WEIGHT
+ELSE
+   SET P TBEG TEND = 1
+
+SAM(SMPL=SMPL) Y  TBEG TEND S 1
+SAM(SMPL=SMPL) P  TBEG TEND W 1
+SAM(SMPL=SMPL) A  TBEG TEND B 1
+INQ(SER=S) *   N
+
+SET                            TY 1 N = S*W
+@S%(NOPRINT,NEGATIVE=NEGATIVE) TY 1 N   TY
+@S%(NOPRINT)                   W  1 N   TP
+COM NG = FIX(%MAXVALUE(B))
+DIM GROUP(NG) TH(5)
+IF %DEFINED(GROUPL)
+   COM GROUP    =  GROUPL
+ELSE
+   EWI GROUP(I) = %CONCAT('Sub-Group_',%STRING(I))
+
+*   Indexes
+DO I=1,5
+   SET TH(I) 1 NG = %NA
+END DO I
+DO I=1,NG
+   CLE SM
+   SET SM 1 N  = %IF(FIX(B)==I,1,0)
+   @GINI(NOPRINT,NOLPRINT,NOGRAPH,SMPL=SM,WEI=W) S 1 N TH(3)(I)
+   COM TH(1)(I) = %MEAN, TH(2)(I) = %DOT(SM,W), TH(5)(I) = FLOAT(%NOBS), TH(4)(I) = %DOT(SM,TP)*%DOT(SM,TY)
+END DO I
+COM TG = %GINI(S,W), TE = %GINI(TH(1),TH(2)), TI = %DOT(TH(4),TH(3))
+
+IF PRINT==1
+   {
+   DIS(STORE=STR) 'Gini Inequality Index decomposition by population subgroups on Series' %L(Y)
+   IF %DEFINED(WEIGHT)
+      DIS(STORE=STR) STR+' weighted by' %L(WEIGHT)
+   DIS  STR
+   DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS
+   DIS '   Global Index            External Index (%)          Internal Index (%)          Overlapping Index (%)'
+   DIS     TG  @+9 TE '(' @-1 ##.## 100*TE/TG @-1 '%)' @+6 * TI '(' @-1 ##.## 100*TI/TG @-1 '%)' @+9 * TG-TE-TI '(' @-1 ##.## 100*(TG-TE-TI)/TG @-1 '%)'
+   DIS
+   DIS 'Decomposition of the Internal Index - Agreggated groups =' NG
+   DIS '                            Internal      Weight         Value'
+   DIS '   Group    Observations     Index     in the index   in the index' 
+   DO I = 1,NG
+      DIS  GROUP(I) @18 FIX(TH(5)(I)) @23 TH(3)(I) TH(4)(I) TH(4)(I)*TH(3)(I)
+   END DO I
+   DIS 'Sum of Weights' ###.## %SUM(TH(4))*100 @-1 '%'
+   DIS;DIS
+   }
+
+IF %DEFINED(OUTEXT);   COM OUTEXT = TE
+IF %DEFINED(OUTINT);   COM OUTINT = TI
+IF %DEFINED(OUTOVL);   COM OUTOVL = TG-TE-TI
+
+CLE S  W  SMPL  B  SM  TY  TP  P  TH
+END PROC GINIDECPG

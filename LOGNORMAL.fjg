@@ -1,0 +1,93 @@
+/*
+     LOGNORMAL STATISTICS, PARAMETER ESTIMATION & TESTS   July/07 - R2: December/08
+*/
+COM [STRING] %%LOGNORMAL =                     'LOGNORMAL - Version R2: December/08'
+
+PROC  LOGNORMAL  SERIE  TBEGP  TENDP   OUTX   OUTY
+TYPE  SER        SERIE                *OUTX  *OUTY
+TYPE  INT               TBEGP  TENDP
+*
+LOCAL INT    TBEG   TEND    NV N
+LOCAL SER    S LS X Y ZEROS SMPL
+LOCAL VEC    MLE
+LOCAL REAL   MA
+*
+OPTION SWITCH  PRINT    1
+OPTION SWITCH  GRAPH    1
+OPTION SERIES  SMPLL
+OPTION REAL    MAX
+OPTION INTEGER GRID     1000
+
+INQUIRE(SERIES=SERIE) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL<>0.AND.%VALID(LOG(SERIE)),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(LOG(SERIE))
+
+SAM(SMPL=SMPL) SERIE TBEG TEND S 1
+LOG S / LS
+LABEL S       LS
+#  %L(SERIE) 'Log('+%L(SERIE)+')'
+
+*   Globals
+COM %%LNMEAN = %%LNMEDIAN = %%LNMODE = %%LNVARIANCE = %%LNCV = %%LNGINI = %NA
+
+COM   MLE    = %LOGNORMALMLE(S)
+COM %%LNMEAN = %LOGNORMALMEAN(MLE(1),MLE(2)), %%LNMEDIAN   = %LOGNORMALMEDIAN(MLE(1)),       $
+    %%LNMODE = %LOGNORMALMODE(MLE(1),MLE(2)), %%LNVARIANCE = %LOGNORMALVAR(MLE(1),MLE(2)),   $
+    %%LNCV   = %LOGNORMALCV(MLE(2)),          %%LNGINI     = %LOGNORMALGINI(MLE(2))
+
+IF PRINT
+   {
+   DIS 'Lognormal Statistics, Parameter estimation and Test on Series' %L(SERIE)
+   DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS
+   DIS 'Sample Statistics'
+   DIS '*****************'
+   }
+STA(PRINT=PRINT,MOMENTS,FRACTILES)  S
+COM MA = %IF(%DEFINED(MAX),MAX,%MAXIMUM)
+
+SET ZEROS 1 %NOBS = 1
+IF PRINT
+   DIS 'Gini Index' @18 %GINI(S,ZEROS)
+
+STA(PRINT=PRINT,MOMENTS,FRACTILES) LS
+
+IF PRINT
+   {
+   DIS 'Jarque-Bera statistic is a lognormality test based on Skewness and Kurtosis'
+   DIS
+   DIS 'Population Statistics for a lognormal distribution'
+   DIS '**************************************************'
+   DIS
+   DIS 'From a normal distribution with     MEAN' MLE(1)
+   DIS '                            and VARIANCE' MLE(2)
+   DIS
+   DIS 'Mean'    @18 %%LNMEAN    @38 'Variance'        @53 %%LNVARIANCE
+   DIS 'Median'  @18 %%LNMEDIAN  @38 'Coef. Variation' @53 %%LNCV
+   DIS 'Mode'    @18 %%LNMODE    @38 'Gini'            @53 %%LNGINI
+   DIS;DIS
+   }
+
+*   Preparing for Graphics
+COM                NV = FIX(%IF(GRID<=1,%NOBS,GRID)), N = %NOBS-%NGT(S,MA)
+ORDER         S
+SET           X  1 NV = %IF(GRID<=1,S,(MA/(NV-1))*(T-1))
+SET(FIRST=0.) Y  1 NV = %LOGNORMALDENSITY(X(T),MLE(1),MLE(2))
+
+IF GRAPH
+   {
+   SET ZEROS 1 NV = 0
+   SCA(HMIN=0,HMAX=MA,VMIN=0,STYLE=LINES,HLABEL='Values',HEADER='Log Normal Density',  $
+       SUBHEAD=%L(SERIE),OVERLAY=DOTS,OVSAME,OMIN=0)                                   2
+   # X Y     1  NV    1
+   # S ZEROS 1  N
+   }
+
+IF %DEFINED(OUTX);  SET OUTX 1 NV = X
+IF %DEFINED(OUTY);  SET OUTY 1 NV = Y
+
+CLE S  LS X Y ZEROS SMPL
+END PROC LOGNORMAL

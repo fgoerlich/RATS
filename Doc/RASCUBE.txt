@@ -1,0 +1,72 @@
+/*
+   RASCUBE: Ajuste triproporcional de filas, columnas y profundidad de un cubo.
+
+   Escrito por Paco Goerlich.                   Version: November/2009 (R1)
+   Version RATS: WinRATS 7.20
+
+   Sintaxis
+
+    @RASCUBE A B C D E
+
+     A = Cubo   MxNxK a ajustar.
+     B = Matriz MxK   de suma de filas       a las que ajustar.
+     C = Matriz KxN   de suma de columnas    a las que ajustar.
+     D = Matriz MxN   de suma de profundidad a las que ajustar.
+     E = Cubo   MxNxK ajustado.
+
+         M = filas       (X-axis)
+	 N = columnas    (Y-axis)
+	 K = profundidad (Z-axis)
+
+     Opciones:
+
+   PRINT/[NOPRINT] Imprime el cubo E.
+   CVCRIT     = Criterio de convergencia en el ajuste [1E-10].
+   ITERATIONS = Numero maximo de iteraciones a efectuar [100].
+   INTEGER/[NOINTEGER], si el ajuste es a enteros.
+
+
+     Variables globales:
+
+    %%RASCUBE   = STRING, Version actual del procedimiento.
+
+
+     Variables definidas por RASCUBE:
+
+    %ITERS       Iterations taken.
+    %CONVERGED   = 1 o 0. Set to 1 if the process converged, 0 if not.
+    %CVCRIT      Final convergence criterion (REAL).
+
+******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   El procedimiento es la extension a cubos rectangulares de RAS para matrices.
+
+   Criterio de convergencia: Maxima discrepancia entre la suma de filas, 
+                             columnas y profundidad de E y los elementos de
+			     B, C y D respectivamente debe ser menor que CVCRIT.
+                             Implementado a traves de %TESTDIFF().
+
+   Aritmetica de punto flotante: Dado que muchos numeros decimales no tienen
+                                 una representacion exacta en base binaria,
+                                 es recomendable que las matrices B, C y D sean
+                                 de enteros para evitar problemas de que la
+                                 suma de filas y columnas no sea identica por
+                                 problemas de precision numerica.
+                                 Un truco habitual es escalar los vectores y
+                                 matrices de forma adecuada.
+                                 Otra es rebajar el criterio de convergencia.
+
+******************************************************************************
+
+   REVISIONES
+
+   R1: Noviembre/2009
+       Correccion de un bug al comprobar que las sumas de elementos de las
+       matrices a ajustar es la misma.
+       Se rebajo el criterio de convergencia a 1e-10.
+       Se añade informacion adicional cuando la rutina aborta por el hecho
+       de que el cubo y/o las matrices no son consistentes.
+   
+*/

@@ -1,0 +1,191 @@
+*   This file contains Rats FUNCTIONs for various POVERTY measures
+*   WinRATS 8.10
+*   Paco Goerlich  27/4/2012
+
+*   Note: The lenght of the series is for the whole population with 0´s for the
+*         non-poor when needed.
+
+********************************************************************************
+
+*   %POVERTYLINE - Relative poverty line as a proportion of the mean/median
+*                  S==0 - Mean
+*                  S==1 - Median - K = 1 Weighted / K = 0 Unweighted
+*                  Note: For the median we use internal Rats functions.
+*                        %FRACTILES()  for nonweighted data (interpolated), and
+*                        %WFRACTILES() for    weighted data (no interpolated)
+
+FUNCTION   %POVERTYLINE  S  X  P  A  K
+TYPE REAL  %POVERTYLINE           A
+TYPE INTE                S           K
+TYPE SER                    X  P
+
+IF      (.NOT.(S==0.OR.S==1)).OR.(A<=0);   COM %POVERTYLINE = %NA
+ELSE IF S==0                           ;   COM %POVERTYLINE = A*%M(X,P)
+ELSE IF S==1.AND.K==0                  ;   COM %POVERTYLINE = A* %FRACTILES(X,  ||.5||)(1)
+ELSE IF S==1.AND.K==1                  ;   COM %POVERTYLINE = A*%WFRACTILES(X,P,||.5||)(1)
+ELSE                                   ;   COM %POVERTYLINE = %NA
+
+END %POVERTYLINE
+
+********************************************************************************
+
+*   %HEADCOUNT - Head Count ratio
+*                This requires a series for the whole population with 0 for
+*                non-poor people and =! 0 for poor people
+
+FUNCTION   %HEADCOUNT  X  P
+TYPE REAL  %HEADCOUNT
+TYPE SER               X  P
+
+LOCAL SER Y
+
+SET(SMPL=%VALID(X))   Y = X<>0
+COM %HEADCOUNT = %DOT(Y,P)/%SUM(P)
+
+CLE Y
+END %HEADCOUNT
+
+********************************************************************************
+
+*   %IG - Income Gap ratio from the mean of the poor and the poverty line
+
+FUNCTION   %IG  M  Z
+TYPE REAL  %IG  M  Z
+
+COM %IG = 1 - M/Z
+
+END %IG
+
+********************************************************************************
+
+*   %INCOMEGAP - Income Gap ratio
+*                It is assumed that the lenght of the series is for the whole
+*                population, but income (X) has 0´s for the non-poor people
+
+FUNCTION   %INCOMEGAP  X  P  Z
+TYPE REAL  %INCOMEGAP        Z
+TYPE SER               X  P
+
+STA(NOPRINT,SMPL=X,WEIGHT=P) X
+COM %INCOMEGAP = %IG(%MEAN,Z)
+
+END %INCOMEGAP
+
+********************************************************************************
+
+*   %POVERTYGAP - Poverty Gap ratio
+
+FUNCTION   %POVERTYGAP  X  P  Z
+TYPE REAL  %POVERTYGAP        Z
+TYPE SER                X  P
+
+COM %POVERTYGAP = %HEADCOUNT(X,P)*%INCOMEGAP(X,P,Z)
+
+END %POVERTYGAP
+
+********************************************************************************
+
+*   %FGT - Foster, Greer & Thorbecke poverty index
+*          It is assumed that the lenght of the series is for the whole population.
+*          The income series (X) can be the income for the whole population, or
+*          for the poor people with 0´s for the non-poor people
+
+FUNCTION   %FGT  X  P  Z  A
+TYPE REAL  %FGT        Z  A
+TYPE SER         X  P
+
+LOCAL SER G
+LOCAL INT N
+
+INQ(SER=X) * N
+
+IF      A==0; SET G 1 N = %IF(X==0,0,    X<Z)
+ELSE IF A==1; SET G 1 N = %IF(X==0,0,%IF(X<Z,X,0))
+ELSE        ; SET G 1 N = %IF(X==0,0,%MAX((Z-X)/Z,0))
+
+IF      A<0 ;   COM %FGT = %NA
+ELSE IF A==0;   COM %FGT = %HEADCOUNT(G,P)
+ELSE IF A==1;   COM %FGT = %POVERTYGAP(G,P,Z)
+ELSE        ;   COM %FGT = %MPOWER(G,P,A)
+
+CLE G
+END %FGT
+
+********************************************************************************
+
+*   %TIP - Tip curve (ordinates)
+*          Y - Normalized, ordered and weighted GAP
+
+FUNCTION  %TIP  Y  Q
+TYPE VEC  %TIP     Q
+TYPE SER        Y
+
+LOCA SER  Z  P
+LOCA INT  I  N  K
+
+INQ(SER=Y) * N
+
+DIM %TIP(%ROWS(Q))
+
+ACC Y 1 N Z 1
+SET P 1 N = T/FLOAT(N)
+
+DO I = 1,%ROWS(Q)
+   IF      Q(I)<0.OR.Q(I)>1;   COM %TIP(I) = %NA
+   ELSE IF Q(I)==0;            COM %TIP(I) = 0
+   ELSE IF Q(I)==1;            COM %TIP(I) = 1
+   ELSE
+      COM K = FIX(Q(I)*N), %TIP(I) = %IF(K==0,%GPLININT(0,0,P(1),Z(1),Q(I)),%GPLININT(P(K),Z(K),P(K+1),Z(K+1),Q(I)))
+END DO I
+
+CLE  Z  P
+END %TIP
+
+********************************************************************************
+
+*   %WTIP - Tip curve (ordinates) from weigthed data.
+*           Y - Normalized, ordered and weighted GAP
+*           W - Ordered weights
+
+FUNCTION  %WTIP  Y  W  Q
+TYPE VEC  %WTIP        Q
+TYPE SER         Y  W
+
+LOCA SER  Z  P
+LOCA INT  I  N  K
+
+INQ(SER=Y) * N
+
+DIM %WTIP(%ROWS(Q))
+
+ACC        Y 1 N Z 1
+ACC(SCALE) W 1 N P 1
+
+DO I = 1,%ROWS(Q)
+   IF      Q(I)<0.OR.Q(I)>1;   COM %WTIP(I) = %NA
+   ELSE IF Q(I)==0;            COM %WTIP(I) = 0
+   ELSE IF Q(I)==1;            COM %WTIP(I) = 1
+   ELSE
+      {
+      COM K = 1
+      WHILE Q(I)>P(K)
+         COM K = K + 1
+      COM %WTIP(I) = %IF(K==1,%GPLININT(0,0,P(1),Z(1),Q(I)),%GPLININT(P(K-1),Z(K-1),P(K),Z(K),Q(I)))
+      }            
+END DO I
+
+CLE  Z  P
+END %WTIP
+
+********************************************************************************
+
+*   List of functions
+
+*   %POVERTYLINE - Relative poverty line as a proportion of the mean/median
+*   %HEADCOUNT   - Head Count ratio
+*   %IG          - Income Gap ratio from the mean of the poor and the poverty line
+*   %INCOMEGAP   - Income Gap ratio
+*   %POVERTYGAP  - Poverty Gap ratio
+*   %FGT         - Foster, Greer & Thorbecke poverty index
+*   %TIP         - Tip curve (ordinates)
+*   %WTIP        - Tip curve (ordinates) from weigthed data.

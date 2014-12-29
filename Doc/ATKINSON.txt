@@ -1,0 +1,64 @@
+/*
+     ATKINSON: Indice de desigualdad de Atkinson (1970)
+
+     Escrito por Paco Goerlich.                    Version: Marzo/2007 (R4)
+     Version RATS: WinRATS 6.30
+
+     Sintaxis
+
+      @ATKINSON R COMIENZO FIN INDICE INDICESE
+
+       R        = Serie de rentas per capita.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       INDICE   = Indice de Atkinson.
+       INDICESE = Error Standar del Indice.
+            
+
+       Opciones:
+
+     [PRINT]/NOPRINT controla la impresion del indice.
+     EQUALITY/[NOEQUALITY], imprime el indice de igualdad, 1-ATKINSON
+     EXTENDED/[NOEXTENDED] si se utiliza la familia estandar o extendida.
+     SE/[NOSE] si se calcula el Error Estandar.
+     REPLICAS numero de replicas en el Error Estandar [100]
+     EPSILON parametro para el calculo del indice. Indica el grado constante
+             de aversion relativa a la desigualdad y debe ser no negativo para
+             la familia estandar, aunque puede tomar cualquier valor en
+             la familia extendida. [1]
+     SMPL    = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+               de los calculos (Ver RATS 5.2 UG) [no definido]
+     WEIGHT  = si el indice deben ponderarse [no definido].
+
+
+       Variables globales:
+
+       %%ATKINSON = STRING, Version actual del procedimiento
+
+       %MEAN = Sample mean (REAL)
+       %NOBS = Number of observations (INTEGER)
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   J. M. Esteban (1994) "La desigualdad interregional en Europa y en Espa¤a:
+   Descripcion y analisis", Capitulo I. IAE.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Mayo/2000  - Introduccion de valores medios e indice de bienestar.
+
+   R2: Julio/2004 - Traducion a WinRATS 6.00 y definicion en terminos de
+                    rentas per capita y ponderaciones.
+
+   R3: Marzo/2006 - Incorporacion de la familia extendida, opcion para
+                    imprimir el indice de igualdad. Correccion de un bug
+		    por la posibilidad de problemas entre SMPL y WEIGHT.
+		    Introduccion de BOOTSTRAP simple para errores standar.
+
+   R4: Marzo/2007 - BOOTSTRAP funcion especifica.
+
+*/

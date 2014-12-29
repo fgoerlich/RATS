@@ -1,0 +1,78 @@
+/*
+   EMPIRICAL CUMULATIVE DISTRIBUTION FUNCTION     January/00 - R3: April/08
+*/
+COM [STRING] %%CDF =                            'CDF - Version R3: April/08'
+
+PROC  CDF      SERIE  TBEGP  TENDP   X   Y  
+TYPE  SERIES   SERIE                *X  *Y
+*
+LOCAL SERIES   SMPL S  W  XZ YZ
+LOCAL INTEGER  TBEG TEND  I
+LOCAL STR      HEAD
+*
+OPTION SWITCH  PRINT      1
+OPTION SWITCH  GRAPH      1
+OPTION SWITCH  INTERPOL   1
+OPTION SERIES  WEIGHT
+OPTION SERIES  SMPLL
+
+*   Globals
+COM %MEAN = %VARIANCE = %MINIMUM = %MAXIMUM = %MEDIAN = %NA, %NOBS = 0
+COM %FRACT01 = %FRACT05 = %FRACT10 = %FRACT25 = %FRACT75 = %FRACT90 = %FRACT95 = %FRACT99 = %NA
+
+INQUIRE(SERIES=SERIE) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(SERIE),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(SERIE)
+
+IF %DEFINED(WEIGHT)
+   SET W TBEG TEND = WEIGHT
+ELSE
+   SET W TBEG TEND = 1.
+
+SAM(SMPL=SMPL) SERIE TBEG TEND S 1
+SAM(SMPL=SMPL) W     TBEG TEND W 1
+INQUIRE(SER=S) * %NOBS
+ORDER       S  1 %NOBS W
+
+COM %MEAN = %M(S,W), %VARIANCE = %V(S,W), %MINIMUM = S(1), %MAXIMUM = S(%NOBS), I = INTERPOL
+IF %DEFINED(WEIGHT)
+   COM %FRACT01 = %FW(S,W,.01,I), %FRACT05 = %FW(S,W,.05,I), %FRACT10 = %FW(S,W,.1,I), %FRACT25 = %FW(S,W,.25,I), $
+       %FRACT99 = %FW(S,W,.99,I), %FRACT95 = %FW(S,W,.95,I), %FRACT90 = %FW(S,W,.9,I), %FRACT75 = %FW(S,W,.75,I), %MEDIAN = %FW(S,W,.5,I)
+ELSE
+   COM %FRACT01 = %F(S,.01,I),    %FRACT05 = %F(S,.05,I),    %FRACT10 = %F(S,.1,I),    %FRACT25 = %F(S,.25,I),    $
+       %FRACT99 = %F(S,.99,I),    %FRACT95 = %F(S,.95,I),    %FRACT90 = %F(S,.9,I),    %FRACT75 = %F(S,.75,I),    %MEDIAN = %F(S,.5,I)
+ACC(SCALE) W 1 %NOBS
+
+IF PRINT
+   {
+   DIS 'ECDF for series' %L(SERIE) %STRIF(%DEFINED(WEIGHT),'weighted by '+%L(WEIGHT),'')
+   DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS 'Sample mean    '      %MEAN      @41 'Variance           '          %VARIANCE
+   DIS 'Standard Error ' SQRT(%VARIANCE) @41 'Coeff. of Variation' ABS(SQRT(%VARIANCE)/%MEAN)
+   DIS
+   DIS 'Minimum'      %MINIMUM        @41 'Maximum'             %MAXIMUM
+   DIS '01-%ile'      %FRACT01        @41 '99-%ile'             %FRACT99
+   DIS '05-%ile'      %FRACT05        @41 '95-%ile'             %FRACT95
+   DIS '10-%ile'      %FRACT10        @41 '90-%ile'             %FRACT90
+   DIS '25-%ile'      %FRACT25        @41 '75-%ile'             %FRACT75
+   DIS 'Median '      %MEDIAN
+   DIS
+   }
+
+IF GRAPH
+   {
+   SET XZ 1 100 = S(1) + (S(%NOBS)-S(1))*(T-1)/99
+   SET YZ 1 100 = %CDF((XZ-%MEAN)/SQRT(%VARIANCE))
+   DIS(STORE=HEAD) %STRIF(%DEFINED(WEIGHT),%L(WEIGHT)+' weighted','') 'Empirical CDF'
+   SCA(HEAD=HEAD,SUB=%CONCAT(%L(SERIE),' vs Normal'),VMAX=1,VMIN=0,VTIC=10,EXT=HOR,STYLE=POLY,OVE=LINE,OVS) 2
+   # S  W  1 %NOBS 5
+   # XZ YZ 1 100   1
+   }
+
+IF %DEFINED(X); SET X 1 %NOBS = S
+IF %DEFINED(Y); SET Y 1 %NOBS = W
+CLE SMPL S  W  XZ YZ
+END PROC CDF

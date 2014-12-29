@@ -1,0 +1,43 @@
+/*
+   STOV convierte una serie en un vector.
+
+   Escrito por:  Paco Goerlich.                      Versiàn: Septiembre/2004 (R2)
+   Versiàn RATS: WinRATS 6.00
+
+   Sintaxis
+
+    @STOV(opciones) S V COMIENZO FIN
+    
+     S        = Serie de interes.
+     V        = Vector.
+     COMIENZO = Primera observacion a considerar.
+     FIN      = Ultima  observacion a considerar.
+
+     Opciones:
+
+   SMPL = serie con ceros en las observaciones que se desean eliminar en la
+          formacion del vector, los %NA se eliminan automaticamente.
+
+
+     Variables globales:
+
+     %%STOV = STRING, Versi¢n actual del procedimiento.
+
+******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Lo mismo que MAKE, pero para vectores.
+   El procedimiento es necesario porque si utilizamos la instruccion MAKE
+   RATS genera una matriz RECTANGULAR de una columna que en ciertas ocasiones
+   no puede manejarse como un VECTOR.
+
+******************************************************************************
+
+   REVISIONES
+
+   R1: Marzo/2004 - Actualizacion a WinRATS 5.11
+
+   R2: Septiembre/2004 - Traduccion a WinRATS 6.00 y correccion de un bug.
+
+*/

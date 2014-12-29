@@ -1,0 +1,39 @@
+/*
+     CALCULATING GROWH RATES                    January/99 -  R1: June/02
+*/
+COM [STRING]                         %%TASA = 'TASA - Version R1: June/02'
+
+PROC  TASA   S1  S2  S3  TBEGP  TENDP
+TYPE  SER    S1  S2 *S3
+*
+LOCAL  INTEGER  TBEG  TEND
+*
+OPTION INTEGER  SPAN     1
+OPTION SWITCH   PRINT    0
+OPTION SWITCH   LOGS     0
+OPTION SWITCH   AVERAGE  0
+ 
+IF SPAN.LE.0
+   {
+   DIS %%TASA; DIS 'Sintax error: SPAN should be a positive integer'
+   HALT  TASA
+   }
+INQUIRE(REGRESSORLIST) TBEG>>TBEGP TEND>>TENDP
+# S1 S2
+ 
+IF LOGS.EQ.0
+   {
+   IF AVERAGE.EQ.0
+      SET  S3  TBEG TEND = EXP( (LOG(S2) - LOG(S1))/SPAN ) - 1.
+   ELSE
+      SET  S3  TBEG TEND = ( (S2 - S1)/S1 )/SPAN
+   }
+ELSE
+   SET     S3  TBEG TEND = ( LOG(S2) - LOG(S1) )/SPAN
+ 
+IF PRINT.EQ.1
+   PRINT TBEG TEND S1 S2 S3
+
+END PROC TASA
+
+

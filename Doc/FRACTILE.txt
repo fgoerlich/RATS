@@ -1,0 +1,57 @@
+/*
+     FRACTILE calcula quantiles de una SERIE.
+
+     Escrito por:  Paco Goerlich.                   Versi¢n: Marzo/2007 (R1)
+     Versi¢n RATS: WinRATS 6.30
+
+     Sintaxis
+
+      @FRACTILE(opciones) S COMIENZO FIN F
+
+       S        = serie sobre la que calcular el quantil
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       F        = vector (opcional) Qx1 que contiene los quantiles,
+                  siendo Q el numero de quantiles calculados.
+
+       Opciones:
+
+     [PRINT]/NOPRINT controla la impresion de los quantiles o no.
+     SMPL    = Serie con valores cero entre COMIENZO y FIN que desean
+               eliminarse de los calculos (Ver RATS 5.2 UG) [no definido]
+     QUANTIL = vector con los quantiles a calcular.
+               Por defecto se calculan los siguientes quantiles:
+                       T < 20   -  25%-quantiles (quartiles)
+                 20 <= T < 50   -  10%-quantiles (deciles)
+                 50 <= T < 200  -   5%-quantiles (veintiles)
+                200 <= T        -   1%-quantiles (percentiles)
+               Siempre se a¤ade el quantil 0%-Minimo y 100%-Maximo.
+     WEIGHT  = si los quantiles deben ponderarse [no definido].
+     SE/[NOSE] si se calculan errores estandard.
+     REPLICAS numero de replicas en los errores estandard [100].
+
+     Variables globales:
+
+      %%FRACTILE = STRING, Version actual del procedimiento
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   FRACTILE no realiza calculos, simplemente utiliza las funciones internas de
+   WinRATS %FRACTILES((A,F), sin ponderaciones, y %WFRACTILES(A,W,F), con
+   ponderaciones.
+   Por tanto sin ponderaciones:    INTERPOLA, y
+             con ponderaciones: NO INTERPOLA.
+   La ventaja es la utilizacion de la opcion SMPL.
+
+   No tiene nada que ver con un procedimiento anterior del mismo nombre.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Marzo/2007 - Introducción de Bootstrap Standard Errors.
+
+*/

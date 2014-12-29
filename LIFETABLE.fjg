@@ -1,0 +1,263 @@
+/*
+   LIFETABLE                                       June/04 - R8: May/10
+*/
+COM [STRING]              %%LIFETABLE = 'LIFETABLE - Version R8: May/10'
+
+*****************************************************************************************************************************
+/*
+   Complete LIFETABLE - NOT FOR GENERAL USE        June/04 - R3: June/05
+*/                      
+PROC   LIFETACOM  M  F  Q  L  D  LL  TT  EV  R  A0  V0  A1  I  WEIGHT  S  B  DEATH
+TYPE   SERIES     M  F *Q *L *D *LL *TT *EV
+TYPE   REAL                                  R  A0      A1
+TYPE   RECT                                         V0
+TYPE   INTEGER                                              I  WEIGHT  S  B  DEATH
+
+LOCAL  SERIES     A
+LOCAL  INTEGER    N
+LOCAL  VECT       G
+LOCAL  REAL       SLL
+
+INQ(SER=M) * N
+
+*   Smoothing the death rates at older ages - HMD adjustment with INE or HMD data
+IF N!=86.AND.DEATH==3
+   {
+   COM N = 111, G = %DEATHHMD(M,F,WEIGHT)
+   SET M 1 N = %IF(T.LE.80,M,G(T-80))
+   }
+
+SET A  1 N = %IF(T==N,1/M,0.5)
+
+*   Very young ages
+IF B!=1
+   COM A(1) = %IF(%VALID(A0),A0,%IF(B==2,%BIRTHINE(M(1)),%IF(%VALID(V0(1,1)).AND.S==1,%BIRTHHMDW(V0),%BIRTHHMD(M(1),S)))), $
+       A(2) = %IF(%VALID(A1),A1,A(2))
+
+SET Q  1 N = %IF(T==N,1,M/(1+(1-A)*M))
+
+*   Smoothing the death probabilities at older ages - INE adjustment with INE or HMD data
+IF N!=86.AND.DEATH==2
+   {
+   COM N = 111, G = %DEATHINE(Q)
+   SET A 1 N = %IF(T.LE.2 ,A,0.5)
+   SET Q 1 N = %IF(T.LE.91,Q,%IF(T==N,1,G(T-91)))
+   }
+
+*  Life table calculations from A & Q
+SET(FIRST=R)        L  1 N = %IF(I==1,%ROUND(L{1}*(1-Q{1}),0),L{1}*(1-Q{1}))
+SET                 D  1 N = %IF(T==N,L  ,L-L{-1})
+SET                 LL 1 N = %IF(T==N,L*A,L-(1-A)*D)
+COM SLL = %SUM(LL)
+SET(FIRST=SLL)      TT 1 N = %IF(T==N,LL ,TT{1}-LL{1})
+SET                 EV 1 N = %IF(L==0,0  ,TT/L)
+
+CLE A
+END PROC LIFETACOM
+
+*****************************************************************************************************************************
+/*
+   Abriged LIFETABLE - NOT FOR GENERAL USE        June/04 - R3: June/05
+*/                      
+PROC   LIFETAABR  M   Q  L  D  LL  TT  EV  R  A0  V0  A14  V14  I  S  B  LENGTH
+TYPE   SERIES     M  *Q *L *D *LL *TT *EV
+TYPE   REAL                                R  A0      A14
+TYPE   RECT                                       V0       V14
+TYPE   INTEGER                                                  I  S  B  LENGTH
+
+LOCAL  SERIES     A  NN
+LOCAL  INTEGER    N
+LOCAL  VECT       G
+LOCAL  REAL       SLL
+
+INQ(SER=M) * N
+
+SET NN 1 N = %IF(T==1,1  ,%IF(T==2,4,5))
+SET A  1 N = %IF(T==N,1/M,NN/2)
+
+*  Average life during the interval
+IF N==19.AND.LENGTH==2
+   {
+   COM G = %KEYFTIZ()
+   SET A  1 N = %IF(T.LE.2.OR.T==N,A,G(T-2))
+   }
+
+*   Very young ages
+IF B!=1
+   {
+   COM A(1) = %IF(%VALID(A0), A0 ,%IF(B==2,%BIRTHINE(M(1)),%IF(%VALID(V0(1,1) ).AND.S==1,%BIRTHHMDW(  V0 ),%BIRTHHMD(  M(1),S))))
+   COM A(2) = %IF(%VALID(A14),A14,%IF(B==2,1.5            ,%IF(%VALID(V14(1,1)).AND.S==1,%BIRTHHMD14W(V14),%BIRTHHMD14(M(1),S))))
+   }
+
+SET Q  1 N = %IF(T==N,1,(NN*M)/(1+(NN-A)*M))
+
+*  Life table calculations from A, NN & Q
+SET(FIRST=R)        L  1 N = %IF(I==1,%ROUND(L{1}*(1-Q{1}),0),L{1}*(1-Q{1}))
+SET                 D  1 N = %IF(T==N,L  ,L-L{-1})
+SET                 LL 1 N = %IF(T==N,L*A,NN*L-(NN-A)*D)
+COM SLL = %SUM(LL)
+SET(FIRST=SLL)      TT 1 N = %IF(T==N,LL ,TT{1}-LL{1})
+SET                 EV 1 N = %IF(L==0,0  ,TT/L)
+
+CLE A NN
+END PROC LIFETAABR
+
+*****************************************************************************************************************************
+/*
+   Abriged Iterated LIFETABLE - NOT FOR GENERAL USE            June/05 - R2: April/08
+*/                      
+PROC   LIFEITABR  M   Q  L  D  LL  TT  EV  R  A0  V0  A14  V14  I  S  B  C  J
+TYPE   SERIES     M  *Q *L *D *LL *TT *EV
+TYPE   REAL                                R  A0      A14                C
+TYPE   RECT                                       V0       V14
+TYPE   INTEGER                                                  I  S  B     J
+
+LOCAL  SERIES     A  A1 NN
+LOCAL  INTEGER    N
+LOCAL  REAL       SLL
+
+*   Globals
+COM %ITERS = %CONVERGED = 0, %CVCRIT = %NA
+
+INQ(SER=M) * N
+
+SET NN 1 N = %IF(T==1,1  ,%IF(T==2,4,5))
+SET A  1 N = %IF(T==N,1/M,NN/2)
+
+*   Very young ages
+IF B!=1
+   {
+   COM A(1) = %IF(%VALID(A0), A0 ,%IF(B==2,%BIRTHINE(M(1)),%IF(%VALID(V0(1,1) ).AND.S==1,%BIRTHHMDW(  V0 ),%BIRTHHMD(  M(1),S))))
+   COM A(2) = %IF(%VALID(A14),A14,%IF(B==2,1.5            ,%IF(%VALID(V14(1,1)).AND.S==1,%BIRTHHMD14W(V14),%BIRTHHMD14(M(1),S))))
+   }
+
+*  Life table calculations from A, NN & Q.
+LOOP
+   SET                 Q  1 N = %IF(T==N,1,(NN*M)/(1+(NN-A)*M))
+   SET(FIRST=R)        L  1 N = %IF(I==1,%ROUND(L{1}*(1-Q{1}),0),L{1}*(1-Q{1}))
+   SET                 D  1 N = %IF(T==N,L  ,L-L{-1})
+   SET                 A1 1 N = %IF(T>3.AND.T<N.AND.D!=0,5*(D{-1}/24+D/2-D{1}/24)/D,A)
+   COM %ITERS = %ITERS + 1, %CVCRIT = %TESTDIFF(A1,A)
+
+   * Convergence criterio
+   IF %CVCRIT<C
+      {
+      DIS 'Convergence achieved at iteration' %ITERS
+      COM %CONVERGED = 1
+      BREAK
+      }
+
+   * Iteration limit
+   IF %ITERS==J
+      {
+      DIS 'Convergence NOT achieved after' %ITERS 'iterations'
+      RETURN
+      }
+
+   SET A 1 N = A1
+END LOOP
+
+SET                 Q  1 N = %IF(T==N,1,(NN*M)/(1+(NN-A)*M))
+SET(FIRST=R)        L  1 N = %IF(I==1,%ROUND(L{1}*(1-Q{1}),0),L{1}*(1-Q{1}))
+SET                 D  1 N = %IF(T==N,L  ,L-L{-1})
+SET                 LL 1 N = %IF(T==N,L*A,NN*L-(NN-A)*D)
+COM SLL = %SUM(LL)
+SET(FIRST=SLL)      TT 1 N = %IF(T==N,LL ,TT{1}-LL{1})
+SET                 EV 1 N = %IF(L==0,0  ,TT/L)
+
+CLE A A1 NN
+END PROC LIFEITABR
+
+*****************************************************************************************************************************
+
+PROC   LIFETABLE  P  F   OUTEV   OUTLT
+TYPE   SERIES     P  F  *OUTEV
+TYPE   RECT                     *OUTLT
+
+OPTION STRING     HEADERL
+OPTION SWITCH     PRINT    1
+OPTION SWITCH     INTEGER  0
+OPTION SWITCH     WEIGHT   1
+OPTION SWITCH     ITER     0
+OPTION SWITCH     SMOOTH   1
+OPTION INTEGER    RADIXL
+OPTION INTEGER    NITERATIONS 100
+OPTION REAL       A01L
+OPTION REAL       A12L
+OPTION REAL       A14L
+OPTION REAL       CVCRIT   1E-15
+OPTION RECT       V01L
+OPTION RECT       V14L
+OPTION CHOICE     SEX      1  BOTH  MALE  FEMALE
+OPTION CHOICE     BIRTH    3  NONE  INE   HMD
+OPTION CHOICE     DEATH    3  NONE  INE   HMD
+OPTION CHOICE     LENGTH   1  HALF  KEYFTIZ
+OPTION CHOICE     FINAL    5  65  70  75  80  85  90  95  100  105  110
+
+LOCAL  SERIES     M AGE Q L D LL TT EV
+LOCAL  STRING     HEADER   
+LOCAL  INTEGER    N N1 I
+LOCAL  REAL       RADIX  A0 A1 A14
+LOCAL  RECT       CLT    V0    V14
+
+*   Globals
+COM %%AGE = %%EVAGE = %%PV = %%PVPC = %NA
+
+IF %DEFINED(HEADERL)
+   COM HEADER = HEADERL
+COM RADIX = %IF(%DEFINED(RADIXL),FLOAT(RADIXL),100000)
+COM A0 = %IF(%DEFINED(A01L),A01L,%NA), A1 = %IF(%DEFINED(A12L),A12L,%NA), A14 = %IF(%DEFINED(A14L),A14L,%NA)
+DIM V0(2,2) V14(2,2)
+IF %DEFINED(V01L)
+   EWI V0(I,J)  = V01L(I,J)
+ELSE
+   EWI V0(I,J)  = %NA
+IF %DEFINED(V14L)
+   EWI V14(I,J) = V14L(I,J)
+ELSE
+   EWI V14(I,J) = %NA
+
+INQ(REG) * N
+# P F
+SET M    1 N = F/%MAX(0,P)
+
+IF      (N==19.OR.N==22.OR.N==24).AND.ITER==0
+   @LIFETAABR  M   Q L D LL TT EV RADIX A0 V0 A14 V14 INTEGER        SEX BIRTH LENGTH
+ELSE IF (N==19.OR.N==22.OR.N==24).AND.ITER==1
+   @LIFEITABR  M   Q L D LL TT EV RADIX A0 V0 A14 V14 INTEGER        SEX BIRTH CVCRIT NITERATIONS
+ELSE IF  N==86.OR.N==101.OR.N==111
+   @LIFETACOM  M F Q L D LL TT EV RADIX A0 V0 A1      INTEGER WEIGHT SEX BIRTH DEATH
+ELSE
+   {
+   DIS %%LIFETABLE; DIS 'Sintax Error: Final age should be at 85+, 100+ or 110+ years only'
+   HALT  LIFETABLE
+   }
+
+IF ITER==1.AND.%CONVERGED==0
+   RETURN
+
+INQ(SER=Q) * N1
+SET AGE    1 N1 = %IF(N.GE.86,T-1,%IF(T<=2,T-1,(T-2)*5))
+MAKE   CLT 1 N1
+# AGE  Q L D LL TT EV
+
+COM %%AGE = %MEANAGE(P), %%EVAGE = %LEATMEANAGE(%%AGE,EV), %%PV = %LIFEPOTENTIAL(P,EV), %%PVPC = %LIFEPOTENTIALPC(P,EV)
+
+IF PRINT
+   {
+   IF SMOOTH==1.AND.N>=101.AND.DEATH==3;      @LIFETABLEPRINT(HEADER=HEADER,PRINT,SMOOTH=M) P F CLT
+   ELSE;                                      @LIFETABLEPRINT(HEADER=HEADER,PRINT)          P F CLT
+   DIS 'Basic Demographic indicators  - Years'
+   DIS 'Mean Age'       @+15  ###.##  %%AGE   @+1 '- Life Expectacy' @+12       ##.## %%EVAGE
+   DIS 'Potential Life' @@>12 *.      %%PV    @+4 '- Potential Life per capita' ##.## %%PVPC
+   DIS;DIS
+   IF N>=86
+      @LIFETABLEC2A(HEADER='Life table data - Abridged',PRI,FINAL=FINAL) CLT
+   DIS;DIS
+   }
+
+IF %DEFINED(OUTEV);   SET OUTEV 1 N1 = EV
+IF %DEFINED(OUTLT);   COM OUTLT      = CLT
+
+CLE M AGE Q L D LL TT EV
+END PROC LIFETABLE

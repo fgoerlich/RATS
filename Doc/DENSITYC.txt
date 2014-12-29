@@ -1,0 +1,80 @@
+/*
+     DENSITYC estima no parametricamente la densidad, simple o ponderada, 
+     de una serie, mediante el metodo KERNEL, suponiendo un dominio [0,1].
+
+     Escrito por:  Paco Goerlich.               Versi¢n: Abril/2008 (R3)
+     Versi¢n RATS: WinRATS 7.00
+
+     Sintaxis
+
+      @DENSITYC(opciones) S COMIENZO FIN x Y
+
+       S        = Serie sobre la que estimar la funcion de densidad.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       X        = Serie sobre la que se calcula la densidad (X en SCATTER).
+       Y        = Serie de densidades                       (Y en SCATTER).
+
+       Opciones:
+
+     [PRINT]/NOPRINT   controla la impresion de la densidad.
+     [GRAPH]/NOGRAPH   controla el grafico   de la densidad.
+     STYLE     = DOTS/SYMBOLS/[LINES] estilo del grafico.
+     GRID      = Numero de puntos en los que se estima la densidad [100].
+                 Para GRID = 1 se estima en los valores muestrales.
+     BANDWIDTH = Bandwidth width [## real].
+                 Si BANDWIDTH no esta definido una serie de opciones controlan
+                 la obtencion de la bandwidth.
+     [SILVERMAN]/NOSILVERMAN si en el caso de KERNEL=GAUSSIAN el factor de
+                 ponderacion se basa en Silverman (1986, (3.31)), 0.9, o en la 
+                 normal, Silverman (1986, (3.28)), (4/3)**(1/5).
+     SPREAD    = SIGMA/IQR/[ROBUST]. Si como medida de dispersion se utiliza la
+                 desviacion tipica, el rango intercuartilico o el minimo de los dos.
+                 Lo que se corresponde con (3.28), (3.29) o (3.30) en Silverman (1986).
+                 Normal reference bandwidth is: KERNEL=GAUSSIAN, SPREAD=SIGMA &
+                 NOSILVERMAN, (3.28).
+     KERNEL    = EPANECHNIKOV/BIWEIGHT/3WEIGHT/TRIANGULAR/[GAUSSIAN]/RECTANGULAR
+     SMPL      = Serie con ceros en las observaciones que se desean eliminar en la
+                 estimacion de la densidad (Ver RATS Section 5.1) [no definido]
+     [INTERPOL]/NOINTERPOL si los quantiles deben ser interpolados o no en el
+                 calculo del rango intercuartilico simple.
+     WEIGHT    = si la densidad deben ponderarse con esta S [no definido].
+     ADAPTATIVE/[NOADAPTATIVE] si la estimacion debe ser adaptativa o no.
+     ALPHA     = parametro de sensibilidad en la adaptacion, entre 0 y 1. [0.5]
+     
+
+       Variables globales:
+
+       %%DENSITYC = STRING, Version actual del procedimiento
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Se supone que el dominio de S es el intervalo [0,1] y por tanto el
+   procedimiento emitira un mensaje de error si S tiene valores fuera
+   de ese intervalo.
+   Si GRID.GT.1 el minimo valor para el que se estima la densidad es 0 y el
+   valor maximo 1.
+
+   Sobre detalles de calculo ver Silverman (1986) Caps.- 2.
+   El estimador se implementa en la practica reflectando el kernel en los
+   intervalos [-1,0] y [1,2].
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Febrero/2004
+       Actualizacion a WinRATS 5.11.
+       Los KERNELs se incluyen como funciones en un fichero aparte.
+       Cambios en la funcion %INVNORMAL() pueden afectar al valor del BANDWIDTH.
+
+   R2: Junio/2007
+       Actualizacion a WinRATS 6.35.
+       Correcction de un problema con %IF(%DEFINED(WEIGHT),,).
+
+   R3: Abril/2008
+       IQ declarado como REAL y no utilizado. Eliminado.
+*/

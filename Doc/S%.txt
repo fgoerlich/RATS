@@ -1,0 +1,52 @@
+/*
+     S% escala una serie en terminos porcentuales.
+
+     Escrito por:  Paco Goerlich.                   Version: Octubre/2014 (R2)
+     Version RATS: WinRATS 8.30
+
+     Sintaxis
+
+      @S%(opciones) SERIE COMIENZO FIN NEWSERIE
+
+       SERIE     = serie de interes.
+       COMIENZO  = primera observacion a considerar
+       FIN       = ultima  observacion a considerar
+       NEWSERIE  = nueva serie en terminos porcentuales
+
+
+       Opciones:
+
+      PRINT/[NOPRINT] controla la impresion de las series
+      NEGATIVE/[NONEGATIVE] si se permiten valores negativos
+      SMPL= Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+            de los calculos (Ver RATS 5.2 UG) [no definido]
+
+   NOTA: Si COMIENZO y FIN no se especifican se toma por defecto el periodo
+         maximo para el cual SERIE esta definida.
+         Si NEWSERIE no se define NEWSERIE = SERIE
+
+
+     Variables globales:
+
+      %%S% = STRING, Version actual del procedimiento
+
+
+********************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   El procedimiento solo funciona cuando los valores de SERIE son no-negativos.
+   Si se define SMPL dentro del rango de COMIENZO y FIN los valores eliminados
+   se fijan a %NA.
+
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Marzo/2003
+       Actualizacion a WinRATS 5.03. Se a¤aden variables globales.
+
+   R2: Octubre/2014
+       Opcion NEGATIVE. Se permiten valores negativos con tal que MEAN>=0
+*/

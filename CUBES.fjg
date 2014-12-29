@@ -1,0 +1,456 @@
+*   This file contains Rats FUNCTIONs for handling CUBES, 3-dimensional matrices.
+*   In fact VECTORs of RECTANGULARs.
+*   WinRATS 7.00
+*   Paco Goerlich   16/6/2008
+
+********************************************************************************
+
+*   %SUMCUBE - %SUM for CUBES.
+
+FUNCTION       %SUMCUBE  C
+TYPE REAL      %SUMCUBE
+TYPE VEC[REC]            C
+
+LOCA INT K
+
+COM %SUMCUBE = 0, %DO(K,1,%ROWS(C),%SUMCUBE = %SUMCUBE + %SUM(C(K)))
+
+END            %SUMCUBE
+
+********************************************************************************
+
+*   %SUMCUBEC - %SUMC for CUBES.
+
+FUNCTION       %SUMCUBEC  C
+TYPE REC       %SUMCUBEC
+TYPE VEC[REC]             C
+
+LOCA INT J K
+
+DIM %SUMCUBEC(%ROWS(C),%COLS(C(1)))
+DO K = 1,%ROWS(C)
+   DO J = 1,%COLS(C(1))
+      COM %SUMCUBEC(K,J) = %SUM(%XCOL(C(K),J))
+   END DO J
+END DO K
+
+END            %SUMCUBEC
+
+********************************************************************************
+
+*   %SUMCUBER - %SUMR for CUBES.
+
+FUNCTION       %SUMCUBER  C
+TYPE REC       %SUMCUBER
+TYPE VEC[REC]             C
+
+LOCA INT I K
+
+DIM %SUMCUBER(%ROWS(C(1)),%ROWS(C))
+DO K = 1,%ROWS(C)
+   DO I = 1,%ROWS(C(1))
+      COM %SUMCUBER(I,K) = %SUM(%XROW(C(K),I))
+   END DO J
+END DO K
+
+END            %SUMCUBER
+
+********************************************************************************
+
+*   %SUMCUBED - %SUM in DEPTH for CUBES.
+
+FUNCTION       %SUMCUBED  C
+TYPE REC       %SUMCUBED
+TYPE VEC[REC]             C
+
+LOCA INT I J K
+
+DIM %SUMCUBED(%ROWS(C(1)),%COLS(C(1)))
+DO I = 1,%ROWS(C(1))
+   DO J = 1,%COLS(C(1))
+      COM %SUMCUBED(I,J) = 0, %DO(K,1,%ROWS(C),%SUMCUBED(I,J) = %SUMCUBED(I,J) + C(K)(I,J))
+   END DO J
+END DO I
+
+END            %SUMCUBED
+
+********************************************************************************
+
+*   %FRACC - %FRAC for CUBES.
+
+FUNCTION       %FRACC  V
+TYPE VEC[REC]  %FRACC  V
+
+LOCA INT K
+
+DIM %FRACC(%ROWS(V))
+DO K = 1,%ROWS(V)
+   COM %FRACC(K) = %FRACM(V(K))
+END DO K
+
+END            %FRACC
+
+********************************************************************************
+
+*   %ROUNDC - %ROUND for CUBES.
+
+FUNCTION       %ROUNDC  V  S
+TYPE VEC[REC]  %ROUNDC  V
+TYPE INT                   S
+
+LOCA INT K
+
+DIM %ROUNDC(%ROWS(V))
+DO K = 1,%ROWS(V)
+   COM %ROUNDC(K) = %ROUNDM(V(K),S)
+END DO K
+
+END            %ROUNDC
+
+********************************************************************************
+
+*   %ANYC - %ANY for CUBES.
+
+FUNCTION       %ANYC  M N L A
+TYPE VEC[REC]  %ANYC
+TYPE INT              M N L
+TYPE REA                    A
+
+LOCA INT K
+
+DIM %ANYC(L)
+DO K=1,L
+   DIM %ANYC(K)(M,N)
+   COM %ANYC(K) = %CONST(A)
+END DO K
+
+END            %ANYC
+
+********************************************************************************
+
+*   %ONESC - %ONES for CUBES.
+
+FUNCTION       %ONESC  M N L
+TYPE VEC[REC]  %ONESC
+TYPE INT               M N L
+
+COM %ONESC = %ANYC(M,N,L,1)
+
+END            %ONESC
+
+********************************************************************************
+
+*   %ZEROSC - %ZEROS for CUBES.
+
+FUNCTION       %ZEROSC  M N L
+TYPE VEC[REC]  %ZEROSC
+TYPE INT                M N L
+
+COM %ZEROSC = %ANYC(M,N,L,0)
+
+END            %ZEROSC
+
+********************************************************************************
+
+*   %UNITC - %UNITV for CUBES.
+
+FUNCTION       %UNITC  M N L I J K
+TYPE VEC[REC]  %UNITC
+TYPE INT               M N L I J K
+
+COM %UNITC = %ZEROSC(M,N,L), %UNITC(K)(I,J) = 1.
+
+END            %UNITC
+
+********************************************************************************
+
+*   %MAXINDEXDEPC - %MAXINDEX depth for CUBES.
+
+FUNCTION       %MAXINDEXDEPC  C
+TYPE INT       %MAXINDEXDEPC
+TYPE VEC[REC]                 C
+
+LOCA VEC MAX
+LOCA INT I
+
+DIM MAX(%ROWS(C))
+EWI MAX(I) = %MAXVALUE(C(I))
+COM %MAXINDEXDEPC = %MAXINDEX(MAX)
+
+END            %MAXINDEXDEPC
+
+********************************************************************************
+
+*   %MININDEXDEPC - %MININDEX depth for CUBES.
+
+FUNCTION       %MININDEXDEPC  C
+TYPE INT       %MININDEXDEPC
+TYPE VEC[REC]                 C
+
+LOCA VEC MIN
+LOCA INT I
+
+DIM MIN(%ROWS(C))
+EWI MIN(I) = %MINVALUE(C(I))
+COM %MININDEXDEPC = %MININDEX(MIN)
+
+END            %MININDEXDEPC
+
+********************************************************************************
+
+*   %MAXINDEXROWC - %MAXINDEXROW for CUBES.
+
+FUNCTION       %MAXINDEXROWC  C
+TYPE INT       %MAXINDEXROWC
+TYPE VEC[REC]                 C
+
+COM %MAXINDEXROWC = %MAXINDEXROW(C(%MAXINDEXDEPC(C)))
+
+END            %MAXINDEXROWC
+
+********************************************************************************
+
+*   %MININDEXROWC - %MININDEXROW for CUBES.
+
+FUNCTION       %MININDEXROWC  C
+TYPE INT       %MININDEXROWC
+TYPE VEC[REC]                 C
+
+COM %MININDEXROWC = %MININDEXROW(C(%MININDEXDEPC(C)))
+
+END            %MININDEXROWC
+
+********************************************************************************
+
+*   %MAXINDEXCOLC - %MAXINDEXCOL for CUBES.
+
+FUNCTION       %MAXINDEXCOLC  C
+TYPE INT       %MAXINDEXCOLC
+TYPE VEC[REC]                 C
+
+COM %MAXINDEXCOLC = %MAXINDEXCOL(C(%MAXINDEXDEPC(C)))
+
+END            %MAXINDEXCOLC
+
+********************************************************************************
+
+*   %MININDEXCOLC - %MININDEXCOL for CUBES.
+
+FUNCTION       %MININDEXCOLC  C
+TYPE INT       %MININDEXCOLC
+TYPE VEC[REC]                 C
+
+COM %MININDEXCOLC = %MININDEXCOL(C(%MININDEXDEPC(C)))
+
+END            %MININDEXCOLC
+
+********************************************************************************
+
+*   %MINVALUECUBE - %MINVALUE for CUBES.
+
+FUNCTION       %MINVALUECUBE  C
+TYPE REA       %MINVALUECUBE
+TYPE VEC[REC]                 C
+
+LOCA INT I
+
+COM %MINVALUECUBE = %MINVALUE(C(1))
+IF %ROWS(C)>1
+   COM %DO(I,2,%ROWS(C),%MINVALUECUBE = %MIN(%MINVALUECUBE,%MINVALUE(C(I))))
+
+END %MINVALUECUBE
+
+********************************************************************************
+
+*   %MAXVALUECUBE - %MAXVALUE for CUBES.
+
+FUNCTION       %MAXVALUECUBE  C
+TYPE REA       %MAXVALUECUBE
+TYPE VEC[REC]                 C
+
+LOCA INT I
+
+COM %MAXVALUECUBE = %MAXVALUE(C(1))
+IF %ROWS(C)>1
+   COM %DO(I,2,%ROWS(C),%MAXVALUECUBE = %MAX(%MAXVALUECUBE,%MAXVALUE(C(I))))
+
+END  %MAXVALUECUBE
+
+********************************************************************************
+
+*   %RASCUBE - Triproportional adjustment of rectangular CUBES
+
+FUNCTION      %RASCUBE  A  B  C  D  CVC  ITE
+TYPE VEC[REC] %RASCUBE  A
+TYPE REC                   B  C  D
+TYPE REA                            CVC
+TYPE INT                                 ITE
+
+LOCA REC R S U R1 S1 U1
+LOCA INT I J K II JJ KK
+LOCA REA E
+
+*   Globals
+COM %ITERS = 0, %CONVERGED = 0, %CVCRIT = %NA
+
+COM II = %ROWS(D), JJ = %COLS(D), KK = %ROWS(A)
+DIM R(II,KK) S(KK,JJ) U(II,JJ) R1(II,KK) S1(KK,JJ) U1(II,JJ)
+COM %RASCUBE = A, R1 = %CONST(1.), S1 = %CONST(1.), U1 = %CONST(1.)
+
+*   RAS cube adjustment
+LOOP
+   *   1st loop
+   DO K = 1,KK
+      DO I = 1,II
+         COM E = 0, %DO(J,1,JJ,E = E + %RASCUBE(K)(I,J)), R(I,K) = %IF(E==0.AND.B(I,K)==0,1,B(I,K)/E)
+	 DO J = 1,JJ
+            COM %RASCUBE(K)(I,J) = R(I,K)*%RASCUBE(K)(I,J)
+         END DO J
+      END DO I
+   END DO K
+   *   2nd loop
+   DO K = 1,KK
+      DO J = 1,JJ
+         COM E = 0, %DO(I,1,II,E = E + %RASCUBE(K)(I,J)), S(K,J) = %IF(E==0.AND.C(K,J)==0,1,C(K,J)/E)
+         DO I = 1,II
+            COM %RASCUBE(K)(I,J) = S(K,J)*%RASCUBE(K)(I,J)
+         END DO I
+      END DO J
+   END DO K
+   *   3rd loop
+   DO I = 1,II
+      DO J = 1,JJ
+         COM E = 0, %DO(K,1,KK,E = E + %RASCUBE(K)(I,J)), U(I,J) = %IF(E==0.AND.D(I,J)==0,1,D(I,J)/E)
+         DO K = 1,KK
+            COM %RASCUBE(K)(I,J) = U(I,J)*%RASCUBE(K)(I,J)
+         END DO K
+      END DO J
+   END DO I
+
+   COM %ITERS = %ITERS + 1, %CVCRIT = %MAX(%MAX(%TESTDIFF(R1,R),%TESTDIFF(S1,S)),%TESTDIFF(U1,U))
+
+   *   Convergence criterion
+   IF %CVCRIT<CVC
+      {
+      COM %CONVERGED = 1 
+      BREAK
+      }
+
+   *   Iteration limit
+   IF %ITERS==ITE
+      BREAK
+
+END LOOP
+
+END %RASCUBE
+
+********************************************************************************
+
+*   %IRASCUBE - Integer version of RASCUBE
+*               Rule for integer asigment follows %IPROPORTIONAL:
+*               For ADDing:       ADD      1 to the value whose fractional part is closest to 0.5 from below.
+*               For SUBSTRACTing: SUBSTRAC 1 to the value whose fractional part is closest to 0.5 from above.
+*               Hovewer since we now deal with cubes we check the need for ADDing and/or SUBSTRACTing by
+*               rows, columns and depth and perform ADDing and/or SUBSTRACTing simultaneously.
+*               Note: This function, like %IPROPORTIONAL and %IRAS, is pending of revising the INTEGER
+*                     adjustment. In particular this one have been found difficult to converge, so
+*                     check the %CONVERGED variable on exit if you use it.
+
+FUNCTION      %IRASCUBE  A  B  C  D  CVC  ITE
+TYPE VEC[REC] %IRASCUBE  A
+TYPE REC                    B  C  D
+TYPE REA                             CVC
+TYPE INT                                  ITE
+
+LOCA VEC[REC]  F  FP FN
+LOCA REC R S U R1 S1 U1
+LOCA INT I J K II JJ KK TT KP KN
+
+*   Globals
+COM TT = %ITERS = 0, %CONVERGED = 0, %CVCRIT = %NA
+
+COM II = %ROWS(D), JJ = %COLS(D), KK = %ROWS(A)
+DIM R(II,KK) S(KK,JJ) U(II,JJ) F(KK) FP(KK) FN(KK)
+DO K = 1,KK
+   DIM FP(K)(II,JJ) FN(K)(II,JJ)
+END DO K
+*   ¡OJO! B, C y D deben ser YA enteros. Or alternatively:
+*   R1 = %IRAS(B,%IPROPORTIONAL(%SUMR(B),%ROUND(%SUM(B),0)),%IPROPORTIONAL(%SUMC(B),%ROUND(%SUM(B),0)),CVC,ITE)
+COM %IRASCUBE = A, R1 = B, S1 = C, U1 = D
+
+LOOP
+   *   Integer RAS adjustment
+   COM %IRASCUBE = %RASCUBE(%IRASCUBE,R1,S1,U1,CVC,ITE)
+   DO K = 1,KK
+      COM F(K) = %FRACM(%IRASCUBE(K)) - %ANY(II,JJ,.5)
+   END DO K
+   COM %IRASCUBE = %ROUNDC(%IRASCUBE,0)
+   COM R = %SUMCUBER(%IRASCUBE), S = %SUMCUBEC(%IRASCUBE), U = %SUMCUBED(%IRASCUBE)
+   COM TT = TT + %ITERS, %CVCRIT = %MAX(%MAX(%TESTDIFF(R1,R),%TESTDIFF(S1,S)),%TESTDIFF(U1,U)), %CONVERGED = 0
+
+   *   Convergence criterion
+   IF %CVCRIT==0
+      {
+      COM %CONVERGED = 1
+      BREAK
+      }
+
+   *   Iteration limit
+   IF TT>=ITE
+      BREAK
+
+   COM KP = %IMAX(%IMAX(FIX(%MAXVALUE(R1-R)),FIX(%MAXVALUE(S1-S))),FIX(%MAXVALUE(U1-U))),  $
+       KN = %IMIN(%IMIN(FIX(%MINVALUE(R1-R)),FIX(%MINVALUE(S1-S))),FIX(%MINVALUE(U1-U)))
+   
+   DO K = 1,KK
+      EWI FP(K)(I,J) = %IF(F(K)(I,J)>0,.5,-F(K)(I,J))
+      EWI FN(K)(I,J) = %IF(F(K)(I,J)<0,.5, F(K)(I,J))
+   END DO K
+
+   IF KP>0
+      {
+      DO I = 1,KP
+         COM K = %MININDEXDEPC(FP), %IRASCUBE(K) = %IRASCUBE(K) + %UNITM(II,JJ,%MININDEXROW(FP(K)),%MININDEXCOL(FP(K)))
+         EWI FP(K)(I,J) = %IF(%MININDEXROW(FP(K))==I.AND.%MININDEXCOL(FP(K))==J,.5,FP(K)(I,J))
+      END DO I
+      }
+   IF KN<0
+      {
+      DO I = 1,-KN
+         COM K = %MININDEXDEPC(FN), %IRASCUBE(K) = %IRASCUBE(K) - %UNITM(II,JJ,%MININDEXROW(FN(K)),%MININDEXCOL(FN(K)))
+         EWI FN(K)(I,J) = %IF(%MININDEXROW(FN(K))==I.AND.%MININDEXCOL(FN(K))==J,.5,FN(K)(I,J))
+      END DO I
+      }
+
+END LOOP
+
+COM %ITERS = TT
+
+END %IRASCUBE
+
+********************************************************************************
+
+*   List of functions
+
+*   %SUMCUBE      - %SUM  for CUBES.
+*   %SUMCUBEC     - %SUMC for CUBES.
+*   %SUMCUBER     - %SUMR for CUBES.
+*   %SUMCUBED     - %SUM in DEPTH for CUBES.
+*   %FRACC        - %FRAC  for CUBES.
+*   %ROUNDC       - %ROUND for CUBES.
+*   %ANYC         - %ANY   for CUBES.
+*   %ONESC        - %ONES  for CUBES.
+*   %ZEROSC       - %ZEROS for CUBES.
+*   %UNITC        - %UNITV for CUBES.
+*   %MAXINDEXDEPC - %MAXINDEX depth for CUBES.
+*   %MININDEXDEPC - %MININDEX depth for CUBES.
+*   %MAXINDEXROWC - %MAXINDEXROW    for CUBES.
+*   %MININDEXROWC - %MININDEXROW    for CUBES.
+*   %MAXINDEXCOLC - %MAXINDEXCOL    for CUBES.
+*   %MININDEXCOLC - %MININDEXCOL    for CUBES.
+*   %MINVALUECUBE - %MINVALUE for CUBES.
+*   %MAXVALUECUBE - %MAXVALUE for CUBES.
+*   %RASCUBE      - %RAS for rectangular CUBES.
+*   %IRASCUBE     - Integer version of %RASCUBE.
+
+********************************************************************************

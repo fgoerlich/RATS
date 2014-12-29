@@ -1,0 +1,78 @@
+/*
+     QUANTILE                                     December/99 - R3: May/14
+*/
+COM [STRING]                   %%QUANTILE = 'QUANTILE - Version R3: May/14'
+
+PROC  QUANTILE  SERIE  TBEGP TENDP   OUTF
+TYPE  SERIES    SERIE
+TYPE  RECT                          *OUTF
+*
+LOCAL INTEGER I J N TBEG TEND
+LOCAL REAL    M STD
+LOCAL VECTOR  Q
+LOCAL RECT    F
+LOCAL SERIES  SMPL  S  W  P
+*
+OPTION SWITCH PRINT     1
+OPTION SWITCH INTERPOL  1
+OPTION VECTOR QUANTIL
+OPTION SERIES WEIGHT
+OPTION SERIES SMPLL
+
+INQUIRE(SERIES=SERIE) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(SERIE),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(SERIE)
+IF %DEFINED(WEIGHT)
+   SET P TBEG TEND = WEIGHT
+ELSE
+   SET P TBEG TEND = 1.
+
+SAM(SMPL=SMPL) SERIE TBEG TEND S 1
+SAM(SMPL=SMPL) P     TBEG TEND W 1
+INQUIRE(SERIES=S) *  N
+ORDER S 1 N W
+
+IF %DEFINED(QUANTIL)
+   COM  Q = QUANTIL
+ELSE
+   {
+   IF      N.LT.20
+      COM  J =   5
+   ELSE IF N.LT.50
+      COM  J =  11
+   ELSE IF N.LT.200
+      COM  J =  21
+   ELSE
+      COM  J = 101
+   DIM Q(J)
+   EWI Q(I)  = (1./(J-1))*(I-1)
+   }   
+
+COM M = %M(S,W), STD = %STD(S,W)
+DIM F(%ROWS(Q),6)
+DO I = 1,%ROWS(Q)
+   COM F(I,1) = Q(I), F(I,2) = %IF(.NOT.%DEFINED(WEIGHT),%F(S,Q(I),INTERPOL),%FW(S,W,Q(I),INTERPOL))
+   COM F(I,3) = %IF(.NOT.%DEFINED(WEIGHT),%IF(INTERPOL,FIX(Q(I)*(N-1)+1),%IMAX(1,FIX(Q(I)*N))),%IF(Q(I)==1,N,%IMAX(1,%NLT(S,F(I,2)))))
+   @MEANVAR(NOPRINT,WEI=W) S 1 FIX(F(I,3))
+   COM F(I,4) = M + %INVNORMAL(Q(I))*STD, F(I,5) = %MEAN, F(I,6) = %VARIANCE
+END DO I
+
+IF PRINT==1
+   {
+   DIS 'Quantile statistics on series' %L(SERIE) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
+   DIS 'Normal values based on a normal distribution with mean' @-1 M
+   DIS '                                    and standard error' @-1 STD
+   DIS '      Quantil           Order     Normal            Conditional'
+   DIS '   %         Value     Number      value         Mean         Variance'
+   DO I = 1,%ROWS(Q)
+      DIS ###.## Q(I)*100 *.* F(I,2) @24 ##### F(I,3) *.* F(I,4) @44 F(I,5) F(I,6)
+   END DO I
+   DIS
+   }
+
+IF %DEFINED(OUTF);  COM  OUTF = F
+CLEAR  SMPL  S  W  P
+END PROC QUANTILE

@@ -1,0 +1,132 @@
+/*
+     QUANTILE calcula quantiles de una SERIE y otros estadisticos asociados.
+
+     Escrito por:  Paco Goerlich.                   Versi¢n: Mayo/2014 (R3)
+     Versi¢n RATS: WinRATS 8.30
+
+     Sintaxis
+
+      @QUANTILE(opciones) S COMIENZO FIN P
+
+       S        = serie sobre la que calcular el quantil
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       P        = matriz (opcional) Qx6 que contiene la siguiente informacion:
+                  (1) Columna 1: probabilidad, [0,1].
+                  (2) Columna 2: quantil.
+                  (3) Columna 3: numero de observaciones por debajo del quantil
+		                 (entero >= 1).
+                  (4) Columna 4: quantil para una normal con la misma media y
+                                 varianza que S.
+                  (5) Columna 5: media    condicionada: E{S|inv(F(PV))=P}
+                  (6) Columna 6: varianza condicionada: Var{S|inv(F(PV))=P}
+                  siendo Q el numero de quantiles calculados.
+
+       Opciones:
+
+     [PRINT]/NOPRINT controla la impresion de los quantiles o no.
+     SMPL    = Serie con valores cero entre COMIENZO y FIN que desean
+               eliminarse de los calculos (Ver RATS 5.2 UG) [no definido]
+     QUANTIL = vector con los quantiles a calcular.
+               Por defecto se calculan los siguientes quantiles:
+                       T < 20   -  25%-quantiles (quartiles)
+                 20 <= T < 50   -  10%-quantiles (deciles)
+                 50 <= T < 200  -   5%-quantiles (veintiles)
+                200 <= T        -   1%-quantiles (percentiles)
+                Siempre se a¤ade el quantil 0%-Minimo y 100%-Maximo.
+
+     [INTERPOL]/NOINTERPOL si los calculos deben ser interpolados o no.
+     WEIGHT  = si los quantiles deben ponderarse [no definido].
+
+     Variables globales:
+
+      %%QUANTILE = STRING, Version actual del procedimiento
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   QUANTILE no realiza calculos, simplemente organiza la informacion y su
+   impresion, los calculos son realizados por las funciones %F y %FW.
+
+   FRACTILE porporciona quantiles (solo) a partir de las funciones internas
+   de WinRATS.
+
+   Para P = 0, PV = S(1;n) = MINIMO, PVN = %NA, M = 1,     V = 0.
+   Para P = 1, PV = S(n;n) = MAXIMO, PVN = %NA, M = Media, V = Varianza.
+
+   Algoritmos:
+   (1) Sin la opcion WEIGHT:
+
+   NOINTERPOL aplica la regla de Patel & Read (1982,p.-261) para la obtencion
+   de los quantiles. Dado np = p*n
+      (i)  si  np  no es entero se toma como valor del quantil-p S([np]+1;n). 
+      (ii) si  np     es entero se toma como valor del quantil-p el valor 
+           medio entre S([np];n) y S([np]+1;n). Esto hace que el calculo para
+           p = 0.5 coincida con la definicion estandar de la MEDIANA,
+           Patel & Read (1982,p.-255).
+   [np] es el mayor entero igual o inferior a np.
+
+
+   INTERPOL aplica la regla de RATS para la obtencion de los quantiles.
+   Primero se determina np como np = p*(n-1)+1 y luego se calcula el quantil
+   por interpolacion lineal entre S([np];n) y S([np]+1;n).
+
+   La mediana, p = .5, es la misma con ambas opciones.
+
+   Basicamente NOINTERPOL distribuye observaciones a ambas partes del
+   quantil, mientras que INTERPOL distribuye probabilidades teniendo en
+   cuenta que con n observaciones solo disponemos de n-1 huecos entre las
+   observaciones.
+
+
+   (2) Con la opcion WEIGHT:
+
+   NOINTERPOL extiende la regla de Patel & Read (1982,p.-261) pero teniendo
+   en cuenta que las probabilidades asociadas a las observaciones son ahora
+   diferentes. Sea la suma acumulada de ponderaciones estandarizadas, W,
+      (i)  dada la observacion I para la que W(I) < p y W(I+1) > p, entonces
+           se toma como valor del quantil-p S(I+1;n).
+      (ii) si p = W(I) para algun I, entonces se toma como valor del
+           quantil-p .5*[S(I;n)+S(I+1;n)].
+   Esta regla coincide con la sugerencia de L. Magee (e-mail 20/12/99),
+   excepto que en (ii) la sugerencia es tomar como valor del quantil-p S(I;n).
+
+
+   INTERPOL calcula el quantil de forma que se distribuye la probabilidad de 
+   cada observacion entre los puntos medios de observaciones adyacentes y el
+   quantil-p es obtenido por interpolacion lineal a partir de las ponderaciones
+   acumuladas.
+   Para las observaciones 1 y n la interpolacion se efectua entre S(1;n) y
+   .5*[S(1;n)+S(2;n)] en el primer caso, y .5*[S(n-1;n)+S(n;n)] y S(n;n) en el
+   segundo.
+   Este procedimiento es razonable, pero sin embargo tiene el inconveniente
+   de que no produce los mismos resultados cuando WEIGHT es constante que
+   cuando no se define.
+
+   Ambos procedimientos deben proporcionar resultados similares a menos que
+   la muestra sea muy peque¤a o el quantil-p este en los extremos de la
+   distribuci¢n.
+
+
+   La media y la varianza condicionada son la media y varianza para las
+   observaciones 1 NP. En el calculo de la varianza el divisor es
+   siempre el numero de observaciones.
+
+
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Mayo/2003 - Actualizacion a WinRats 5.03.
+
+   R2: Febrero/2007 - Correccion de un bug. La opcion WEIGTH podia dar errores
+                      junto con la opcion SMP.
+		      Se suprimio la llamada a FRACTILE.
+
+   R3: Mayo/2014
+   Cambio de sintaxis de @MEANVAR(NOPRINT,WEI=W) S 1 FIX(F(I,3))
+
+*/

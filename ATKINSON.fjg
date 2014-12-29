@@ -1,0 +1,66 @@
+/*
+     ATKINSON INEQUALITY INDEX.                November/97 - R4: March/07
+*/
+COM [STRING] %%ATKINSON =                'ATKINSON - Version R4: March/07'
+
+PROC  ATKINSON Y  TBEGP  TENDP   OUTIND   OUTINDSE
+TYPE  SER      Y  TBEGP  TENDP
+TYPE  INTEGER     TBEGP  TENDP
+TYPE  REAL                      *OUTIND  *OUTINDSE
+*
+LOCAL INTEGER     TBEG   TEND
+LOCAL SERIES   S  W  P   SMPL
+LOCAL REAL     ATK   
+LOCAL VECTOR   ATKSE
+*
+OPTION SWITCH PRINT    1
+OPTION SWITCH EQUALITY 0
+OPTION SWITCH EXTENDED 0
+OPTION SWITCH SE       0
+OPTION INTEGE REPLICAS 100
+OPTION REAL   EPSILON  1.
+OPTION SERIES WEIGHT
+OPTION SERIES SMPLL
+
+INQUIRE(SERIES=Y) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(Y),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(Y)
+
+IF %DEFINED(WEIGHT)
+   SET P TBEG TEND = WEIGHT
+ELSE
+   SET P TBEG TEND = 1
+
+SAM(SMPL=SMPL) Y  TBEG TEND S 1
+SAM(SMPL=SMPL) P  TBEG TEND W 1
+IF SE;   COM ATKSE = %ATKINSON_BOOTSE(S,W,REPLICAS,EPSILON,EXTENDED)
+
+*   Globals
+COM %MEAN = %NA, %NOBS = 0
+INQ(SER=S)  *    %NOBS
+
+COM ATK = %IF(EXTENDED,%ATKINSONEXT(S,W,EPSILON),%ATKINSON(S,W,EPSILON)), %MEAN = %M(S,W)
+
+IF PRINT
+   {
+   DIS 'Atkinson Inequality index on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   IF EXTENDED;   DIS 'Extended family'
+   DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS 'Inequality Aversion' ###.## EPSILON
+   IF SE;   DIS 'Bootstrap Standard Errors in brackets:' REPLICAS 'replications'
+   DIS 'Atkinson index'                   ATK      @41 'Welfare  index'  %MEAN*(1-ATK)
+   IF SE;   DIS @21 #.#####       '(' @-1 ATKSE(2) @-1 ')'
+   DIS 'Sample mean   '                  %MEAN        
+   IF SE;   DIS @15               '(' @-1 ATKSE(1) @-1 ')'
+   IF EQUALITY;   DIS 'Equality index'  1-ATK
+   DIS;DIS
+   }
+
+IF %DEFINED(OUTIND);     COM OUTIND   = ATK
+IF %DEFINED(OUTINDSE);   COM OUTINDSE = ATKSE(2)
+
+CLE SMPL S W P
+END PROC ATKINSON

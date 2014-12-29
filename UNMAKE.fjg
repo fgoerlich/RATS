@@ -1,0 +1,42 @@
+/*
+     UNMAKE: Unmaking matrices                         May/1999 - R1: March/2004
+*/
+COM [STRING]                         %%UNMAKE = 'UNMAKE - Version R1: March/2004'
+
+PROC   UNMAKE    M  TBEGP  TENDP
+TYPE   RECT      M
+*
+LOCAL  INTEGER   I  TBEG   TEND
+LOCAL  RECT      X
+LOCAL  VECT[INT] XLIST
+LOCAL  SERIES    SMPL
+*
+OPTION SWITCH  TRANSPOSE  0
+OPTION SERIES  SMPLL
+
+IF TRANSPOSE.EQ.1
+   COM X = TR(M)
+ELSE
+   COM X = M
+ENTER(VARYING)  XLIST
+
+IF %ROWS(XLIST).NE.%COLS(X)
+   {
+   DIS %%UNMAKE; DIS 'Sintax error: Number of series and matrix columns are not equal'
+   HALT  UNMAKE
+   }
+
+COM TBEG = FIX(%IF(%DEFINED(TBEGP),TBEGP,1)), TEND = FIX(%IF(%DEFINED(TENDP),TENDP,%ROWS(X)))
+
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL.NE.0,1,0)
+ELSE
+   SET SMPL TBEG TEND = 1
+
+DO I = 1,%COLS(X)
+   SET XLIST(I) TBEG TEND = %IF(SMPL.EQ.1,X(T,I),%NA)
+END DO I
+
+CLEAR SMPL
+END PROC UNMAKE
+

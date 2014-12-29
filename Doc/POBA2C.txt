@@ -1,0 +1,123 @@
+/*
+     POBA2C
+
+     Escrito por:  Paco Goerlich.                   Version: Mayo/2010 (R1)
+     Version RATS: WinRATS 7.30
+
+     Sintaxis
+
+      @POBA2C TOT VAR MUJ TOTPR VARPR MUJPR
+
+      TOT   VAR   MUJ   = Series de poblacion por edades simples de la CCAA a la que hay que ajustar.
+	                  Observaciones: 101.
+      TOTPR VARPR MUJPR = Vectores de series de poblacion por grupos de edad de las provincias que hay 
+                          distribuir.
+                          Observaciones: 18.
+
+      Observa que el procedimiento sustituye estas series por grupos de edad con series por edades
+      simples, de forma que las series por grupos de edad se pierden.
+
+      En todos los casos el orden es TOTALES, VARONES y MUJERES.
+
+     Opciones:
+
+      [PRINT]/NOPRINT controla la impresion de la serie.
+      CVCRIT     = Criterio de convergencia en el ajuste [1E-15].
+      ITERATIONS = Numero maximo de iteraciones a efectuar [100].
+
+
+     Variables globales:
+
+      %%POBA2C = STRING, Version actual del procedimiento.
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Este procedimiento es MUY especifico y es dificil utilizarlo con generalidad.
+
+   Simplemente distribuye las series de poblacion por edades simples de una CCAA
+   en series de poblacion por edades simples provinciales, de forma que cuadren por
+   sexos, edades y provincias con las series de poblacion por sexos y edades 
+   simples de la CCAA.
+
+   El cuadre se efectua para cada grupo de edad (quinquenal) y para el intervalo
+   abierto final de 85 y + a 100 y +.
+
+   Esta pensado para la elaboracion de las Tablas de Vida provinciales, aunque las
+   poblaciones simples no se utilicen.
+
+   Admite muchas extensiones:
+      (1) Otras periodicidades de edades simples y grupos,
+      (2) Ajuste a enteros, o
+      (3) Que las series calculadas sean output de salida del procedimiento y 
+          no sustituyan a las series por grupos de edad.
+
+
+   PROCEDIMIENTO:
+
+   Informacion para hacer el ajuste y los pasos que se siguen.
+   Consideramos un esquema en el que:
+      K (profundidad) = Provincias
+      M (filas)       = Edades simples
+      N (columnas)    = Sexos
+
+   Los totales de los que disponemos para el ajuste son los siguientes:
+   1) Totales por sexo y provincias     (agregando por edades):         KxN
+   2) Totales por edades simples y sexo (agregando por provincias):     MxN
+   3) Totales por provincia             (agregando por edades y sexos): Kx1
+
+   La informacion en 3) esta incompleta, necesitariamos la matriz MxK de 
+   poblacion por edades simples y provincias (agregando por sexos).
+   Para obtener esta matriz procedemos en dos pasos:
+
+   3.1) El vector por edades simples de poblacion total (TOT) de la CCAA
+        se distribuye segun %PROPORTIONAL() al total de cada provincia.
+        Esto genera una matriz MxK, de totales (agregando por sexo) 
+        por edades simples y provincias que, sin embargo, no tiene porque
+        sumar por provincias el total de la CCAA.
+
+   3.2) Para evitar esto la matriz anterior MxK se ajusta por %RAS() para que
+        sume por edades para cada provincia (paso anterior) y por provincias
+        para cada edad simple al total de la CCAA.
+        Esta matriz MxK es la que se utilizará como total por sexos en
+        %RASCUBE().
+
+   Ahora tenemos todos los totales a los que debemos ajustarnos para cada
+   grupo de edad, [x, x+5).
+
+   4) El ultimo problema es que para cada grupo de edad, [x, x+5), NO disponemos
+      del cubo inicial para hacer el ajuste.
+      Dicho cubo inicial se obtiene de forma similar a como se ha obtenido la 
+      matriz MxK anterior para el total de la poblacion, pero haciendo ahora el 
+      ajuste para cada sexo.
+
+   4.1) Para cada sexo (VAR, MUJ) el vector por edades simples de la CCAA
+        se distribuye segun %PROPORTIONAL() al total de cada provincia.
+        Esto genera N matrices MxK (es decir un cubo MxNxK) que no tienen
+        porque sumar ni por sexos para cada provincia, ni por provincias
+        para la CCAA.
+
+   4.2) Antes de utilizar %RASCUBE() efectuamos un ajuste adicional en la 
+        dimension provincial, de forma que efectuamos N ajustes, uno para
+        cada sexo, de forma enteramente equivalente al ajuste del paso 3.2)
+        anterior para la poblacion total (TOT).
+        Asi, para cada sexo (VAR, MUJ) la matriz MxK resultante del proceso
+        anterior, 4.1), se ajusta por %RAS() para que, para cada sexo, sume
+        por edades simples el total provincial y por provincias el total de
+        la CCAA.
+
+   El cubo MxNxK resultante, que no suma por sexos el total de la poblacion
+   para cada edad y provincia, es el que se ajusta por %RASCUBE().
+	
+   
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Mayo/2010 - Correccion de un bug que no afecta a los calculos.
+                   Se elimino CLEar PT PV PM que aparecia al final, ya
+		   que estas series no se utilizan.
+
+*/

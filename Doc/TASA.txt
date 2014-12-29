@@ -1,0 +1,69 @@
+/*
+     TASA calcula tasas de crecimiento entre dos series de corte transversal,
+     es decir entre dos puntos de tiempo para distintas unidades cross-section.
+
+     Escrito por Paco Goerlich.                   Versi¢n: Junio/2002 (R1)
+     Version RATS: RATS386 5.02
+
+     Sintaxis
+
+      @TASA S1 S2 S3 COMIENZO FIN
+
+       S1        = serie inicial, Periodo 0.
+       S2        = serie final,   Periodo T.
+       S3        = serie de tasas de crecimiento por periodo en tanto por uno.
+       COMIENZO  = primera observacion a considerar
+       FIN       = ultima  observacion a considerar
+
+       Opciones:
+
+     PRINT/[NOPRINT] controla la impresion de las series.
+     SPAN distancia en periodos entre S1 y S2. [1].
+     LOGS/[NOLOGS] aproximacion logaritmica en el calculo de las tasas de
+                   crecimiento.
+     AVERAGE/[NOAVERAGE] tasas medias o acumulativas.
+
+
+   Si COMIENZO y FIN no se especifican se toma el maximo rango de S1 y S2.
+
+
+     Variables globales:
+
+    %%TASA = STRING, Version actual del procedimiento.
+
+********************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   El procedimiento trata de emular la funci¢n @TASA de LOTUS 123.
+
+   Con las opciones por defecto, NOAVERAGE y NOLOGS, calcula la tasa media de
+   crecimiento acumulativo por periodo, que es exactamente lo que calcula la
+   funci¢n @TASA, i.e.
+
+      S3 = EXP( (LOG(S2) - LOG(S1))/SPAN ) - 1.
+
+   Con las opciones AVERAGE y NOLOGS calcula la tasa media (simple) de
+   crecimiento por periodo, i.e.
+
+      S3 = ( (S2 - S1)/S1 )/SPAN
+
+   En este caso solo existe diferencia si SPAN es diferente de 1 y las
+   diferencias aumentan conforme aumenta SPAN.
+
+   Con la opcion LOGS se calcula una aproximacion logaritmica, i.e.
+
+      S3 = ( LOG(S2) - LOG(S1) )/SPAN
+
+   En este caso la tasa media simple coincide con la tasa media acumulativa
+   por periodo, por lo que con la opcion LOGS la opcion AVERAGE no es
+   operativa.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Junio/2002
+       Actualizacion a RATS 5.02
+
+*/

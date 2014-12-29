@@ -1,0 +1,43 @@
+/*
+     LIFETABLEC2A
+
+     Escrito por:  Paco Goerlich.                   Version: Mayo/2010 (R1)
+     Version RATS: WinRATS 7.30
+
+     Sintaxis
+
+      @LIFETABLEC2A CLT ALT
+
+      CLT = Tabla de Vida Completa,  RECT (86, 101 o 111)x7.
+      ALT = Tabla de Vida Abreviada, RECT (15      a  24)x7.
+
+
+     Opciones:
+
+      [PRINT]/NOPRINT controla la impresion de la tabla de vida.
+      HEADER = Titulo a imprimir.
+      FINAL  = 65/70/75/80/[85]/90/95/100/105/110 intervalo final en la tabla abreviada.
+
+
+     Variables globales:
+
+      %%LIFETABLEC2A = STRING, Version actual del procedimiento
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Este procedimiento agrega una tabla completa a una tablas abreviada siguiendo
+   el metodo de la HMD. Ver Wilmoth 2007, p.-44.
+   
+   Las 7 columnas son: AGE Q L D LL TT EV. Este es el output de LIFETABLE.
+   
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Mayo/2010 - Se extiende la posibilidad de que la tabla abreviada finalice entre
+                   los 65 y los 110 en intervalos de 5 años.
+
+*/

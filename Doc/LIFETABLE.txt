@@ -1,0 +1,130 @@
+/*
+     LIFETABLE
+
+     Escrito por:  Paco Goerlich.                   Version: Mayo/2010 (R8)
+     Version RATS: WinRATS 7.30
+
+     Sintaxis
+
+      @LIFETABLE P F LE LT
+
+       P  = Poblacion   por edades simples o grupos: 0-85+, 0-100+ o 0-110+.
+       F  = Defunciones por edades simples o grupos, 0-85+, 0-100+ o 0-110+.
+       LE = Esperanza de vida a las correspondientes edades.
+       LT = Matriz de Tabla de Vida, (Edades)x7.
+
+
+     Opciones:
+
+      [PRINT]/NOPRINT controla la impresion de la tabla de vida.
+      INTEGER/[NOINTEGER] aritmetica de enteros para las personas o de reales.
+      HEADER = Titulo a imprimir.
+      RADIX  = Supervivientes iniciales [100000] (INTEGER)
+      A01    = Valor de a, edad [0,1)            (REAL)
+      A12    = Valor de a, edad [1,2)            (REAL)
+      A14    = Valor de a, edad [1,5)            (REAL)
+      V01    = Estructura por sexos, edad [0,1)  (RECTANGULAR 2x2)
+      V14    = Estructura por sexos, edad [1,5)  (RECTANGULAR 2x2)
+      SEX    = [BOTH]/MALE/FEMALE
+      BIRTH  = NONE/INE/[HMD]
+      DEATH  = NONE/INE/[HMD]
+      [WEIGHT]/NOWEIGHT ponderar la regresion logística si DEATH=HMD.
+      FINAL  = 65/70/75/80/[85]/90/95/100/105/110 intervalo final en la tabla abreviada.
+      LENGTH = [HALF]/KEYFTIZ
+      ITER/[NOITER] si la tabla (abreviada) debe ser iterada.
+      NITERATIONS = number of iterations [100]
+      CVCRIT = Criterio de convergencia [1E-15]
+      [SMOOTH]/NOSMOOTH controla si en la impresión las tasas de mortalidad son
+                        las suavizadas cuando la metodologia es la de HMD.
+
+
+     Variables globales:
+
+      %%LIFETABLE = STRING, Version actual del procedimiento
+      %%AGE       = REAL, Edad media de la poblacion
+      %%EVAGE     = REAL, Esperanza de vida a la edad media
+      %%PV        = REAL, Potencial de Vida
+      %%PVPC      = REAL, Potencial de vida per capita
+
+
+     Variables globales creadas por LIFETABLE:
+
+      %ITERS     = Iterations taken.
+      %CONVERGED = 1 o 0. Set to 1 if the process converged, 0 if not.
+      %CVCRIT    = Final convergence criterion (REAL).
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Solo se consideran datos por edades hasta un intervalo abierto final de
+   85+, 100+ o 110+ años.
+
+   El procedimiento implementa el esquema básico de Preston, Heuveline y Guillot
+   (2001), p.-48, y de la HMD, segun Wilmoth (2002, October 1), aunque tambien
+   puede acomodar las opciones del INE.
+
+   BIRTH indica los ajustes a realizar al principio de la distribución de edades.
+
+   DEATH indica los ajustes al final de la distribucion para edades simples:
+   - Para  85+ no se hacen ajustes, se trunca la distribución con el metodo
+     de la HMD.
+   - Para 100+ y 110+ hay dos posibilidades, el ajuste INE, pero no se truncan 
+     los calculos (en consecuencia la tabla de vida se prolonga hasta que no 
+     existen supervivientes: > 111 años), y el ajuste HMD, truncandose la 
+     distribución en 110+ años.
+     Para los dos ultimos casos tambien existe la posibilidad de no suavizar
+     la distribución de edades al final y aplicar el mismo metodo de terminacion
+     que cuando el intervalo abierto final es 85+.
+
+   V## la estructura de estas matrices es la siguiente:
+       || POB - VARONES , POB - MUJERES |
+          DEF - VARONES , DEF - MUJERES ||
+
+   La tabla abreviada se construye segun la HMD y es consistente con la tabla
+   completa.
+
+   Se incluyen algunos indicadores demográficos basicos:
+   - Edad media,
+   - EV del individuo representativo,
+   - Potencial de Vida, agregado y per capita.
+
+   El programa trabaja a partir del cociente F/P (Death rates) por tanto 
+   haciendo los ajustes correspondientes en F y/o P, por ejemplo si se
+   dispone de defunciones por triangulos de Lexis, poblaciones al principio 
+   y final del intervalo, o medidas de exposicion al riesgo de muerte, 
+   el programa se ajusta bastante a la metodología de la HMD (Wilmoth 2002, October 1).
+
+   Metodologia exacta del   INE en: LIFETABLEINE.
+   Metodologia exacta de la HMD en: LIFETABLEHMD. (Version 5, Wilmoth (2007, May 31).
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Junio/2004   - Incorporacion de metodo HMD para intervalos finales +100.
+
+   R2: Julio/2004   - Tablas abreviadas y diversas opciones adicionales.
+
+   R3: Junio/2005   - Variables globales %%AGE, %%EVAGE, %%PV y %%PVPC y
+                      Tablas abreviadas iterativas.
+
+   R4: Julio/2006   - Se limita la poblacion a valores no nulos.
+                      Se sustituye M = F/P por M = F/%max(0,P).
+
+   R5: Febrero/2007 - Se sustituye el nombre de la opcion INTERATIONS por
+                      NITERATIONS, ya que habia dos opciones que empezaban con las
+                      3 primeras letras.
+
+   R6: Abril/2088   - Se sustituyo la impresion de la tabla abreviada por el PROC LIFETABLEC2A.
+		      Se sustituyo la impresion de los datos          por el PROC LIFETABLEPRINT.
+		      G      declarado VECTOR en LIFEITABR no era utilizado.      Eliminado.
+		      N0 & E declarados como INTEGER y LVECTOR no eran utilizado. Eliminado.
+		      Los estadisticos demograficos se calculan en funciones almacenadas en LIFE.
+
+   R7: Junio/2008   - Inclusion de la opcion SMOOTH, procedente de la modificacion de LIFETABLEPRINT.
+
+   R8: Mayo/2010    - Se extiende la posibilidad de que la tabla abreviada agregada de la tabla
+                      completa finalice entre los 65 y los 110 en intervalos de 5 años.
+*/

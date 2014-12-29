@@ -1,0 +1,69 @@
+/*
+     LIFECHANGE descompone los cambios en la esperanza de vida en función
+                de los cambios en las tasas de mortalidad por edades.
+
+     Escrito por:  Paco Goerlich.                   Version: Mayo/2012 (R2)
+     Version RATS: WinRATS 8.10
+
+     Sintaxis
+
+      @LIFECHANGE L0 LL0 L1 LL1 LE LC
+      # <supp. card> M0 M01...M0n
+      # <supp. card> M1 M11...M1n
+
+       L0   = Serie de supervivientes de la cohorte sintetica en el periodo 0.
+       LL0  = Serie de años-persona en el periodo 0.
+       L1   = Serie de supervivientes de la cohorte sintetica en el periodo 1.
+       LL1  = Serie de años-persona en el periodo 1.
+       LE   = Serie de contribuciones por grupo de edad al cambio en la
+              esperanza de vida a la EDAD=AGE.
+       LC   = Serie de contribuciones por causa         al cambio en la 
+              esperanza de vida a la EDAD=AGE.
+
+      Con la opcion MD:
+      
+      # <supp. card> M0 M01...M0n: Tasa de mortalidad global y para las diferentes causas en el periodo 0.
+      # <supp. card> M1 M11...M1n: Tasa de mortalidad global y para las diferentes causas en el periodo 1.
+
+
+     Opciones:
+
+      [PRINT]/NOPRINT controla la impresion del output.
+      AGE   = Edad a la que se efectua la descomposición [0].
+      LABEL = Vector de etiquetas para la impresion, (2x1).
+      MD/[NOMD] descomposicion por causas.
+      EPS   = Tolerancia en comparar las tasas de mortalidad de las causas y la global [e-10].
+
+
+     Variables globales:
+
+      %%LIFECHANGE = STRING, Version actual del procedimiento
+
+      %%AC = RECTangular, Matriz de doble entrada de la descomposición: Dim = Edad x Causa
+             Solo disponible con la opcion MD.
+
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Pueden ser datos por edades simples o por grupos de edades (hasta 85+, 100+
+   o 110+).
+
+   El procedimiento implementa la formula (3.11) de Preston, Heuveline y Guillot
+   (2001), pag.-64.
+
+   Para la descomposición por causas se implementa la formula (4.9) de Preston, 
+   Heuveline y Guillot (2001), pag.-84.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Mayo/2008 - Se implementaron otras edades diferentes de la de 0 años.
+                   Se implemento la posibilidad de edades simples.
+
+   R2: Mayo/2012 - Se añade la posibilidad de descomposicion por causas.
+
+*/

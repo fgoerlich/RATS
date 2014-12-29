@@ -1,0 +1,101 @@
+/*
+     BCONVERG calcula todas las posibles regresiones relacionadas 
+     con la BETA-CONVERGENCIA a partir de un conjunto dado de
+     series en niveles.
+
+     Escrito por Paco Goerlich.                     Version: Mayo/08 (R2)
+     Version RATS: WinRATS 7.00
+
+     Sintaxis:
+
+      @BCONVERG(opciones) COMIENZO FIN BETA
+      #<supp.card> series a considerar (niveles)
+
+       COMIENZO = Primera observacion a considerar
+       FIN      = Ultima  observacion a considerar
+       BETA     = Matriz  simetrica de coeficientes beta.
+
+     NOTA: Si comienzo y fin no es especificado el programa toma como valores
+           por defecto el periodo maximo para el cual todas las variables de
+           <supp.card> estan definidas.
+
+      Opciones:
+
+       GRAPH/[NOGRAPH]   realiza un  grafico     de BETA-CONVERGENCIA
+       PRINT/[NOPRINT]   imprime las regresiones de BETA-CONVERGENCIA
+       TASA/[NOTASA]     controla si para el calculo de las tasas de
+                         crecimiento se utilizan logaritmos ([NOTASA]), o
+                         la tasa media de crecimiento acumulada (TASA = @TASA)
+       [LOGS]/NOLOGS     controla si la condicion inicial se considera en
+                         logaritmos ([LOGS]), o en niveles originales (NOLOGS)
+       ROBUST/[NOROBUST] proporciona errores estandares robustos frente a la
+                         heteroscedasticidad (White (1980)).
+       YEAR    = indice Nx1 con los a¤os de las series, [1,2,...,N].
+                 Esta informacion se utiliza para calcular la tasa media de
+                 crecimiento, por lo que si el SPAN no es siempre igual a 1
+                 es importante que se introduzca, en otro caso el signo de
+                 BETA ser  correcto pero su magnitud no ser comparable entre
+                 a¤os diferentes.
+       LOBSER  = vector de etiquetas de las observaciones, solo util si se
+                 utiliza SMPL.
+       SMPL    = serie con ceros en las observaciones que se desean eliminar
+                 en el calculo de las regresiones (Ver RATS 5.2 UG)
+
+
+      Variables globales:
+
+       %%BCONVERG = STRING, version actual del procedimiento.
+       
+
+*******************************************************************************
+
+     INFORMACION COMPUTACIONAL
+
+     Necesita la compilacion previa del procedimiento @MISSING.
+
+     El OUTPUT suministrado es el siguiente:
+
+     (1) BETA: Coeficiente estimado de la condicion inicial en la estimacion 
+               lineal de la tasa media de crecimiento sobre una constante y 
+               la condicion inicial, i.e. estimacion lineal de la ecuacion 
+               (15) de Barro & Sala-i-Martin (1992).
+               Si LOGS==1.AND.TASA==0, i.e. LOGS & NOTASA que son las
+               opciones por defecto, entonces entre parentesis aparece 
+               (i)  el valor implicito del AR(1) en logs obtenido deshaciendo
+                    la transformacion, i.e. b = (1 + T*BETA)**(1/T), y
+               (ii) la velocidad de convergencia, a, por periodo (normalmente
+                    anual), obtenida deshaciendo la transformacion no lineal
+                    de la ecuacion (15) de Barro & Sala-i-Martin (1992),
+                    i.e. a = -log(b). Esto es equivalente a estimar la
+                    ecuacion (15) de Barro & Sala-i-Martin (1992) por NLLS.
+
+     (2) S.E.:       Error estandar de la estimacion de BETA.
+     (3) t-Stat:     Estadistico t de H0: BETA = 0.
+     (4) Sig. Level: Nivel de significacion de t-Stat, 2 colas.
+     (5) R**2:       de la regresion
+     (6) Het. Test:  Nivel de significacion de un test de HETEROCEDASTICIDAD,
+                     que es un contraste t/F de la restriccion c = 0 en la 
+                     regresion auxiliar 
+                               uhat**2 = a + c*yhat**2 + e
+                     donde uhat y yhat se han obtenido de la ecuaci¢n de 
+                     convergencia. 
+                     Este test es el suministrado por MICROFIT y puede ser 
+                     considerado como una version simplificada del test de 
+                     White (1980).
+
+     TASA utiliza la formula de @TASA de Lotus, i.e. tasa media anual
+          acumulada.
+
+*******************************************************************************
+
+     REVISIONES
+
+     R1: Junio/2000 - Eliminacion de la opcion GLS ya que carece de sentido.
+                      Eliminacion de las series utilizadas en la regresion como
+                      output del procedimiento.
+                      La tasa media de crecimiento no esta expresada ahora en %.
+
+     R2: Mayo/2008  - Traduccion a WinRATS 7.00.
+                      Se añade la opcion de extraer en una matriz los coeficientes
+		      beta.
+*/

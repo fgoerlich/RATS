@@ -1,0 +1,89 @@
+/*
+     LORENZ estima y dibuja percentiles de curvas de Lorenz
+
+     Escrito por:  Paco Goerlich.                     Version: Abril/2012 (R6)
+     Version RATS: WinRATS 8.10
+
+     Sintaxis:
+
+      @LORENZ R COMIENZO FIN GINI LX LY GLY ALY SELY
+
+       R        = Serie de rentas per capita.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       GINI     = Indice de Gini por integracion numerica.
+       LX       = Abcisa   de Lorenz en los puntos estimados.
+       LY       = Ordenada de Lorenz en los puntos estimados.
+       GLY      = Ordenada de Lorenz generalizada en los puntos estimados.
+       ALY      = Ordenada de Lorenz absoluta en los puntos estimados.
+       SELY     = Errores estandares para la ordenada de Lorenz.
+
+
+       Opciones:
+
+     [PRINT]/NOPRINT     controla la impresion de los percentiles estimados.
+                         Se imprime tambien la ordenada generalizada de la
+                         curva de Lorenz.
+     [GRAPH]/NOGRAPH     controla la visualizacion de la curvas de Lorenz.
+     SAMPLE/[NOSAMPLE]   calcula la curva de Lorenz en los puntos muestrales
+                         en lugar de en determinados percentiles.
+     REVERSE/[NOREVERSE] los percentiles son determinados en base a porcentajes
+                         de renta, contrariamente al procedimiento habitual.
+			 Solo funciona con NOSAMPLE.
+     SMPL    = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+               de los calculos (Ver RATS 5.2 UG) [no definido]
+     QUANTIL = vector con los quantiles a calcular.
+               Por defecto los percentiles calculados son los siguientes,
+                         T < 20   -  25%-quantiles (quartiles)
+                   20 <= T < 50   -  10%-quantiles (deciles)
+                   50 <= T < 200  -   5%-quantiles (veintiles)
+                  200 <= T        -   1%-quantiles (percentiles)
+		  Siempre se añaden los extremos, 0% y 100%.
+     WEIGHT  = si la curva de Lorenz deben ponderarse [no definido].
+     SE/[NOSE] si se calculan errores estandard.
+               Solo funciona con NOSAMPLE Y NOREVERSE.
+     REPLICAS numero de replicas en los errores estandar [100].
+
+
+       Variables globales:
+
+       %%LORENZ = STRING, Version actual del procedimiento
+
+       %MEAN = Sample mean (REAL)
+       %NOBS = Number of observations (INTEGER)
+
+
+*****************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   El procedimiento interpola linealmente para estimar los percentiles.
+
+   Sobre la curva de Lorenz generalizada ver Shorrocks (1983, Economica).
+   En la practica el procedimiento estima la curva de Lorenz standard y
+   la curve de Lorenz generalizada se calcula como GL(p) = Mean(R)*L(p)
+
+   Sobre la curva de Lorenz absoluta ver Moyes (1987, EL).
+   La curva de Lorenz absoluta se calcula como AL(p) = GL(p) - p*Mean(R)
+
+   Los errores estandares solo funcionan con NOSAMPLE & NOREVERSE
+
+*****************************************************************************
+
+   REVISIONES
+
+   R2: Septiembre/2004 - Traduccion a WinRATS 6.00 y definicion en terminos de
+                         rentas per capita y ponderaciones.
+
+   R3: Junio/2006 - Introduccion de los pesos como serie local.
+
+   R4: Abril/2007 - Definicion a partir de una funcion externa e introduccion de
+                    los errores estandares.
+
+   R5: Abril/2008 - K declarado como INTEGER, no utilizado. Eliminado.
+
+   R6: Abril/2012 - Introduccion de la curva de Lorenz absoluta. Ver Bishop,
+                    Chakraborti y Thistle (1988, EL) formula (2.2).
+		    Se documenta la posibilidad de obtener los errores estandares
+		    de la curva de Lorenz como parametro del procedieminto.
+*/

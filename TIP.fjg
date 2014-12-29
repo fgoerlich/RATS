@@ -1,0 +1,134 @@
+/*
+     Jenkins & Lambert TIP curves.             April/12 - R0: April/12
+*/
+COM [STRING] %%TIP =                       'TIP - Version R0: April/12'
+
+PROC  TIP    Y  TBEGP  TENDP   OUTLX   OUTLY 
+TYPE  SER    Y                *OUTLX  *OUTLY
+TYPE  INTEGER   TBEGP  TENDP
+*
+LOCAL INTEGER   N  TBEG   TEND  I  J
+LOCAL SERIES    S  W  W% P   SMPL  GAPS  TY  TP  LY  LX
+LOCAL VECTOR    Q  L
+LOCAL STRING    STR PG HC
+*
+OPTION SWITCH PRINT    1
+OPTION SWITCH GRAPH    1
+OPTION SWICTH MEDIAN   1
+OPTION SWITCH SAMPLE   0
+OPTION REAL   PL
+OPTION REAL   SHARE    .6
+OPTION VECTOR QUANTIL
+OPTION SERIES WEIGHT
+OPTION SERIES SMPLL
+
+INQUIRE(SERIES=Y) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(Y),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(Y)
+
+IF %DEFINED(WEIGHT)
+   SET P TBEG TEND = WEIGHT
+ELSE
+   SET P TBEG TEND = 1
+
+SAM(SMPL=SMPL) Y  TBEG TEND S 1
+SAM(SMPL=SMPL) P  TBEG TEND W 1
+
+*   Globals
+COM %MEAN = %%POVERTYLINE = %%HEADCOUNT = %%INCOMEGAP = %%POVERTYGAP = %%FGT2 = %NA, %NOBS = 0
+INQ(SER=S)  *  N
+IF N<200;   HALT 'At least 200 observations are required'
+
+*   Poverty Line
+COM %%POVERTYLINE = %IF(%DEFINED(PL),PL,%POVERTYLINE(MEDIAN,S,W,%IF(SHARE<=0,.6,SHARE),%DEFINED(WEIGHT)))
+
+*   Poverty Line Analysis
+IF %%POVERTYLINE<%MINVALUE(S);   HALT 'Poverty Line too low.  Nobody    is poor'
+IF %%POVERTYLINE>%MAXVALUE(S);   HALT 'Poverty Line too high. Everybody is poor'
+
+*   Gaps series (normalized)
+ORDER    S 1 N    W
+SET   GAPS 1 N = %MAX((%%POVERTYLINE-S)/%%POVERTYLINE,0)
+@S%      W 1 N    W%
+SET   GAPS 1 N  = W%*GAPS
+
+*   Poverty statistics
+COM %%HEADCOUNT = %HEADCOUNT(GAPS,W), %%POVERTYGAP = %FGT(S,W,%%POVERTYLINE,1)
+COM %%INCOMEGAP = %%POVERTYGAP/%%HEADCOUNT, %%FGT2 = %FGT(S,W,%%POVERTYLINE,2), %MEAN = %M(S,W), %NOBS = N
+
+IF SAMPLE
+   {
+   *   TIP Curve at sample points
+   ACC           GAPS 1 %NOBS     TY 1
+   ACC(SCALE)    W%   1 %NOBS     TP 1
+   SET(FIRST=0.) LX   1 %NOBS+1 = TP{1}
+   SET(FIRST=0.) LY   1 %NOBS+1 = TY{1}
+   COM J = %NOBS-1, STR = 'sample points'
+   CLE TY TP
+   }
+ELSE
+   {
+   IF %DEFINED(QUANTIL)
+      {
+      DIM L(%ROWS(QUANTIL))
+      EWI L(I) = %IF(QUANTIL(I)<=0.OR.QUANTIL(I)>=1,0,1)
+      COM Q = %SORT(%COMPRESS(QUANTIL,L)), J = %ROWS(Q), STR = 'user defined points'
+      }
+   ELSE
+      {
+      COM  J =  99, STR = '1%-quantiles (percentiles)'
+      DIM Q(J)
+      EWI Q(I)  = I/(J+1.)
+      }   
+
+   IF .NOT.%DEFINED(WEIGHT)
+      COM L = %TIP(GAPS,Q)
+   ELSE
+      COM L = %WTIP(GAPS,W,Q)
+
+   SET(FIRST=0.) LX 1 J+2 = %IF(T==J+2,1,Q(T-1))
+   SET(FIRST=0.) LY 1 J+2 = %IF(T==J+2,%%POVERTYGAP,L(T-1))
+   }
+
+IF PRINT
+   {
+   DIS;DIS 'Poverty indices and TIP curve on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   IF %DEFINED(PL)
+      DIS 'User defined Poverty Line' %%POVERTYLINE
+   ELSE
+      DIS 'Relative Poverty Line' %%POVERTYLINE '(' @-1 ###.## %IF(SHARE<=0,.6,SHARE)*100  @-1 '% of the' %STRIF(MEDIAN,'median','mean')+' = ' * %%POVERTYLINE/%IF(SHARE<=0,.6,SHARE) @-1 ')'
+   DIS 'Poverty basic statistics'
+   DIS 'Sample mean   '             %MEAN
+   DIS 'Head Count    ' @+5 ###.##  %%HEADCOUNT*100 @-1 '%'
+   DIS 'Income gap    '             %%INCOMEGAP     @41 'Poverty gap     ' %%POVERTYGAP
+   DIS 'FGT(2)        '             %%FGT2
+   DIS
+   DIS '  Abcisa (%)   Ordinate (%)'
+   DO I = 1,J+2
+      DIS @3 ###.## LX(I)*100 @+5 ###.###### LY(I)
+   END DO I
+   DIS;DIS
+   }
+
+IF GRAPH
+   {
+   DIS(STORE=PG) 'Poverty Gap = '   #.##### %%POVERTYGAP
+   DIS(STORE=HC) 'Head Count = ' ##.##      %%HEADCOUNT*100 @-1 '%'
+   SPGRAPH
+      SCA(HMAX=%ROUND(1.1*%%HEADCOUNT,2),HMIN=0.0,VMIN=0.0,VGRID=||%%POVERTYGAP||,HGRID=||%%HEADCOUNT||,     $
+          STYLE=LINES,VLABEL='Cumulative (normalized) gaps',HLABEL='Cumulative population',HEADER='TIP Curve',SUBHEAD=%L(Y))
+      # LX LY 1 J+2 1
+      GRTEXT(ALIGN=LEFT,VALIGN=TOP,X=LX(2),Y=.9*%%POVERTYGAP,BOX) PG
+      GRTEXT(ALIGN=RIGHT,VALIGN=BOTTOM,X=.8*%%HEADCOUNT,Y=LY(2),BOX) HC
+   SPGRAPH(DONE)
+   }
+
+IF %DEFINED(OUTLX)  ;   SET OUTLX   1 J+2 = LX
+IF %DEFINED(OUTLY)  ;   SET OUTLY   1 J+2 = LY
+
+CLE SMPL W W% S P GAPS TY TP LX LY
+END PROC FGT

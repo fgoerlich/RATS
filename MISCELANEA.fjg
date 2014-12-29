@@ -1,0 +1,737 @@
+*   This file contains Rats FUNCTIONs for various things (MISCELANEA)
+*   WinRATS 9.00
+*   Paco Goerlich   27/12/2014
+
+********************************************************************************
+
+*   %SUMS - Sum the elements of a series
+
+FUNCTION  %SUMS  X
+TYPE REA  %SUMS
+TYPE SER          X
+
+LOCAL REAL A
+LOCAL INT  I N
+
+INQ(SER=X) * N
+COM  A = %SUMS = 0, %DO(I,1,N,A = A + X(I)), %SUMS = A
+
+END      %SUMS
+
+********************************************************************************
+
+*   %SUMC - Sum the columns of a matrix
+*           This is a built in function in WinRATS 7.20
+
+*FUNCTION  %SUMC  A
+*TYPE VEC  %SUMC
+*TYPE REC         A
+
+*DIM %SUMC(%COLS(A))
+*EWI %SUMC(J) = %SUM(%XCOL(A,J))
+
+*END %SUMC
+
+********************************************************************************
+
+*   %SUMR - Sum the rows of a matrix
+*           This is a built in function in WinRATS 7.20
+
+*FUNCTION  %SUMR  A
+*TYPE VEC  %SUMR
+*TYPE REC         A
+
+*DIM %SUMR(%ROWS(A))
+*EWI %SUMR(J) = %SUM(%XROW(A,J))
+
+*END %SUMR
+
+********************************************************************************
+
+*   %BLOCKDIAG - Block diagonal matrix from a vector of rectangulars
+*                This is a built in function in WinRATS 6.02
+
+*FUNCTION      %BLOCKDIAG  A
+*TYPE     REC  %BLOCKDIAG
+*TYPE VEC[REC]             A
+
+*LOCA REC[REC]  B
+*LOCA INT       I J
+
+*DIM           B(%ROWS(A),%ROWS(A))
+*DO I = 1,%ROWS(B)
+*   DO J = 1,%COLS(B)
+*      COM B(I,J) = %ZEROS(%ROWS(A(I)),%COLS(A(J)))
+*   END DO J
+*   COM B(I,I) = A(I)
+*END DO I
+*COM  %BLOCKDIAG = %BLOCKGLUE(B)
+
+*END  %BLOCKDIAG
+
+********************************************************************************
+
+*   %BLOCKDIAGSYM - Block diagonal symmetric matrix from a vector of symmetrics
+
+FUNCTION      %BLOCKDIAGSYM  A
+TYPE     SYM  %BLOCKDIAGSYM
+TYPE VEC[SYM]                A
+
+LOCA VEC[REC]  C
+
+DIM  C(%ROWS(A))
+EWI  C(I) = A(I)
+COM  %BLOCKDIAGSYM = %BLOCKDIAG(C)
+
+END  %BLOCKDIAGSYM
+
+********************************************************************************
+
+*   %AGREGA - Convert this PROC into a FUNCTION.
+
+********************************************************************************
+
+*   %DUPLICA - Operator to duplicate rows of a matrix.
+*              To duplicate de columns post-multiply by TR(%DUPLICA(.))
+*              Also to alter the order of the rows and/or columns of a matrix.
+
+FUNCTION  %DUPLICA  V
+TYPE REC  %DUPLICA
+TYPE VEC            V
+
+DIM  %DUPLICA(%ROWS(V),FIX(%MAXVALUE(V)))
+EWI  %DUPLICA(I,J) = %IF(FIX(V(I))==J,1,0)
+
+END  %DUPLICA
+
+********************************************************************************
+
+*   %COMPRESSV - Same as %COMPRESS(A,V) but with A type VEC[LAB]
+
+FUNCTION       %COMPRESSV  A  V
+TYPE VEC[LAB]  %COMPRESSV  A
+TYPE VEC                      V
+
+LOCAL INT I J
+
+DIM  %COMPRESSV(%ROWS(%COMPRESS(V,V)))
+COM I = 1
+DO  J = 1,%ROWS(V)
+    IF V(J).NE.0
+       COM %COMPRESSV(I) = A(J), I = I + 1
+END DO J
+
+END  %COMPRESSV
+
+********************************************************************************
+
+*   %STRCOMPRESSV - Same as %COMPRESSV(A,V) but with A type VEC[STR]
+
+FUNCTION       %STRCOMPRESSV  A  V
+TYPE VEC[STR]  %STRCOMPRESSV  A
+TYPE VEC                      V
+
+LOCAL INT I J
+
+DIM  %STRCOMPRESSV(%ROWS(%COMPRESS(V,V)))
+COM I = 1
+DO  J = 1,%ROWS(V)
+    IF V(J).NE.0
+       COM %STRCOMPRESSV(I) = A(J), I = I + 1
+END DO J
+
+END  %STRCOMPRESSV
+
+********************************************************************************
+
+*   %CPUTIMEHMS - Same as %CPUTIME() but in h:mm:ss format
+
+FUNCTION  %CPUTIMEHMS N
+TYPE STR  %CPUTIMEHMS
+TYPE INT              N
+
+COM %CPUTIMEHMS = %STRING(N/3600) + ' h  ' + %STRING(%MOD(N,3600)/60) + ' min  ' + %STRING(%MOD(%MOD(N,3600),60)) + ' sec'
+
+END %CPUTIMEHMS
+
+********************************************************************************
+
+*   %STRIF - Same as %IF(X,Y,Z) but with Y & Z type STRING
+
+FUNCTION  %STRIF  X  Y  Z
+TYPE STR  %STRIF     Y  Z
+TYPE INT          X
+
+IF    X!=0;   COM %STRIF = Y
+ELSE      ;   COM %STRIF = Z
+
+END       %STRIF
+
+********************************************************************************
+
+*   %INV - Inverse of a Real Number.
+
+FUNCTION  %INV  X
+TYPE REA  %INV  X
+
+COM       %INV = 1./X
+
+END       %INV
+
+********************************************************************************
+
+*   %NAN - Number of NA in a Series.
+
+FUNCTION  %NAN  X
+TYPE INT  %NAN
+TYPE SER        X
+
+LOCA INT   N1 N2 I
+
+INQ(SER=X) N1 N2
+COM %NAN = 0
+DO I = N1,N2
+   IF .NOT.%VALID(X(I))
+      COM %NAN = %NAN + 1
+END DO I
+
+END       %NAN
+
+********************************************************************************
+
+*   %NEGATIVE - Number of Negative Values in a Series.
+
+FUNCTION  %NEGATIVE  X
+TYPE INT  %NEGATIVE
+TYPE SER             X
+
+LOCA SER  Z
+
+SET  Z =  %IF(X<0,1,0)
+COM       %NEGATIVE = FIX(%SUM(Z))
+
+CLE  Z
+END       %NEGATIVE
+
+********************************************************************************
+
+*   %POSITIVE - Number of Positive Values in a Series.
+
+FUNCTION  %POSITIVE  X
+TYPE INT  %POSITIVE
+TYPE SER             X
+
+LOCA SER  Z
+
+SET  Z =  %IF(X>0,1,0)
+COM       %POSITIVE = FIX(%SUM(Z))
+
+CLE  Z
+END       %POSITIVE
+
+********************************************************************************
+
+*   %NUMVALUE - Number of Values in a Series equal to VALUE.
+
+FUNCTION  %NUMVALUE  X  V
+TYPE INT  %NUMVALUE
+TYPE SER             X
+TYPE REA                V
+
+LOCA SER  Z
+
+SET  Z =  %IF(X==V,1,0)
+COM       %NUMVALUE = FIX(%SUM(Z))
+
+CLE  Z
+END       %NUMVALUE
+
+********************************************************************************
+
+*   %NZEROS - Number of ZERO큦 in a Series.
+
+FUNCTION  %NZEROS  X
+TYPE INT  %NZEROS
+TYPE SER           X
+
+COM       %NZEROS = %NUMVALUE(X,0)
+
+END       %NZEROS
+
+********************************************************************************
+
+*   %NONES - Number of ONE큦 in a Series.
+
+FUNCTION  %NONES  X
+TYPE INT  %NONES
+TYPE SER          X
+
+COM       %NONES = %NUMVALUE(X,1)
+
+END       %NONES
+
+********************************************************************************
+
+*   %NLT - Number of Values in a Series LOWER THAN to VALUE.
+
+FUNCTION  %NLT  X  V
+TYPE INT  %NLT
+TYPE SER        X
+TYPE REA           V
+
+LOCA SER  Z
+
+SET  Z =  %IF(X<V,1,0)
+COM       %NLT = FIX(%SUM(Z))
+
+CLE  Z
+END       %NLT
+
+********************************************************************************
+
+*   %NLE - Number of Values in a Series LOWER OR EQUAL THAN to VALUE.
+
+FUNCTION  %NLE  X  V
+TYPE INT  %NLE
+TYPE SER        X
+TYPE REA           V
+
+LOCA SER  Z
+
+SET  Z =  %IF(X<=V,1,0)
+COM       %NLE = FIX(%SUM(Z))
+
+CLE  Z
+END       %NLE
+
+********************************************************************************
+
+*   %NGT - Number of Values in a Series GREATER THAN to VALUE.
+
+FUNCTION  %NGT  X  V
+TYPE INT  %NGT
+TYPE SER        X
+TYPE REA           V
+
+LOCA SER  Z
+
+SET  Z =  %IF(X>V,1,0)
+COM       %NGT = FIX(%SUM(Z))
+
+CLE  Z
+END       %NGT
+
+********************************************************************************
+
+*   %NGE - Number of Values in a Series GREATER OR EQUAL THAN to VALUE.
+
+FUNCTION  %NGE  X  V
+TYPE INT  %NGE
+TYPE SER        X
+TYPE REA           V
+
+LOCA SER  Z
+
+SET  Z =  %IF(X>=V,1,0)
+COM       %NGE = FIX(%SUM(Z))
+
+CLE  Z
+END       %NGE
+
+********************************************************************************
+
+*   %INTEGER - If a REAL is an INTEGER, 1, or NOT, 0.
+
+FUNCTION  %INTEGER  X
+TYPE INT  %INTEGER
+TYPE REAL           X
+
+COM       %INTEGER = FIX(%IF(%FRAC(X)==0,1,0))
+
+END       %INTEGER
+
+********************************************************************************
+
+*   %IEVEN - If an INTEGER is EVEN, 1, or NOT, 0.
+
+FUNCTION  %IEVEN  X
+TYPE INT  %IEVEN  X
+
+COM       %IEVEN = FIX(%IF(%FRAC(X/2.)==0,1,0))
+
+END       %IEVEN
+
+********************************************************************************
+
+*   %IODD - If an INTEGER is ODD, 1, or NOT, 0.
+
+FUNCTION  %IODD  X
+TYPE INT  %IODD  X
+
+COM       %IODD = 1 - %IEVEN(X)
+
+END       %IODD
+
+********************************************************************************
+
+*   %EVEN - If a REAL is an EVEN INTEGER, 1, or NOT, 0.
+
+FUNCTION  %EVEN  X
+TYPE REAL %EVEN  X
+
+COM       %EVEN = %IF(%INTEGER(X),%IEVEN(FIX(X)),%NA)
+
+END       %EVEN
+
+********************************************************************************
+
+*   %ODD - If a REAL is an ODD INTEGER, 1, or NOT, 0.
+
+FUNCTION  %ODD  X
+TYPE REAL %ODD  X
+
+COM       %ODD = %IF(%INTEGER(X),1-%EVEN(X),%NA)
+
+END       %ODD
+
+********************************************************************************
+
+*   %FRACV - %FRAC for vectors.
+
+FUNCTION  %FRACV  V
+TYPE VEC  %FRACV  V
+
+DIM %FRACV(%ROWS(V))
+EWI %FRACV(I) = %FRAC(V(I))
+
+END       %FRACV
+
+********************************************************************************
+
+*   %FRACM - %FRAC for matrices (rectangular).
+
+FUNCTION  %FRACM  V
+TYPE REC  %FRACM  V
+
+DIM %FRACM(%ROWS(V),%COLS(V))
+EWI %FRACM(I,J) = %FRAC(V(I,J))
+
+END       %FRACM
+
+********************************************************************************
+
+*   %ROUNDV - %ROUND for vectors.
+
+FUNCTION  %ROUNDV  V  S
+TYPE VEC  %ROUNDV  V
+TYPE INT              S
+
+LOCA INT I
+
+DIM %ROUNDV(%ROWS(V))
+EWI %ROUNDV(I) = %ROUND(V(I),S)
+
+END       %ROUNDV
+
+********************************************************************************
+
+*   %ROUNDM - %ROUND for matrices (rectangular).
+
+FUNCTION  %ROUNDM  V  S
+TYPE REC  %ROUNDM  V
+TYPE INT              S
+
+LOCA INT I J
+
+DIM %ROUNDM(%ROWS(V),%COLS(V))
+EWI %ROUNDM(I,J) = %ROUND(V(I,J),S)
+
+END       %ROUNDM
+
+********************************************************************************
+
+*   %UNITM - %UNITV for matrices (rectangular).
+
+FUNCTION  %UNITM  M N I J
+TYPE REC  %UNITM
+TYPE INT          M N I J
+
+COM %UNITM = %ZEROS(M,N), %UNITM(I,J) = 1.
+
+END       %UNITM
+
+********************************************************************************
+
+*   %ANY - Creates and m x n matrix with all elements equal to a given real, A.
+*          Same as %CONST(A) without dimensioning the matrix.
+
+FUNCTION  %ANY  M N A
+TYPE REC  %ANY
+TYPE INT        M N
+TYPE REA            A
+
+DIM %ANY(M,N)
+COM %ANY = %CONST(A)
+
+END       %ANY
+
+********************************************************************************
+
+*   %ONES - Creates and m x n matrix with all elements equal to one.
+*           Same as %CONST(1) without dimensioning the matrix.
+*           This is a built in function in WinRATS 9.00
+
+*FUNCTION  %ONES  M N
+*TYPE REC  %ONES
+*TYPE INT         M N
+
+*COM %ONES = %ANY(M,N,1)
+
+*END       %ONES
+
+********************************************************************************
+
+*   %PROPORTIONAL - Adjust proportionally a vector V to a given quantity, S.
+
+FUNCTION  %PROPORTIONAL  V  S
+TYPE VEC  %PROPORTIONAL  V
+TYPE REAL                   S
+
+COM %PROPORTIONAL = %IF(%MIN(%MINVALUE(V),S)<0,%NA,%IF(%SUM(V)==0.AND.S==0,1,S/%SUM(V)))*V
+
+END       %PROPORTIONAL
+
+********************************************************************************
+
+*   %IPROPORTIONAL - Integer version of %PROPORTIONAL.
+*                    Rule for integer asigment after rounding to the nearest integer:
+*                    If we have to ADD:      ADD      1 to the value whose fractional part is closest to 0.5 from below.
+*                    If we have to SUBSTRAC: SUBSTRAC 1 to the value whose fractional part is closest to 0.5 from above.
+
+FUNCTION  %IPROPORTIONAL  V  S
+TYPE VEC  %IPROPORTIONAL  V
+TYPE REAL                    S
+
+LOCA INT A I
+LOCA VEC F
+
+COM %IPROPORTIONAL = %PROPORTIONAL(V,%ROUND(S,0)), F = %FRACV(%IPROPORTIONAL)-%ANY(%ROWS(V),1,.5)
+COM %IPROPORTIONAL = %ROUNDV(%IPROPORTIONAL,0)   , A = FIX(%ROUND(S,0)-%SUM(%IPROPORTIONAL))
+
+IF      A>0
+   EWI F(I) = %IF(F(I)>0,.5,-F(I))
+ELSE IF A<0   
+   EWI F(I) = %IF(F(I)<0,.5, F(I))
+
+IF A!=0
+   {
+   DO I = 1,%IABS(A)
+      COM %IPROPORTIONAL = %IPROPORTIONAL + %IF(A<0,-1,1)*%UNITV(%ROWS(V),%MININDEX(F))
+      EWI F(I) = %IF(%MININDEX(F)==I,.5,F(I))
+   END DO I
+   }
+   
+END       %IPROPORTIONAL
+
+********************************************************************************
+
+*   %MAXINDEXROW - %MAXINDEX row for a rectangular matrix.
+
+FUNCTION  %MAXINDEXROW  V
+TYPE INT  %MAXINDEXROW
+TYPE REC                V
+
+COM %MAXINDEXROW = %CLOCK(%MAXINDEX(%VEC(V)),%ROWS(V))
+
+END       %MAXINDEXROW
+
+********************************************************************************
+
+*   %MININDEXROW - %MININDEX row for a rectangular matrix.
+
+FUNCTION  %MININDEXROW  V
+TYPE INT  %MININDEXROW
+TYPE REC                V
+
+COM %MININDEXROW = %CLOCK(%MININDEX(%VEC(V)),%ROWS(V))
+
+END       %MININDEXROW
+
+********************************************************************************
+
+*   %MAXINDEXCOL - %MAXINDEX column for a rectangular matrix.
+
+FUNCTION  %MAXINDEXCOL  V
+TYPE INT  %MAXINDEXCOL
+TYPE REC                V
+
+COM %MAXINDEXCOL = %MAXINDEXROW(TR(V))
+
+END       %MAXINDEXCOL
+
+********************************************************************************
+
+*   %MININDEXCOL - %MININDEX column for a rectangular matrix.
+
+FUNCTION  %MININDEXCOL  V
+TYPE INT  %MININDEXCOL
+TYPE REC                V
+
+COM %MININDEXCOL = %MININDEXROW(TR(V))
+
+END       %MININDEXCOL
+
+********************************************************************************
+
+*   %BINRIGHT - %BIN with right closed intervals.
+*               Returns n = %BINRIGHT(x,V) where V(n-1) < x <= V(n)
+
+FUNCTION  %BINRIGHT  X  V
+TYPE INT  %BINRIGHT
+TYPE REA             X
+TYPE VEC                V
+
+COM %BINRIGHT = FIX(%IF(X>%MAXVALUE(V),0,%BIN(X,V)+%IF(X==V(%BIN(X,V)),0,1)))
+
+END %BINRIGHT
+
+********************************************************************************
+
+*   %DOMINANCE - Checks the dominance of two curves (series = ordinates).
+*                0 No dominance
+*                1 if Y1 (strong) dominates Y2
+*                2 if Y2 (strong) dominates Y1
+*                (Strong) dominance is defined as Y1>=Y2, with at least one strict inequality.
+
+FUNCTION  %DOMINANCE  Y1  Y2
+TYPE INT  %DOMINANCE
+TYPE SER              Y1  Y2
+
+LOCA INT N
+LOCA SER Z
+
+INQ(REG) * N
+# Y1 Y2
+
+SET Z = Y1 - Y2
+IF      (%POSITIVE(Z)+%NZEROS(Z)==N).AND.%NZEROS(Z)<N;   COM %DOMINANCE = 1
+ELSE IF (%NEGATIVE(Z)+%NZEROS(Z)==N).AND.%NZEROS(Z)<N;   COM %DOMINANCE = 2
+ELSE                                                 ;   COM %DOMINANCE = 0
+
+END %DOMINANCE
+
+********************************************************************************
+
+*   %PADDING - Pads an integer with zeros to the left. Type: String
+*              N is the length of the returned string.
+
+FUNCTION  %PADDING  N  I
+TYPE STR  %PADDING
+TYPE INT            N  I
+
+COM %PADDING = %STRREP('0',N-%STRLEN(%STRING(I)))+%STRING(I)
+
+END %PADDING
+
+********************************************************************************
+
+*   %PROV2CA - Returns the CCAA code from a PROVINCIA code
+*              It is assumed that the order is the one in the EPF's
+
+FUNCTION  %PROV2CA  P
+TYPE INT  %PROV2CA  P
+
+IF      P==4.OR.P==11.OR.P==14.OR.P==18.OR.P==21.OR.P==23.OR.P==29.OR.P==41
+   COM %PROV2CA =  1
+ELSE IF P==22.OR.P==44.OR.P==50
+   COM %PROV2CA =  2
+ELSE IF P==33
+   COM %PROV2CA =  3
+ELSE IF P==7
+   COM %PROV2CA =  4
+ELSE IF P==35.OR.P==38
+   COM %PROV2CA =  5
+ELSE IF P==39
+   COM %PROV2CA =  6
+ELSE IF P==5.OR.P==9.OR.P==24.OR.P==34.OR.P==37.OR.P==40.OR.P==42.OR.P==47.OR.P==49
+   COM %PROV2CA =  7
+ELSE IF P==2.OR.P==13.OR.P==16.OR.P==19.OR.P==45
+   COM %PROV2CA =  8
+ELSE IF P==8.OR.P==17.OR.P==25.OR.P==43
+   COM %PROV2CA =  9
+ELSE IF P==3.OR.P==12.OR.P==46
+   COM %PROV2CA = 10
+ELSE IF P==6.OR.P==10
+   COM %PROV2CA = 11
+ELSE IF P==15.OR.P==27.OR.P==32.OR.P==36
+   COM %PROV2CA = 12
+ELSE IF P==28
+   COM %PROV2CA = 13
+ELSE IF P==30
+   COM %PROV2CA = 14
+ELSE IF P==31
+   COM %PROV2CA = 15
+ELSE IF P==1.OR.P==20.OR.P==48
+   COM %PROV2CA = 16
+ELSE IF P==26
+   COM %PROV2CA = 17
+ELSE IF P==51.OR.P==52
+   COM %PROV2CA = 18
+ELSE
+   COM %PROV2CA = 0
+
+END    %PROV2CA
+
+********************************************************************************
+
+*   List of functions
+
+*   %SUMS          - Sum the elements of a series
+*   %SUMC          - Sum the columns of a matrix (built in 7.20)
+*   %SUMR          - Sum the rows    of a matrix (built in 7.20)
+*   %BLOCKDIAG     - Block diagonal matrix from a vector of rectangulars (built in 6.02)
+*   %BLOCKDIAGSYM  - Block diagonal symmetric matrix from a vector of symmetrics
+*   %AGREGA        - Convert this PROC into a FUNCTION (pending)
+*   %DUPLICA       - Operator to duplicate rows of a matrix.
+*   %COMPRESSV     - Same as %COMPRESS(A,V) but with A type VEC[LAB]
+*   %STRCOMPRESSV  - Same as %COMPRESSV(A,V) but with A type VEC[STR]
+*   %CPUTIMEHMS    - Same as %CPUTIME() but in h:mm:ss format
+*   %STRIF         - Same as %IF(X,Y,Z) but with Y & Z type STRING
+*   %INV           - Inverse of a Real Number.
+*   %NAN           - Number of NA in a Series.
+*   %NEGATIVE      - Number of Negative Values in a Series.
+*   %POSITIVE      - Number of Positive Values in a Series.
+*   %NUMVALUE      - Number of Values in a Series equal to VALUE.
+*   %NZEROS        - Number of ZERO큦 in a Series.
+*   %NONES         - Number of ONE큦 in a Series.
+*   %NLT           - Number of Values in a Series LOWER THAN to VALUE.
+*   %NLE           - Number of Values in a Series LOWER OR EQUAL THAN to VALUE.
+*   %NGT           - Number of Values in a Series GREATER THAN to VALUE.
+*   %NGE           - Number of Values in a Series GREATER OR EQUAL THAN to VALUE.
+*   %INTEGER       - If a REAL is an INTEGER, 1, or NOT, 0.
+*   %IEVEN         - If an INTEGER is EVEN, 1, or NOT, 0.
+*   %IODD          - If an INTEGER is ODD, 1, or NOT, 0.
+*   %EVEN          - If a REAL is an EVEN INTEGER, 1, or NOT, 0.
+*   %ODD           - If a REAL is an ODD INTEGER, 1, or NOT, 0.
+*   %FRACV         - %FRAC for vectors.
+*   %FRACM         - %FRAC for matrices (rectangular).
+*   %ROUNDV        - %ROUND for vectors.
+*   %ROUNDM        - %ROUND for matrices (rectangular).
+*   %UNITM         - %UNITV for matrices (rectangular).
+*   %ANY           - Creates and m x n matrix with all elements equal to a given real, A.
+*                    Same as %CONST(A) without dimensioning the matrix.
+*   %ONES          - Creates and m x n matrix with all elements equal to one.
+*                    Same as %CONST(1) without dimensioning the matrix. (built in 9.00)
+*   %PROPORTIONAL  - Adjust proportionally a vector V to a given quantity, S.
+*   %IPROPORTIONAL - Integer version of %PROPORTIONAL.
+*   %MAXINDEXROW   - %MAXINDEX row for a rectangular matrix.
+*   %MININDEXROW   - %MININDEX row for a rectangular matrix.
+*   %MAXINDEXCOL   - %MAXINDEX column for a rectangular matrix.
+*   %MININDEXCOL   - %MININDEX column for a rectangular matrix.
+*   %BINRIGHT      - %BIN with right closed intervals.
+*                    Returns n = %BINRIGHT(X,V) where V(n-1) < x <= V(n)
+*   %DOMINANCE     - Checks the dominance of two curves (series = ordinates).
+*   %PADDING       - Pads an integer with zeros to the left. Type: String
+*   %PROV2CA       - Returns the CCAA code from a PROVINCIA code (EPF큦 order)
+
+********************************************************************************

@@ -1,0 +1,63 @@
+/*
+     LogNormal: Estadisticos, estimación de parámetros y contrastes 
+                relacionados con la distribución lognormal.
+     
+     Escrito por:  Paco Goerlich.                 Version: Diciembre/2008 (R2)
+     Version RATS: WinRATS 7.10
+
+     Sintaxis:
+
+      @LOGNORMAL S COMIENZO FIN  X  Y
+
+       S        = Serie.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       X        = Abscisas  en la densidad Lognormal estimada.
+       Y        = Ordenadas en la densidad Lognormal estimada.
+
+
+       Opciones:
+
+     [PRINT]/NOPRINT   controla la impresion de los estadisticos.
+     [GRAPH]/NOGRAPH   controla la visualizacion de la densidad estimada.
+     SMPL    = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+               de los calculos (Ver RATS 5.2 UG) [no definido].
+     MAX     = Maximum value to consider in the Graph [MAX(S)].
+               (In calculations all valid and not excluded values are included).
+     GRID    = Numero de puntos en los que se estima la densidad [1000].
+               Para GRID = 1 se estima en los valores muestrales.
+
+
+       Variables globales:
+
+       %%LOGNORMAL = STRING, Version actual del procedimiento
+
+       Todas las variables internas de RATS procedentes de la instruccion
+       STATISTICS para la serie en logaritmos: Log(S) (Ver RATS 6.3 RM, p.-406)
+
+       %%LNMEAN     = Mean          of the estimated Lognormal distribution.
+       %%LNMEDIAN   = Median        of the estimated Lognormal distribution.
+       %%LNMODE     = Mode          of the estimated Lognormal distribution.
+       %%LNVARIANCE = Variance      of the estimated Lognormal distribution.
+       %%LNCV       = Coef. of Var. of the estimated Lognormal distribution.
+       %%LNGINI     = Gini index    of the estimated Lognormal distribution.
+
+
+
+*****************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Nelson (1973), p.-162, Aitchison & Brown (1969) & Cowell (1995)
+
+*****************************************************************************
+
+   INFORMACION ADICIONAL
+
+   R1: Abril/2008
+       SMPL y ZEROS series no estaban definidas como locales.
+
+   R2: Diciembre/2008
+       Cambios cosmeticos.
+
+*/

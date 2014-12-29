@@ -1,0 +1,245 @@
+*   This file contains Rats FUNCTIONs for GENERAL PURPOSE calculations
+*   WinRATS 8.30
+*   Paco Goerlich   21/12/2014
+
+********************************************************************************
+
+*   %AREA - Area between line X = 0 and two points
+
+FUNCTION   %AREA  X1  Y1  X2  Y2
+TYPE REAL  %AREA  X1  Y1  X2  Y2
+
+COM  %AREA = %IF(X2<X1.OR.%MIN(Y1,Y2)<0,%NA,(X2 - X1)*((Y2 + Y1)/2.))
+
+END  %AREA
+
+********************************************************************************
+
+*   %AREABASE - Area between line X = B and two points
+
+FUNCTION   %AREABASE  X1  Y1  X2  Y2  B
+TYPE REAL  %AREABASE  X1  Y1  X2  Y2  B
+
+COM  %AREABASE = %IF(X2<X1.OR.%MIN(Y1,Y2)<B,%NA,(X2 - X1)*((Y1 - B) + (Y2 - Y1)/2.))
+
+END  %AREABASE
+
+********************************************************************************
+*   %GPLININT - LINear INTerpolation inside and extrapolation outside
+*               Regla del determinante: Keyfitz (1979, Cap.-10)
+
+FUNCTION   %GPLININT  X1  Y1  X2  Y2  X
+TYPE REAL  %GPLININT  X1  Y1  X2  Y2  X
+
+LOCAL RECT A B
+
+COM A = || X , 1,  0  |  $
+           X1, 1, -Y1 |  $
+           X2, 1, -Y2 ||
+DIM B(2,2)
+EWI B(I,J) = A(I+1,J)
+
+COM  %GPLININT = %IF(%DET(B)==0,%NA,%DET(A)/%DET(B))
+
+END  %GPLININT
+
+********************************************************************************
+
+*   %GPNUMINT - General Purpose NUMerical INTegration (by linear interpolation)
+*               This is a built in function in WinRATS 8.30
+
+*FUNCTION   %GPNUMINT  X  Y
+*TYPE REAL  %GPNUMINT
+*TYPE SER              X  Y
+
+*LOCAL INT  N I
+
+*INQ(REG) * N
+*# X Y
+
+*COM  %GPNUMINT = 0
+*DO I=2,N
+*   COM %GPNUMINT = %GPNUMINT + %AREA(X(I-1),Y(I-1),X(I),Y(I))
+*END DO I
+
+*END  %GPNUMINT
+
+********************************************************************************
+
+*   %RAS - Biproportional adjustment of rectangular matrices
+
+FUNCTION %RAS  A  B  C  CVC  ITE
+TYPE REC %RAS  A
+TYPE VEC          B  C
+TYPE REA                CVC
+TYPE INT                     ITE
+
+LOCA VEC R S  R1 S1
+LOCA INT I J
+
+*   Globals
+COM %ITERS = 0, %CONVERGED = 0, %CVCRIT = %NA
+
+DIM R(%ROWS(A)) S(%COLS(A)) R1(%ROWS(A)) S1(%COLS(A))
+COM %RAS = A, R1 = %CONST(1.), S1 = %CONST(1.)
+LOOP
+   *   RAS adjustment
+   EWI  R(I)     = %IF(%SUM(%XROW(%RAS,I))==0.AND.B(I)==0,1,B(I)/%SUM(%XROW(%RAS,I)))
+   EWI %RAS(I,J) = R(I)*%RAS(I,J)
+   EWI  S(J)     = %IF(%SUM(%XCOL(%RAS,J))==0.AND.C(J)==0,1,C(J)/%SUM(%XCOL(%RAS,J)))
+   EWI %RAS(I,J) = S(J)*%RAS(I,J)
+   COM %ITERS = %ITERS + 1, %CVCRIT = %MAX(%TESTDIFF(R1,R),%TESTDIFF(S1,S))
+
+   *   Convergence criterion
+   IF %CVCRIT<CVC
+      {
+      COM %CONVERGED = 1 
+      BREAK
+      }
+
+   *   Iteration limit
+   IF %ITERS==ITE
+      BREAK
+
+END LOOP
+
+END %RAS
+
+********************************************************************************
+
+*   %IRAS2 - Integer version of RAS (Initial version)
+*            Rule for integer asigment follows %IPROPORTIONAL:
+*            For ADDing:       ADD       1 to the value whose fractional part is closest to 0.5 from below.
+*            For SUBSTRACTing: SUBSTRACT 1 to the value whose fractional part is closest to 0.5 from above.
+*            Hovewer since we now deal with matrices we check the need for ADDing and/or SUBSTRACTing by
+*            rows and columns and perform ADDing and/or SUBSTRACTing simultaneously.
+
+FUNCTION %IRAS2  A  B  C  CVC  ITE  IITE
+TYPE REC %IRAS2  A
+TYPE VEC            B  C
+TYPE REA                  CVC
+TYPE INT                       ITE  IITE
+
+LOCA VEC R S R1 S1
+LOCA REC F      FP FN
+LOCA INT I J KP KN
+
+*   Globals
+COM %%ITERS = 0, %%CONVERGED = 0, %CVCRIT = %NA
+
+DIM R(%ROWS(A)) S(%COLS(A)) FP(%ROWS(A),%COLS(A)) FN(%ROWS(A),%COLS(A))
+COM %IRAS2 = A, R1 = %IPROPORTIONAL(B,%ROUND(%SUM(B),0)), S1 = %IPROPORTIONAL(C,%ROUND(%SUM(C),0))
+
+LOOP
+   *   Integer RAS adjustment
+   COM %IRAS2 = %RAS(%IRAS2,R1,S1,CVC,ITE), F = %FRACM(%IRAS2)-%ANY(%ROWS(A),%COLS(A),.5), %IRAS2 = %ROUNDM(%IRAS2,0)
+   EWI R(I)   = %SUM(%XROW(%IRAS2,I))
+   EWI S(J)   = %SUM(%XCOL(%IRAS2,J))
+   COM %%ITERS = %%ITERS + 1, %CVCRIT = %MAX(%TESTDIFF(R1,R),%TESTDIFF(S1,S))
+   IF %CONVERGED==0
+      RETURN
+
+   *   Convergence criterion
+   IF %CVCRIT==0
+      {
+      COM %%CONVERGED = 1
+      BREAK
+      }
+
+   *   Iteration limit
+   IF %%ITERS==IITE
+      BREAK
+
+   COM KP = %IMAX(FIX(%MAXVALUE(R1-R)),FIX(%MAXVALUE(S1-S))), KN = %IMIN(FIX(%MINVALUE(R1-R)),FIX(%MINVALUE(S1-S)))
+   EWI FP(I,J) = %IF(F(I,J)>0,.5,-F(I,J))
+   EWI FN(I,J) = %IF(F(I,J)<0,.5, F(I,J))
+
+   IF KP>0
+      {
+      DO I = 1,KP
+         COM %IRAS2 = %IRAS2 + %UNITM(%ROWS(A),%COLS(A),%MININDEXROW(FP),%MININDEXCOL(FP))
+         EWI FP(I,J) = %IF(%MININDEXROW(FP)==I.AND.%MININDEXCOL(FP)==J,.5,FP(I,J))
+      END DO I
+      }
+   IF KN<0
+      {
+      DO I = 1,-KN
+         COM %IRAS2 = %IRAS2 - %UNITM(%ROWS(A),%COLS(A),%MININDEXROW(FN),%MININDEXCOL(FN))
+         EWI FN(I,J) = %IF(%MININDEXROW(FN)==I.AND.%MININDEXCOL(FN)==J,.5,FN(I,J))
+      END DO I
+      }
+
+END LOOP
+
+END %IRAS2
+
+********************************************************************************
+
+*   %IRAS - Integer version of RAS
+*           Rule for integer asigment: Look for rows/columns with discrepancies.
+*           A RAS adjustment is done ONLY in these elements until integer convergence.
+
+FUNCTION %IRAS  A  B  C  CVC  ITE  IITE
+TYPE REC %IRAS  A
+TYPE VEC           B  C
+TYPE REA                 CVC
+TYPE INT                      ITE  IITE
+
+LOCA VEC R S R1 S1
+LOCA REC F G
+LOCA INT I J
+
+*   Globals
+COM %%ITERS = 0, %%CONVERGED = 0, %CVCRIT = %NA
+
+DIM R(%ROWS(A)) S(%COLS(A)) F(%ROWS(A),%COLS(A))
+COM R1 = %IPROPORTIONAL(B,%ROUND(%SUM(B),0)), S1 = %IPROPORTIONAL(C,%ROUND(%SUM(C),0)), %IRAS = %ROUNDM(%RAS(A,R1,S1,CVC,ITE),0)
+IF %CONVERGED==0
+   RETURN
+EWI R(I)    = %SUM(%XROW(%IRAS,I))
+EWI S(J)    = %SUM(%XCOL(%IRAS,J))
+COM %CVCRIT = %MAX(%TESTDIFF(R1,R),%TESTDIFF(S1,S)), G = %IRAS
+
+IF %CVCRIT==0
+   COM %%CONVERGED = 1
+ELSE
+   {
+   LOOP
+      *   Only discrepant row/column and non-zero elements are adjusted again
+      EWI F(I,J)  = (R1(I) - R(I))*(S1(J) - S(J))*%IF(A(I,J)==0,0,1)
+      EWI F(I,J)  = %IF(F(I,J)==0,0,G(I,J))
+      EWI R1(I)   = %SUM(%XROW(F,I)) + (R1(I) - R(I))
+      EWI S1(J)   = %SUM(%XCOL(F,J)) + (S1(J) - S(J))
+      COM G       = %ROUNDM(%RAS(F,R1,S1,CVC,ITE),0)
+      EWI R(I)    = %SUM(%XROW(G,I))
+      EWI S(J)    = %SUM(%XCOL(G,J))
+      COM %CVCRIT = %MAX(%TESTDIFF(R1,R),%TESTDIFF(S1,S)), %%ITERS = %%ITERS + 1
+      IF %CONVERGED==0
+         RETURN     
+      IF %CVCRIT==0
+         {
+         COM %%CONVERGED = 1
+         BREAK
+         }
+      *   Iteration limit
+      IF %%ITERS==IITE
+         BREAK
+   END LOOP
+   EWI %IRAS(I,J) = %IF(G(I,J)>0,G(I,J),%IRAS(I,J))
+   }
+
+END %IRAS
+
+********************************************************************************
+
+*   List of functions
+
+*   %AREA     - Area between line X = 0 and two points
+*   %AREABASE - Area between line X = B and two points
+*   %GPLININT - LINear INTerpolation inside and extrapolation outside
+*   %GPNUMINT - General Purpose NUMerical INTegration (by linear interpolation) (built in 8.30)
+*   %RAS      - Biproportional adjustment of rectangular matrices
+*   %IRAS2    - Integer version of RAS: Initial version
+*   %IRAS     - Integer version of RAS
+
+********************************************************************************

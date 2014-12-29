@@ -1,0 +1,566 @@
+*   This file contains Rats FUNCTIONs for various INEQUALITY indices
+*   WinRATS 8.30
+*   Paco Goerlich  18/12/2014
+
+********************************************************************************
+
+*   %ATKINSON - Atkinson Inequality indices
+
+FUNCTION   %ATKINSON  X  P  E
+TYPE REAL  %ATKINSON        E
+TYPE SER              X  P
+
+IF      E< 0;   COM %ATKINSON = %NA
+ELSE IF E==0;   COM %ATKINSON = 0
+ELSE IF E==1;   COM %ATKINSON = 1 - %MGEOMETRIC(X,P)/%M(X,P)
+ELSE        ;   COM %ATKINSON = 1 - %MORDER(X,P,1-E)/%M(X,P)
+
+END %ATKINSON
+
+********************************************************************************
+
+*   %ATKINSONEXT - Extended Atkinson Inequality indices
+
+FUNCTION   %ATKINSONEXT  X  P  E
+TYPE REAL  %ATKINSONEXT        E
+TYPE SER                 X  P
+
+LOCAL SER Y
+
+SET Y = P*X
+
+IF      E< 0;   COM %ATKINSONEXT = 1 - %M(X,P)/%MORDER(X,P,1-E)
+ELSE IF E==0;   COM %ATKINSONEXT = 1 - %M(X,P)/%MGEOMETRIC(X,Y)
+ELSE        ;   COM %ATKINSONEXT = %ATKINSON(X,P,E)
+
+CLE Y
+END %ATKINSONEXT
+
+********************************************************************************
+
+*   %THEIL_INEQ - Theil/Generalised Entropy Inequality indices
+
+FUNCTION   %THEIL_INEQ  X  P  B
+TYPE REAL  %THEIL_INEQ        B
+TYPE SER                X  P
+
+LOCAL SER  Y
+
+SET Y = P*X
+
+IF      B==0;   COM %THEIL_INEQ = LOG(%M(X,P)) -  %MLOG(X,P)
+ELSE IF B==1;   COM %THEIL_INEQ =  %MLOG(X,Y)  - LOG(%M(X,P))
+ELSE        ;   COM %THEIL_INEQ = ( ( %MPOWER(X,P,B)/(%M(X,P)**B) ) - 1 )/(B*(B - 1))
+
+CLE  Y
+END %THEIL_INEQ
+
+********************************************************************************
+
+*   %GINI - Gini Inequality index
+
+FUNCTION   %GINI  X  P
+TYPE REAL  %GINI
+TYPE SER          X  P
+
+LOCAL REAL A B
+LOCAL INT  I J N
+
+INQ(SER=X) * N
+COM A = B = %GINI = 0, %DO(I,1,N,B = B + P(I)), B = %M(X,P)*B**2, $
+    %DO(I,2,N,%DO(J,1,I-1,A = A + P(I)*P(J)*ABS(X(I) - X(J)))), %GINI = A/B
+
+END %GINI
+
+********************************************************************************
+
+*   %GININUMINT - Gini Inequality index by numerical integration of Lorenz curve
+
+FUNCTION   %GININUMINT  X  Y
+TYPE REAL  %GININUMINT
+TYPE SER                X  Y
+
+COM %GININUMINT = 1-2*%itrapezoid(X,Y)
+
+*   Integrating the concentration curve
+*   LOCAL SER p_Lp
+*   SET       p_Lp = X - Y
+*   COM %GININUMINT = 2*%itrapezoid(X,p_Lp)
+
+END %GININUMINT
+
+********************************************************************************
+
+*   %MAD - (1/2 of) Mean Absolute Deviation
+
+FUNCTION   %MAD  X  P
+TYPE REAL  %MAD
+TYPE SER         X  P
+
+COM %MAD = .5*%MOMABS(X,P,1)/%M(X,P)
+
+END %MAD
+
+********************************************************************************
+
+*   %LOGV - Logarithmic Variance
+
+FUNCTION   %LOGV  X  P
+TYPE REAL  %LOGV
+TYPE SER          X  P
+
+LOCAL REAL LM
+LOCAL SER   Z
+
+COM LM    = LOG(%M(X,P))
+SET  Z    = (LOG(X) - LM)**2
+COM %LOGV = %M(Z,P)
+
+CLE  Z
+END %LOGV
+
+********************************************************************************
+
+*   %LORENZ - Lorenz curve (ordinates)
+
+FUNCTION  %LORENZ  Y  Q
+TYPE VEC  %LORENZ     Q
+TYPE SER           Y
+
+LOCA SER  Z  P
+LOCA INT  I  N  K
+
+INQ(SER=Y) * N
+
+DIM %LORENZ(%ROWS(Q))
+
+SET        Z 1 N = Y
+ORDER      Z 1 N
+ACC(SCALE) Z 1 N Z 1
+SET        P 1 N = T/FLOAT(N)
+
+DO I = 1,%ROWS(Q)
+   IF      Q(I)<0.OR.Q(I)>1;   COM %LORENZ(I) = %NA
+   ELSE IF Q(I)==0;            COM %LORENZ(I) = 0
+   ELSE IF Q(I)==1;            COM %LORENZ(I) = 1
+   ELSE
+      COM K = FIX(Q(I)*N), %LORENZ(I) = %IF(K==0,%GPLININT(0,0,P(1),Z(1),Q(I)),%GPLININT(P(K),Z(K),P(K+1),Z(K+1),Q(I)))
+END DO I
+
+CLE  Z  P
+END %LORENZ
+
+********************************************************************************
+
+*   %WLORENZ - Lorenz curve (ordinates) from weigthed data.
+
+FUNCTION  %WLORENZ  Y  W  Q
+TYPE VEC  %WLORENZ        Q
+TYPE SER            Y  W
+
+LOCA SER  Z  P
+LOCA INT  I  N  K
+
+INQ(SER=Y) * N
+
+DIM %WLORENZ(%ROWS(Q))
+
+SET        Z 1 N = Y
+SET        P 1 N = W
+ORDER      Z 1 N   P
+SET        Z 1 N = P*Z
+ACC(SCALE) Z 1 N Z 1
+ACC(SCALE) P 1 N P 1
+
+DO I = 1,%ROWS(Q)
+   IF      Q(I)<0.OR.Q(I)>1;   COM %WLORENZ(I) = %NA
+   ELSE IF Q(I)==0;            COM %WLORENZ(I) = 0
+   ELSE IF Q(I)==1;            COM %WLORENZ(I) = 1
+   ELSE
+      {
+      COM K = 1
+      WHILE Q(I)>P(K)
+         COM K = K + 1
+      COM %WLORENZ(I) = %IF(K==1,%GPLININT(0,0,P(1),Z(1),Q(I)),%GPLININT(P(K-1),Z(K-1),P(K),Z(K),Q(I)))
+      }            
+END DO I
+
+CLE  Z  P
+END %WLORENZ
+
+********************************************************************************
+
+*   %RWLORENZ - Reversed Weighted Lorenz curve (abscisas)
+
+FUNCTION  %RWLORENZ  Y  W  Q
+TYPE VEC  %RWLORENZ        Q
+TYPE SER             Y  W
+
+LOCA SER  Z  P
+LOCA INT  I  N  K
+
+INQ(SER=Y) * N
+
+DIM %RWLORENZ(%ROWS(Q))
+
+SET        Z 1 N = Y
+SET        P 1 N = W
+ORDER      Z 1 N   P
+SET        Z 1 N = P*Z
+ACC(SCALE) Z 1 N Z 1
+ACC(SCALE) P 1 N P 1
+
+DO I = 1,%ROWS(Q)
+   IF      Q(I)<0.OR.Q(I)>1;   COM %RWLORENZ(I) = %NA
+   ELSE IF Q(I)==0;            COM %RWLORENZ(I) = 0
+   ELSE IF Q(I)==1;            COM %RWLORENZ(I) = 1
+   ELSE
+      {
+      COM K = 1
+      WHILE Q(I)>Z(K)
+         COM K = K + 1
+      COM %RWLORENZ(I) = %IF(K==1,%GPLININT(0,0,Z(1),P(1),Q(I)),%GPLININT(Z(K-1),P(K-1),Z(K),P(K),Q(I)))
+      }            
+END DO I
+
+CLE  Z  P
+END %RWLORENZ
+
+********************************************************************************
+
+*   %RLORENZ - Reversed Lorenz curve (abscisas)
+
+FUNCTION  %RLORENZ  Y  Q
+TYPE VEC  %RLORENZ     Q
+TYPE SER            Y
+
+LOCA SER  P
+LOCA INT  N
+
+INQ(SER=Y) * N
+SET P 1 N = 1.
+
+COM %RLORENZ = %RWLORENZ(Y,P,Q)
+
+CLE  P
+END %RLORENZ
+
+********************************************************************************
+*                                                                              *
+*   BOOTSTRAP STANDARD ERROR FUNCTIONS                                         *
+*                                                                              *
+********************************************************************************
+
+*   %MEANVAR_BOOTSE - Simple Bootstraping Standard Error for Mean/Variance/se/cv with weights
+
+FUNCTION  %MEANVAR_BOOTSE  X  P  R
+TYPE VEC  %MEANVAR_BOOTSE
+TYPE SER                   X  P
+TYPE INT                         R
+
+LOCAL VEC[SER] Z
+LOCAL SER      XB PB
+LOCAL SER[INT] B
+LOCAL INT      I  N
+
+DIM %MEANVAR_BOOTSE(4) Z(4)
+SET Z(1) 1 R = %NA
+SET Z(2) 1 R = %NA
+SET Z(3) 1 R = %NA
+SET Z(4) 1 R = %NA
+INQ(SER=X) *  N
+
+INFOBOX(ACT=DEFINE,PROGRESS,UPPER=R) 'Mean/var/se/cv: Bootstraping Standard Errors...'
+DO I=1,R
+   INFOBOX(CURRENT=I) 'Drawing '+I
+   CLE  XB PB
+   BOOT  B 1 N 1 N
+   SET  XB 1 N = X(B(T))
+   SET  PB 1 N = P(B(T))
+   COM  Z(1)(I) = %M(XB,PB), Z(2)(I) = %V(XB,PB), Z(3)(I) = %STD(XB,PB), Z(4)(I) = %CV(XB,PB)
+END DO I
+INFOBOX(ACT=REMOVE)
+
+EWI %MEANVAR_BOOTSE(J) = SQRT(%COV(Z(J),Z(J)))
+
+CLE  Z XB PB
+END %MEANVAR_BOOTSE
+
+********************************************************************************
+
+*   %ATKINSON_BOOTSE - Simple Bootstraping Standard Error for Atkinson Index
+
+FUNCTION  %ATKINSON_BOOTSE  X  P  R  E  EXT
+TYPE VEC  %ATKINSON_BOOTSE
+TYPE SER                    X  P
+TYPE REAL                            E
+TYPE INT                          R     EXT
+
+LOCAL VEC[SER] Z
+LOCAL SER      XB PB
+LOCAL SER[INT] B
+LOCAL INT      I  N
+
+DIM %ATKINSON_BOOTSE(2) Z(2)
+SET Z(1) 1 R = %NA
+SET Z(2) 1 R = %NA
+INQ(SER=X) *  N
+
+INFOBOX(ACT=DEFINE,PROGRESS,UPPER=R) 'Atkinson: Bootstraping Standard Errors'
+DO I=1,R
+   INFOBOX(CURRENT=I) 'Drawing '+I
+   CLE  XB PB
+   BOOT  B 1 N 1 N
+   SET  XB 1 N = X(B(T))
+   SET  PB 1 N = P(B(T))
+   COM  Z(1)(I) = %M(XB,PB), Z(2)(I) = %IF(EXT,%ATKINSONEXT(XB,PB,E),%ATKINSON(XB,PB,E))
+END DO I
+INFOBOX(ACT=REMOVE)
+
+EWI %ATKINSON_BOOTSE(J) = SQRT(%COV(Z(J),Z(J)))
+
+CLE  Z XB PB
+END %ATKINSON_BOOTSE
+
+********************************************************************************
+
+*   %THEIL_BOOTSE - Simple Bootstraping Standard Error for Theil Index
+
+FUNCTION  %THEIL_BOOTSE  X  P  R  E
+TYPE VEC  %THEIL_BOOTSE
+TYPE SER                    X  P
+TYPE REAL                         E
+TYPE INT                       R
+
+LOCAL VEC[SER] Z
+LOCAL SER      XB PB
+LOCAL SER[INT] B
+LOCAL INT      I  N
+
+DIM %THEIL_BOOTSE(2) Z(2)
+SET Z(1) 1 R = %NA
+SET Z(2) 1 R = %NA
+INQ(SER=X) *  N
+
+INFOBOX(ACT=DEFINE,PROGRESS,UPPER=R) 'Theil: Bootstraping Standard Errors'
+DO I=1,R
+   INFOBOX(CURRENT=I) 'Drawing '+I
+   CLE  XB PB
+   BOOT  B 1 N 1 N
+   SET  XB 1 N = X(B(T))
+   SET  PB 1 N = P(B(T))
+   COM  Z(1)(I) = %M(XB,PB), Z(2)(I) = %THEIL_INEQ(XB,PB,E)
+END DO I
+INFOBOX(ACT=REMOVE)
+
+EWI %THEIL_BOOTSE(J) = SQRT(%COV(Z(J),Z(J)))
+
+CLE  Z XB PB
+END %THEIL_BOOTSE
+
+********************************************************************************
+
+*   %GINI_BOOTSE - Simple Bootstraping Standard Error for Gini Index
+
+FUNCTION  %GINI_BOOTSE  X  P  R
+TYPE VEC  %GINI_BOOTSE
+TYPE SER                X  P
+TYPE INT                      R
+
+LOCAL VEC[SER] Z
+LOCAL SER      XB PB
+LOCAL SER[INT] B
+LOCAL INT      I  N
+
+DIM %GINI_BOOTSE(3) Z(3)
+SET Z(1) 1 R = %NA
+SET Z(2) 1 R = %NA
+SET Z(3) 1 R = %NA
+INQ(SER=X) *  N
+
+INFOBOX(ACT=DEFINE,PROGRESS,UPPER=R) 'Gini: Bootstraping Standard Errors'
+DO I=1,R
+   INFOBOX(CURRENT=I) 'Drawing '+I
+   CLE  XB PB
+   BOOT  B 1 N 1 N
+   SET  XB 1 N = X(B(T))
+   SET  PB 1 N = P(B(T))
+   COM  Z(1)(I) = %M(XB,PB), Z(2)(I) = %GINI(XB,PB), Z(3)(I) = %MAD(XB,PB)
+END DO I
+INFOBOX(ACT=REMOVE)
+
+EWI %GINI_BOOTSE(I) = SQRT(%COV(Z(I),Z(I)))
+
+CLE  Z XB PB
+END %GINI_BOOTSE
+
+********************************************************************************
+
+*   %FRACTIL_BOOTSE - Simple Bootstraping Standard Error for Fractiles
+
+FUNCTION  %FRACTIL_BOOTSE  X  Q  R
+TYPE VEC  %FRACTIL_BOOTSE     Q
+TYPE SER                   X
+TYPE INT                         R
+
+LOCAL VEC[SER] Z
+LOCAL VEC      ZV
+LOCAL SER      XB
+LOCAL SER[INT] B
+LOCAL INT      I  J  N
+
+DIM %FRACTIL_BOOTSE(%ROWS(Q)) Z(%ROWS(Q))
+DO J = 1,%ROWS(Q)
+   SET Z(J) 1 R = %NA
+END DO J
+INQ(SER=X) *  N
+
+INFOBOX(ACT=DEFINE,PROGRESS,UPPER=R) 'Fractile: Bootstraping Standard Errors'
+DO I=1,R
+   INFOBOX(CURRENT=I) 'Drawing '+I
+   CLE  XB
+   BOOT  B 1 N 1 N
+   SET  XB 1 N = X(B(T))
+   COM  ZV = %FRACTILES(XB,Q), %DO(J,1,%ROWS(Q),Z(J)(I) = ZV(J))
+END DO I
+INFOBOX(ACT=REMOVE)
+
+EWI %FRACTIL_BOOTSE(J) = SQRT(%COV(Z(J),Z(J)))
+
+CLE  Z XB
+END %FRACTIL_BOOTSE
+
+********************************************************************************
+
+*   %WFRACTIL_BOOTSE - Simple Bootstraping Standard Error for Weighted Fractiles
+
+FUNCTION  %WFRACTIL_BOOTSE  X  W  Q  R
+TYPE VEC  %WFRACTIL_BOOTSE        Q
+TYPE SER                    X  W
+TYPE INT                             R
+
+LOCAL VEC[SER] Z
+LOCAL VEC      ZV
+LOCAL SER      XB
+LOCAL SER[INT] B
+LOCAL INT      I  J  N
+
+DIM %WFRACTIL_BOOTSE(%ROWS(Q)) Z(%ROWS(Q))
+DO J = 1,%ROWS(Q)
+   SET Z(J) 1 R = %NA
+END DO J
+INQ(SER=X) *  N
+
+INFOBOX(ACT=DEFINE,PROGRESS,UPPER=R) 'Weighted Fractile: Bootstraping Standard Errors'
+DO I=1,R
+   INFOBOX(CURRENT=I) 'Drawing '+I
+   CLE  XB
+   BOOT  B 1 N 1 N
+   SET  XB 1 N = X(B(T))
+   COM  ZV = %WFRACTILES(XB,W,Q), %DO(J,1,%ROWS(Q),Z(J)(I) = ZV(J))
+END DO I
+INFOBOX(ACT=REMOVE)
+
+EWI %WFRACTIL_BOOTSE(J) = SQRT(%COV(Z(J),Z(J)))
+
+CLE  Z XB
+END %WFRACTIL_BOOTSE
+
+********************************************************************************
+
+*   %LORENZ_BOOTSE - Simple Bootstraping Standard Errors for Lorenz curve (ordinates)
+
+FUNCTION  %LORENZ_BOOTSE  X  Q  R
+TYPE VEC  %LORENZ_BOOTSE     Q
+TYPE SER                  X
+TYPE INT                        R
+
+LOCAL VEC[SER] Z
+LOCAL VEC      ZV
+LOCAL SER      XB
+LOCAL SER[INT] B
+LOCAL INT      I  J  N
+
+DIM %LORENZ_BOOTSE(%ROWS(Q)) Z(%ROWS(Q))
+DO J = 1,%ROWS(Q)
+   SET Z(J) 1 R = %NA
+END DO J
+INQ(SER=X) *  N
+
+INFOBOX(ACT=DEFINE,PROGRESS,UPPER=R) 'Lorenz curve: Bootstraping Standard Errors'
+DO I=1,R
+   INFOBOX(CURRENT=I) 'Drawing '+I
+   CLE  XB
+   BOOT  B 1 N 1 N
+   SET  XB 1 N = X(B(T))
+   COM  ZV = %LORENZ(XB,Q), %DO(J,1,%ROWS(Q),Z(J)(I) = ZV(J))
+END DO I
+INFOBOX(ACT=REMOVE)
+
+EWI %LORENZ_BOOTSE(J) = SQRT(%COV(Z(J),Z(J)))
+
+CLE  Z  XB
+END %LORENZ_BOOTSE
+
+********************************************************************************
+
+*   %WLORENZ_BOOTSE - Simple Bootstraping Standard Errors for Lorenz curve (ordinates) from weigthed data.
+
+FUNCTION  %WLORENZ_BOOTSE  X  W  Q  R
+TYPE VEC  %WLORENZ_BOOTSE        Q
+TYPE SER                   X  W
+TYPE INT                            R
+
+LOCAL VEC[SER] Z
+LOCAL VEC      ZV
+LOCAL SER      XB
+LOCAL SER[INT] B
+LOCAL INT      I  J  N
+
+DIM %WLORENZ_BOOTSE(%ROWS(Q)) Z(%ROWS(Q))
+DO J = 1,%ROWS(Q)
+   SET Z(J) 1 R = %NA
+END DO J
+INQ(SER=X) *  N
+
+INFOBOX(ACT=DEFINE,PROGRESS,UPPER=R) 'Lorenz curve (weighted): Bootstraping Standard Errors'
+DO I=1,R
+   INFOBOX(CURRENT=I) 'Drawing '+I
+   CLE  XB
+   BOOT  B 1 N 1 N
+   SET  XB 1 N = X(B(T))
+   COM  ZV = %WLORENZ(XB,W,Q), %DO(J,1,%ROWS(Q),Z(J)(I) = ZV(J))
+END DO I
+INFOBOX(ACT=REMOVE)
+
+EWI %WLORENZ_BOOTSE(J) = SQRT(%COV(Z(J),Z(J)))
+
+CLE  Z XB
+END %WLORENZ_BOOTSE
+
+********************************************************************************
+
+*   List of functions
+
+*   %ATKINSON        - Atkinson Inequality indices
+*   %ATKINSONEXT     - Extended Atkinson Inequality indices
+*   %THEIL_INEQ      - Theil/Generalised Entropy Inequality indices
+*   %GINI            - Gini Inequality index
+*   %GININUMINT      - Gini Inequality index by numerical integration of Lorenz curve
+*   %MAD             - (1/2 of) Mean Absolute Deviation
+*   %LOGV            - Logarithmic Variance
+*   %LORENZ          - Lorenz curve (ordinates)
+*   %WLORENZ         - Lorenz curve (ordinates) from weigthed data
+*   %RLORENZ         - Reversed Lorenz curve (abscisas)
+*   %RWLORENZ        - Reversed Weighted Lorenz curve (abscisas)
+
+*   BOOTSTRAP STANDARD ERROR FUNCTIONS
+
+*   %MEANVAR_BOOTSE  - Simple Bootstraping Standard Error for Mean/Variance
+*   %ATKINSON_BOOTSE - Simple Bootstraping Standard Error for Atkinson Index
+*   %THEIL_BOOTSE    - Simple Bootstraping Standard Error for Theil Index
+*   %GINI_BOOTSE     - Simple Bootstraping Standard Error for Gini Index
+*   %FRACTIL_BOOTSE  - Simple Bootstraping Standard Error for Quantiles
+*   %WFRACTIL_BOOTSE - Simple Bootstraping Standard Error for Weighted Quantiles
+*   %LORENZ_BOOTSE   - Simple Bootstraping Standard Errors for Lorenz curve (ordinates)
+*   %WLORENZ_BOOTSE  - Simple Bootstraping Standard Errors for Lorenz curve (ordinates) from weigthed data.

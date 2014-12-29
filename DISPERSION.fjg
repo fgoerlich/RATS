@@ -1,0 +1,60 @@
+/*
+     DISPERSION STATISTICS                         October/97 - R2: October/04
+*/
+COM [STRING] %%DISPERSION =               'DISPERSION - Version R2: October/04'
+
+PROC  DISPERSION  Y  TBEGP  TENDP
+TYPE  SER         Y
+TYPE  INT            TBEGP  TENDP
+*
+LOCAL INT  TBEG  TEND
+LOCAL SER  S  W  SMPL
+*
+OPTION SWITCH  PRINT  1
+OPTION SERIES  WEIGHT
+OPTION SERIES  SMPLL
+OPTION CHOICE  CENTER 1 MEAN MIN MAX ZERO
+
+*   Globals
+COM %MEAN = %VARIANCE = %MAXIMUM = %MINIMUM = %NA, %NOBS = 0
+
+INQUIRE(SERIES=Y) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(Y),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(Y)
+
+IF %DEFINED(WEIGHT)
+   SET W    TBEG TEND = WEIGHT
+ELSE
+   SET W    TBEG TEND = 1
+
+SAM(SMPL=SMPL) Y TBEG TEND S 1
+SAM(SMPL=SMPL) W TBEG TEND W 1
+INQ(SER=S)  * %NOBS
+
+COM %MINIMUM  = %MINVALUE(S), %MAXIMUM = %MAXVALUE(S), %MEAN = %M(S,W), %VARIANCE = %V(S,W)
+IF      CENTER==2;   SET S 1 %NOBS = S - %MINIMUM
+ELSE IF CENTER==3;   SET S 1 %NOBS = S - %MAXIMUM
+
+IF      CENTER!=1;   COM %VARIANCE = %MPOWER(S,W,2)
+
+IF PRINT==1
+   {
+   DIS 'Sample mean and variance on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%L(WEIGHT),'')
+   IF      CENTER==1;   DIS 'Dispersion centered at MEAN value'
+   ELSE IF CENTER==2;   DIS 'Dispersion centered at MINIMUM value'
+   ELSE IF CENTER==3;   DIS 'Dispersion centered at MAXIMUM value'
+   ELSE             ;   DIS 'Dispersion uncentered'
+   DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
+   DIS 'Sample period: From'  %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS 'Minimum        '      %MINIMUM   @41 'Maximum            '          %MAXIMUM
+   DIS 'Sample mean    '      %MEAN      @41 'Variance           '          %VARIANCE
+   DIS 'Standard Error ' SQRT(%VARIANCE) @41 'Coeff. of Variation'          $
+                                              ABS(SQRT(%VARIANCE)/%IF(CENTER==2,%MINIMUM,%IF(CENTER==3,%MAXIMUM,%MEAN)))
+   DIS;DIS
+   }
+
+CLE S  W  SMPL
+END PROC  DISPERSION
+

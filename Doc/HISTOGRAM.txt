@@ -1,0 +1,50 @@
+/*
+     HISTOGRAMa de una SERIE.
+
+     Escrito por:  Paco Goerlich.               Version: Mayo/2008 (R2)
+     Version RATS: WinRATS 7.00
+
+     Sintaxis
+
+      @HISTOGRAM(opciones) S COMIENZO FIN HX HY H
+
+       S        = serie sobre la que calcular el  histograma.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       HX       = valores medios en las cajas del histograma. (X en SCATTER)
+       HY       = altura         de las cajas del histograma. (Y en SCATTER)
+       H        = matriz con los mismos datos que se imprimen.
+
+       Opciones:
+
+     [PRINT]/NOPRINT controla la impresion del histograma.
+     [GRAPH]/NOGRAPH controla el grafico   del histograma.
+     MIN       = Minimum value       to consider [MIN(SERIES)].
+     MAX       = Maximum value       to consider [MAX(SERIES)].
+     INTERVALS = Number of intervals to consider [(4*n)^(2/5)].
+     BREAK     = Vector de puntos de corte en los intervalos [no definido].
+     [LEFT]/NOLEFT intervalos [.,.) versus (.,.].
+     SMPL      = serie con ceros en las observaciones que se desean eliminar en el
+                 calculo del histograma (Ver RATS Section 5.1) [no definido].
+     WEIGHT    = si el histograma deben ponderarse con esta serie [no definido].
+     
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Necesita la compilacion previa del procedimiento S%.
+
+   Sobre detalles de calculo ver Silverman (1986) Cap.-2.2.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Octubre/2004
+       Traduccion a WinRATS 6.01 y consideración de intervalos variable.
+
+   R2: Mayo/2008
+       Las ponderaciones e ponen en otra serie, P, para evitar problemas con S.
+
+*/

@@ -1,0 +1,77 @@
+/*
+     AICVAR: Calcula los criterios de informacion de Akaike (AIC),
+             de Schwarz (BIC), de Hannan & Quinn (HQ), el error final
+             de prediccion (FPE) y el log(det(SIGMA)) para
+             un Vector Autoregresivo (VAR) con varios desfases.
+
+     Escrito por:  Paco Goerlich.               Versi¢n: Junio/2002 (R1)
+     Versi¢n RATS: RATS386 5.02
+
+     Sintaxis
+
+      @AICVAR(opciones) MAXLAG COMIENZO FIN
+      #<supp.card> variables endogenas
+      #<supp.card> lista de variables deterministas (o adicionales)
+                   en formato de regresion. Solo con la opcion DETER
+
+       MAXLAG   = maximo numero de desfases a considerar.
+                  [por defecto se toma un valor tal que el numero de
+                  grados de libertad sea la mitad de la muestra]
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+
+     NOTA: Si comienzo y fin no es especificado el programa toma como
+           valores por defecto el periodo maximo para el cual todas las
+           variables, endogenas y deterministas, estan definidas.
+
+
+       Opciones:
+
+        [PRINT]/NOPRINT controla la impresion del output (IC).
+        REGRES/[NOREGRES] controla la impresion de los VAR's.
+        [DETER]/NODETER controla si se incluyen variables deterministas
+                        (i.e. constante, tendencia lineal) en el VAR.
+        [SAME]/NOSAME controla si todas las regresiones se efectuan sobre
+                      el mismo periodo muestral 
+     
+
+       Variables globales:
+
+      %%AICVAR  = STRING, Version actual del procedimiento
+      %%INDEX   = RECTANGULAR(maxlag+1,6), Valores de los IC.
+                  Columna 1: Lag
+                  Columna 2: AIC
+                  Columna 3: BIC
+                  Columna 4: HQ
+                  Columna 5: FPE
+                  Columna 6: ln(Det(SIGMA))
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Las formulas estan obtenidas de H. LÅtkepohl (1991), 4.3, p.-128-135.
+
+   AIC - (4.3.2), p.- 129.
+   BIC - (4.3.9), p.- 132.
+   HQ  - (4.3.8), p.- 132.
+   FPE - (4.3.1), p.- 128.
+
+   Las formulas son, sin embargo, ligeramente incorrectas.
+   Las correspondientes a AIC, BIC y HQ no consideran la inclusion de
+   componentes deterministas en al VAR.
+   La correspondiente a FPE solo considera la inclusion de una constante.
+
+   Las formulas de AICVAR se generalizan para incluir siempre todos los
+   parametros estimados.
+
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Junio/2002
+       Actualizacion a RATS 5.02. Se a§aden variables globales.
+
+*/

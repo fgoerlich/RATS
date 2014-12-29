@@ -1,0 +1,191 @@
+ENV  NOECHO
+/*
+   FJG.FJG                                                      Version 9.00
+   This file makes accesible FJG procedures & functions.
+*/
+
+*   FUNCTION files
+SOURCE KERNEL.FJG           ;*   1
+SOURCE MISCELANEA.FJG       ;*   2
+SOURCE GENERALPURPOSE.FJG   ;*   3
+SOURCE CUBES.FJG            ;*   4
+SOURCE STATISTICS.FJG       ;*   5
+SOURCE INEQUALITY.FJG       ;*   6
+SOURCE LIFE.FJG             ;*   7
+SOURCE POVERTY.FJG          ;*   8
+
+*   These have to be compiled first
+SOURCE S%.FJG               ;*  43
+SOURCE LIFETABLEPRINT.FJG   ;*  29
+SOURCE LIFETABLEC2A.FJG     ;*  26
+SOURCE MEANVAR.FJG          ;*  32
+SOURCE MISSING.FJG          ;*  33
+SOURCE IQR.FJG              ;*  17
+SOURCE PANELORG.FJG         ;*  35
+SOURCE VECS.FJG             ;*  49
+SOURCE GINI.FJG             ;*  19
+
+*   These are compiled by alphabetic order
+SOURCE AGREGA.FJG           ;*   1
+SOURCE AICVAR.FJG           ;*   2
+SOURCE ANOVA.FJG            ;*   3
+SOURCE ATKINSON.FJG         ;*   4
+SOURCE ATKINSONDECPG.FJG    ;*   5
+SOURCE BCONVERG.FJG         ;*   6
+SOURCE BWIDTH.FJG           ;*   7
+SOURCE BOXPLOT.FJG          ;*   8
+SOURCE COINTPO.FJG          ;*   9
+SOURCE CDF.FJG              ;*  10
+SOURCE DISMAT.FJG           ;*  11
+SOURCE DISPERSION.FJG       ;*  12
+SOURCE DENSITY.FJG          ;*  13
+SOURCE DENSITYB.FJG         ;*  14
+SOURCE DENSITYC.FJG         ;*  15
+SOURCE INVLEO.FJG           ;*  16
+*OURCE IQR.FJG              ;*  17
+SOURCE FGT.FJG              ;*  18
+SOURCE FRACTILE.FJG         ;*  19
+*OURCE GINI.FJG             ;*  20
+SOURCE GINIDECPG.FJG        ;*  21
+SOURCE HISTOGRAM.FJG        ;*  22
+SOURCE HPFILTER.FJG         ;*  23
+SOURCE LIFECHANGE.FJG       ;*  24
+SOURCE LIFEHEALTH.FJG       ;*  25
+SOURCE LIFETABLE.FJG        ;*  26
+*OURCE LIFETABLEC2A.FJG     ;*  27
+SOURCE LIFETABLEHMD.FJG     ;*  28
+SOURCE LIFETABLEHMDMD.FJG   ;*  29
+SOURCE LIFETABLEINE.FJG     ;*  30
+*OURCE LIFETABLEPRINT.FJG   ;*  31
+SOURCE LOGNORMAL.FJG        ;*  32
+SOURCE LORENZ.FJG           ;*  33
+*OURCE MEANVAR.FJG          ;*  34
+*OURCE MISSING.FJG          ;*  35
+SOURCE MOMENT.FJG           ;*  36
+*OURCE PANELORG.FJG         ;*  37
+SOURCE PARETO.FJG           ;*  38
+SOURCE POBA2C.FJG           ;*  39
+SOURCE POBC2A.FJG           ;*  40
+SOURCE QUANTILE.FJG         ;*  41
+SOURCE RAS.FJG              ;*  42
+SOURCE RASCUBE.FJG          ;*  43
+SOURCE RANGE.FJG            ;*  44
+*OURCE S%.FJG               ;*  45
+SOURCE STOV.FJG             ;*  46
+SOURCE TASA.FJG             ;*  47
+SOURCE THEIL.FJG            ;*  48
+SOURCE THEILDECPG.FJG       ;*  49
+SOURCE TIP.FJG              ;*  50
+SOURCE UNMAKE.FJG           ;*  51
+SOURCE VECICLUSTER.FJG      ;*  52
+*OURCE VECS.FJG             ;*  53
+SOURCE ZIPF.FJG             ;*  54
+
+
+DIS 'WinRATS' #.## %RATSVERSION() 'Run on' %DATEANDTIME()
+DIS 'Paco´s procs loaded correctly!'
+DIS @32 'COPYRIGHT PACO GOERLICH!!!'
+DIS @37      'Last update: 27/12/14'
+DIS
+
+
+/*
+   Warning: These procedures use GLOBAL variables.
+            All GLOBAL variables begin with `%%` so you are better off if
+            your variable names DO NOT begin with this doble symbol.
+            A complete list of reserved names is just below
+            Each procedure has an STRING GLOBAL, %%<proc name>, that
+            indicates its current version'
+   Procedures can be obtained from https://github.com/fgoerlich/RATS
+
+   RESERVED NAMES
+
+     NAME             TYPE              PROCEDURE
+   ***********      *************      ***********
+    %%AGREGA         STRING             AGREGA
+    %%AICVAR         STRING             AICVAR
+    %%ANOVA          STRING             ANOVA
+    %%ATKINSON       STRING             ATKINSON
+    %%ATKINSONDECPG  STRING             ATKINSONDECPG
+    %%BDWIDTH        STRING             BDWIDTH
+    %%BCONVERG       STRING             BCONVERG
+    %%BOXPLOT        STRING             BOXPLOT
+    %%COINTPO        STRING             COINTPO
+    %%CDF            STRING             CDF
+    %%DISMAT         STRING             DISMAT
+    %%DISPERSION     STRING             DISPERSION
+    %%DENSITY        STRING             DENSITY
+    %%DENSITYB       STRING             DENSITYB
+    %%DENSITYC       STRING             DENSITYC
+    %%INVLEO         STRING             INVLEO
+    %%INDEX          RECTANGULAR        AICVAR
+    %%IQR            STRING             IQR
+    %%GINI           STRING             GINI
+    %%GINIDECPG      STRING             GINIDECPG
+    %%HISTOGRAM      STRING             HISTOGRAM
+    %%HPFILTER       STRING             HPFILTER
+    %%LIFECHANGE     STRING             LIFECHANGE
+    %%LIFEHEALT      STRING             LIFECHEALTH
+    %%LIFETABLE      STRING             LIFETABLE
+    %%AGE            REAL               LIFETABLE & LIFETABLEINE & LIFETABLEHMD
+    %%EVAGE          REAL               LIFETABLE & LIFETABLEINE & LIFETABLEHMD
+    %%PV             REAL               LIFETABLE & LIFETABLEINE & LIFETABLEHMD
+    %%PVPC           REAL               LIFETABLE & LIFETABLEINE & LIFETABLEHMD
+    %%LIFETABLEC2A   STRING             LIFETABLEC2A
+    %%LIFETABLEHMD   STRING             LIFETABLEHMD
+    %%AGEF           REAL               LIFETABLEHMD
+    %%EVAGEF         REAL               LIFETABLEHMD
+    %%PVF            REAL               LIFETABLEHMD
+    %%PVPCF          REAL               LIFETABLEHMD
+    %%DEATHF         SERIES             LIFETABLEHMD
+    %%EXPOSUREF      SERIES             LIFETABLEHMD
+    %%DEATHRATEF     SERIES             LIFETABLEHMD
+    %%AxF            SERIES             LIFETABLEHMD
+    %%AGEM           REAL               LIFETABLEHMD
+    %%EVAGEM         REAL               LIFETABLEHMD
+    %%PVM            REAL               LIFETABLEHMD
+    %%PVPCM          REAL               LIFETABLEHMD
+    %%DEATHM         SERIES             LIFETABLEHMD
+    %%EXPOSUREM      SERIES             LIFETABLEHMD
+    %%DEATHRATEM     SERIES             LIFETABLEHMD
+    %%AxM            SERIES             LIFETABLEHMD
+    %%DEATH          SERIES             LIFETABLEHMD
+    %%EXPOSURE       SERIES             LIFETABLEHMD
+    %%DEATHRATE      SERIES             LIFETABLEHMD
+    %%Ax             SERIES             LIFETABLEHMD
+    %%LIFETABLEINE   STRING             LIFETABLEINE
+    %%LIFETABLEPRINT STRING             LIFETABLEPRINT
+    %%LORENZ         STRING             LORENZ
+    %%MEANVAR        STRING             MEANVAR
+    %%MISSING        STRING             MISSING
+    %%MOMENT         STRING             MOMENT
+    %%MOMENTR        REAL               MOMENT
+    %%QUANTILE       STRING             QUANTILE
+    %%PANELORG       STRING             PANELORG
+    %%POBA2C         STRING             POBA2C
+    %%POBC2A         STRING             POBC2A
+    %%FGT            STRING             FGT
+    %%POVERTYLINE    REAL               FGT & TIP
+    %%MEANPOOR       REAL               FGT
+    %%HEADCOUNT      REAL               FGT & TIP
+    %%INCOMEGAP      REAL               FGT & TIP
+    %%POVERTYGAP     REAL               FGT & TIP
+    %%FGT2           REAL               FGT & TIP
+    %%GINIPOOR       REAL               FGT
+    %%GINIGAP        REAL               FGT
+    %%CVPOOR         REAL               FGT
+    %%CVGAP          REAL               FGT
+    %%POOR_S(3)      VEC[SER]           FGT
+    %%RANGE          STRING             RANGE
+    %%RAS            STRING             RAS
+    %%S%             STRING             S%
+    %%STOV           STRING             STOV
+    %%TASA           STRING             TASA
+    %%THEIL          STRING             THEIL
+    %%THEILDECPG     STRING             THEILDECPG
+    %%TIP            STRING             TIP
+    %%UNMAKE         STRING             UNMAKE
+    %%VECS           STRING             VECS
+    %%VECICLUSTER    STRING             VECICLUSTER
+
+*/

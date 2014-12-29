@@ -1,0 +1,112 @@
+/*
+     ANOVA realiza un ANALISIS DE VARIANZA/COVARIANZA mediante OLS
+
+     Escrito por:  Paco Goerlich.                  Version: Marzo/2005 (R3)
+     Version RATS: WinRATS 6.02
+
+     Sintaxis
+
+      @ANOVA(opciones) COMIENZO FIN
+      #<supp.card> series para realizar el ANOVA
+      #<supp.card> regresores adicionales  (si ADDREG>0, tantas como ADDREG)
+      #<supp.card> orden de los regresores adicionales a excluir
+                   (si ADDREG>0.AND.XTEST>0, tantas como XTEST)
+
+       COMIENZO = primera observacion a considerar
+       FIN      = ultima  observacion a considerar
+
+
+       Opciones:
+
+     DEBUG/[NODEBUG] controla la impresion de todas las regresiones.
+     [PRINT]/NOPRINT controla la impresion de la regresion en la que se 
+                     basa el ANOVA.
+     ORGANIZATION = TIME/[INDIVIDUAL], si las series estan organizadas
+                    por tiempo, TIME,
+                    i.e. cada serie un periodo para todos los individuos;
+                    o por individuos, INDIVIDUAL,
+                    i.e. cada serie un individuo para todos los periodos.
+     EFFECTS = [BOTH]/TIME/INDIVIDUAL/NONE, efectos fijos en dos dimensiones, 
+               BOTH; solo en la dimension temporal, TIME; solo en la dimension 
+               individual, INDIVIDUAL; o en ninguna dimension, NONE.
+     ROBUST/[NOROBUST], si la inferencia es consistente frente a
+          heterocedasticidad de forma desconocida. Esta opcion incorpora la
+          opcion ROBUSTERRORS en la regresion, observese por tanto que se
+          sigue suponiendo independencia tanto en el corte transversal como
+          en la dimension temporal.
+     YLABEL = etiqueta para la variable dependiente,
+              [LABEL de la primera serie de <supp.card>].
+     XLABEL = Vector de etiquetas para los regresores adicionales.
+              [LABEL de la primera serie de <supp.card>].
+     TIME   = Vector de etiquetas para los periodos temporales ['Time_##'].
+     INDI   = Vector de etiquetas para los individuos          ['Indi_##'].
+     ADDREG = Numero de regresores adicionales [0]
+     XTEST  = Numero de restricciones sobre subconjuntos de regresores
+              adicionales si REG>0.
+     RTIME  = Categoria de referencia para el  tiempo     [0], i.e. promedio = 0.
+     RINDI  = Categoria de referencia para los individuos [0], i.e. promedio = 0.
+     SMPL   = Serie con los valores cero entre COMINEZO y FIN que desean eliminarse
+              de los calculos (Ver RATS 5.2 UG) [no definido]
+
+
+       Variables globales:
+
+      %%ANOVA  = STRING, Version actual del procedimiento
+     
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   El procedure realiza un ANOVA estimando por OLS el modelo:
+
+                 Y(i,t) = c + a(i) + b(t) + u(i,t)
+
+   donde c    = constante,
+         a(i) = variables ficticias que toman 1 para el individuo i y 0 en
+                caso contrario, y
+         b(t) = variables ficticias que toman 1 para el periodo   t y 0 en
+                caso contrario.
+
+   El modelo no esta identificado, son necesarias dos restricciones 
+   para la identificacion.
+   Las restricciones incorporadas por defecto son
+                     Sum{a(i),i=1,...N} = 0    y
+                     Sum{b(t),t=1,...T} = 0.
+
+   Ver Suits (1984,RE&St) para una interpretacion de estas restricciones.
+
+   Es posible cambiar esto con las opciones RTIME y RINDI.
+
+   Utiliza PANELORG y VECS, que deben ser compilados con anterioridad.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Junio/99 - Cuando la ORGANIZATION es INDIVIDUAL se utiliza el procedure
+                  PANELORG para cambiar la ordenaci¢n a ORGANIZATION TIME de
+                  forma que la regresion siempre se efectua con los datos
+                  organizados de esta forma.
+                  Tambien se incluyo la posibilidad de incluir regresores
+                  adicionales en la regresion. Opcion REG = ##.
+
+   R2: Noviembre/99 - Se cambio la opcion por defecto de ORGANIZATION, de
+                      ORGANIZATION=TIME a ORGANIZATION=INDIVIDUAL.
+                      Ahora cuando la ORGANIZATION es TIME se utiliza el
+                      procedure PANELORG para cambiar la ordenacion a
+                      ORGANIZATION INDIVIDUAL de forma que la regresion siempre
+                      se efectua con los datos organizados de esta forma.
+                      La razon de este cambio es que esta es la forma habitual
+                      de organizacion de los datos en la literatura sobre paneles,
+                      Manual del RATS 12-10.
+                      Tambien es esta la forma habitual en trabajo analitico.
+                      La nomenclatura y obtencion de los efectos fijos de
+                      adec£a a Balestra (1992), "Fixed effect models and fixed
+                      coefficient models".
+                      Incorporacion de la opcion XTEST = ## para contrastar la
+                      significatividad de subconjuntos de regresores adicionales.
+
+   R3: Marzo/2005 - Traduccion a WinRATS 6.02 y acomodacion del output a PSTAT.
+
+*/

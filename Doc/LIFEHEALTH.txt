@@ -1,0 +1,54 @@
+/*
+     LIFEHEALTH calcula la esperanza de vida libre de discapacidad por el
+                metodo de Sullivan.
+
+     Escrito por:  Paco Goerlich.                   Version: Enero/2012 (R1)
+     Version RATS: WinRATS 7.00
+
+     Sintaxis
+
+      @LIFEHEATH LT PREVALENCE DFLE SEDFLE
+
+       LT         = Tabla de vida en el formato de la HMD, (Edades)x7.
+       PREVALENCE = Serie de tasas de prevalencia.
+       DFLE       = Serie de esperanzas de vida libes de discapacidad.
+       SEDFLE     = Serie de errores estandar de DFLE.
+
+
+     Opciones:
+
+      [PRINT]/NOPRINT controla la impresion del output.
+      HEADER = Titulo a imprimir.
+      SAMPLE = Serie con el número de observaciones utilizadas en en
+               calculo de PREVALENCE. [No definido]. Si se utiliza esta
+	       opción se calcula el error estandar aproximado de la DFLE.
+
+
+     Variables globales:
+
+      %%LIFEHEALTH = STRING, Version actual del procedimiento
+
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   El procedimiento requiere una Tabla de Vida, en el formato de salida de los
+   procedimientos LIFE*.fjg y una serie de tasas de prevalencia.
+
+   Los procedimientos de cálculo siguen el método de Sullivan según la
+   descripcion en Jagger (2001), REVES paper 408.
+
+   Para el calculo del error estandard se sigue también la aproximación de
+   Jagger (2001), REVES paper 408.
+
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Enero/2012 - Se corrigio un error ortografico en la serie de salida del
+                    SD de la DFLE
+       
+*/

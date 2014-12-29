@@ -1,0 +1,49 @@
+/*
+     IQR: RANGO INTER-CUARTILICO (o cualquier otro), simple o ponderado.
+
+     Escrito por:  Paco Goerlich.               Versi¢n: Febrero/2007 (R2)
+     Versi¢n RATS: WinRATS 6.30
+
+     Sintaxis
+
+      @IQR(opciones) S COMIENZO FIN IQR
+
+       S        = serie sobre la que calcular el rango inter-cuartilico.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       IQR      = rango inter-cuartilico.
+
+     Opciones:
+
+    Q       = Valor [0,.5) que indica el rango a calcular [.25].
+    [PRINT]/NOPRINT   controla la impresion de la informacion.
+    SMPL  = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+            de los calculos (Ver RATS 5.2 UG) [no definido]
+    [INTERPOL]/NOINTERPOL si los quantiles deben ser interpolados o no.
+    WEIGHT  = si los quantiles deben ponderarse [no definido].
+
+   NOTA: Si COMIENZO y FIN no se especifican se toma por defecto el periodo
+         maximo para el cual S esta definida, omitiendo %NA's.
+
+     Variables globales:
+
+      %%IQR = STRING, Version actual del procedimiento
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Ver proc QUANTILE
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Febrero/2004 - Actualizacion a WinRATS 5.11. Se a¤aden variables globales.
+
+   R2: Febrero/2007 - Correccion de un bug. La opcion WEIGTH podia dar errores
+                      junto con la opcion SMP.
+		      Se suprimio la llamada a FRACTILE.
+
+*/

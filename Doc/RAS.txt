@@ -1,0 +1,92 @@
+/*
+   RAS: Ajuste biproporcional de filas y columnas de una matriz.
+
+   Escrito por Paco Goerlich.                   Versi¢n: Febrero/2013 (R5)
+   Version RATS: WinRATS 8.10
+
+   Sintaxis
+
+    @RAS A B C D
+
+     A = Matriz MxN a ajustar.
+     B = Vector Mx1 de suma de filas    a las que ajustar.
+     C = Vector Nx1 de suma de columnas a las que ajustar.
+     D = Matriz MxN ajustada.
+
+     Opciones:
+
+   PRINT/[NOPRINT] Imprime la matriz D.
+   CVCRIT     = Criterio de convergencia en el ajuste [1E-15].
+   ITERATIONS = Numero maximo de iteraciones a efectuar [100].
+   ITERATIONS = Numero maximo de iteraciones enteras a efectuar [100].
+   INTEGER/[NOINTEGER], si el ajuste es a enteros.
+
+
+     Variables globales:
+
+    %%RAS   = STRING, Version actual del procedimiento.
+    Con la opcion INTEGER podemos saber las iteraciones ENTERAS:
+    %%ITERS       Iterations taken.
+    %%CONVERGED   = 1 o 0. Set to 1 if the process converged, 0 if not.
+
+
+     Variables definidas por RAS:
+
+    %ITERS       Iterations taken (if INTEGER these are the initial iterations).
+    %CONVERGED   = 1 o 0. Set to 1 if the process converged, 0 if not.
+    %CVCRIT      Final convergence criterion (REAL).
+
+******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   El procedimiento es la traducci¢n a RATS del correspondiente procedimiento
+   escrito para GAUSS 2.1 (RAS.ARC).
+
+   Originalmente pensado para ajustar por RAS matrices de transacciones
+   intersectoriales Input-Output, sin embargo puede ser utilizado mas
+   generalmente para matrices rectangulares.
+
+   Criterio de convergencia: Maxima discrepancia entre la suma de filas y
+                             columnas de D y los elementos de B y C
+                             respectivamente debe ser menor que CVCRIT.
+                             Implementado a traves de %TESTDIFF().
+
+   Aritmetica de punto flotante: Dado que muchos numeros decimales no tienen
+                                 una representacion exacta en base binaria,
+                                 es recomendable que los vectores B y C sean
+                                 de enteros para evitar problemas de que la
+                                 suma de filas y columnas no sea identica por
+                                 problemas de precision numerica.
+                                 Un truco habitual es escalar los vectores y
+                                 matrices de forma adecuada.
+				 Otra es rebajar el criterio de convergencia.
+
+******************************************************************************
+
+   REVISIONES
+
+   R1: Septiembre/2001
+       Actualizacion a RATS 5.00.
+       Se a¤aden variables definidas por RATS en procesos iterativos.
+
+   R2: Junio/2002
+       Se elimino la variable global %%ERROR al sustituir el RETURN en las
+       condiciones de error por HALT.
+
+   R3: Junio/2006
+       Se cambio el criterio de error de que las sumas del vector fila y
+       columna sea EXACTAMENTE igual por la condicion de que su diferencia
+       sea menor que el criterio de convergencia, CVCRIT.
+       Se introdujo la posibilidad de que el ajuste sea a enteros.
+
+   R4: Abril/2008
+       I, J, B1 & C1 declarados como INTEGER y VECTOR no eran utilizados.
+       Eliminado.
+
+   R5: Febrero/2013
+       Se cambió la funcion que hacía el ajuste a ENTEROS, y ademas se
+       estableción un contador de interaciones enteras y una variable global
+       que da la convergencia del proceso de ajuste a enteros.
+
+*/

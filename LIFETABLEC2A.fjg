@@ -1,0 +1,63 @@
+/*
+   LIFETABLEC2A                                      April/08 - R1: May/10
+*/
+COM [STRING]           %%LIFETABLEC2A = 'LIFETABLEC2A - Version R1: May/10'
+
+PROC   LIFETABLEC2A  LT  OUTLT
+TYPE   RECT          LT *OUTLT
+
+LOCAL  SERIES     AGE A1 A2 A Q L D LL TT EV
+LOCAL  STRING     HEADER   
+LOCAL  INTEGER    N M I
+LOCAL  VEC[LAB]   E
+
+OPTION STRING     HEADERL
+OPTION SWITCH     PRINT    1
+OPTION CHOICE     FINAL    5  65  70  75  80  85  90  95  100  105  110
+
+IF %DEFINED(HEADERL)
+   COM HEADER = HEADERL
+ELSE
+   DIS(STORE=HEADER) 'Abridge Life Table from Complete Life Table' %LABEL(LT)
+
+COM M = %ROWS(LT)
+IF .NOT.(M==86.OR.M==101.OR.M==111)
+   {
+   DIS %%LIFETABLEC2A; DIS 'Sintax Error: Final age should be at 85+, 100+ or 110+ years only'
+   HALT  LIFETABLEC2A
+   }
+SET A1  1 M = LT(T,3)
+SET A2  1 M = LT(T,7)
+
+COM N = %COM2ABR(M,FINAL), E = %AGE(N)
+CLE A
+SET A 1 M = %IF(T<=2,1,0)
+DO I=6,M,5
+   COM A(I) = %IF(I-1<=%ABR2AGE(N),1,0)
+END DO I
+SAM(SMP=A)       A2 1 M     EV
+SAM(SMP=A)       A1 1 M   L
+SET(FIR=LT(1,6)) TT 1 N = L*EV
+SET(FIR=LT(1,5)) LL 1 N = %IF(T==N,TT,TT-TT{-1})
+SET(FIR=LT(1,4)) D  1 N = %IF(T==N,L ,L -L{-1} )
+SET(FIR=LT(1,2)) Q  1 N = D/L
+
+IF PRINT
+   {
+   DIS HEADER
+   DIS '  Age       Q(x)x1000          l(x)          d(x)          L(x)          T(x)          e(x)'
+   DO I=1,N
+      DIS E(I) @@>14 ####.###### Q(I)*1000 *. L(I) D(I) %ROUND(LL(I),0) %ROUND(TT(I),0) ###.## EV(I)
+   END DO I
+   DIS
+   }
+
+SET AGE 1 N = %IF(T<=2,T-1,(T-2)*5)
+IF %DEFINED(OUTLT)
+   {
+   MAKE OUTLT 1 N
+   # AGE Q L D LL TT EV
+   }
+
+CLE AGE A1 A2 A Q L D LL TT EV
+END PROC LIFETABLEC2A

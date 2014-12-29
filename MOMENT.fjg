@@ -1,0 +1,67 @@
+/*
+     Weighted MOMENT                            December/99 - R2: May/14
+*/
+COM [STRING]                     %%MOMENT = 'MOMENT - Version R2: May/14'
+
+PROC  MOMENT   Y  TBEGP  TENDP
+TYPE  SERIES   Y
+
+LOCAL SERIES   A  S  W  P  SMPL  M
+LOCAL REAL     C  D
+LOCAL INTEGER  TBEG  TEND
+
+OPTION SWITCH  CENTER    1
+OPTION SWITCH  ABSOLUTE  0
+OPTION SWITCH  PRINT     1
+OPTION SERIES  SMPLL
+OPTION SERIES  WEIGHT
+OPTION REAL    ORDER     2.
+
+*   Globals
+COM %%MOMENTR = %NA, %NOBS = 0
+
+IF ORDER.LE.0
+   {
+   DIS %%MOMENT; DIS "Sintax Error: Exponent should be positive"
+   HALT  MOMENT
+   }
+
+INQUIRE(SERIES=Y) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF((SMPLL!=0).AND.%VALID(Y),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(Y)
+
+IF %DEFINED(WEIGHT)
+   SET P TBEG TEND = WEIGHT
+ELSE
+   SET P TBEG TEND = 1
+
+SAM(SMPL=SMPL) Y  TBEG TEND S 1
+SAM(SMPL=SMPL) P  TBEG TEND W 1
+
+INQ(SER=S)  *    %NOBS
+COM C = %IF(CENTER==1,%M(S,W),0), D = %V(S,W)
+
+IF ABSOLUTE
+   SET M 1 %NOBS = ABS(S - C)**ORDER
+ELSE
+   SET M 1 %NOBS =    (S - C)**ORDER
+STA(NOPRINT,WEI=W) M 1 %NOBS
+COM %%MOMENTR = %MEAN
+
+IF PRINT
+   {
+   DIS 'Sample moment of order' #.* ORDER 'on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   IF ABSOLUTE
+      DIS 'Absolute moment'
+   IF CENTER
+      DIS 'Centered at mean value (' @-1 *.#### C @-1 ')'
+   DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS 'Sample moment  '     %%MOMENTR    @41 'Standarized'  ABS(%%MOMENTR/(D**(ORDER/2)))
+   DIS
+   }
+
+CLEAR A S W P SMPL  M
+END PROC MOMENT

@@ -1,0 +1,99 @@
+/*
+     Beta convergence regressions                     June/97 - R2: May/08
+*/
+COM [STRING] %%BCONVERG =                   'BCONVERG - Version R2: May/08'
+
+PROC   BCONVERG   TBEGP TENDP   OUTBETA
+TYPE   SYMM                    *OUTBETA
+*
+OPTION SWITCH       GRAPH    0
+OPTION SWITCH       PRINT    0
+OPTION SWITCH       LOGS     1
+OPTION SWITCH       TASA     0
+OPTION SWITCH       ROBUST   0
+OPTION LVECT        LOBSERL
+OPTION SERIES       SMPLL
+OPTION INDEX        YEARL
+*
+LOCAL  INTEGER    TBEG  TEND  I  J  NVAR
+LOCAL  INDEX      YEAR
+LOCAL  STRING     HEAD
+LOCAL  SERIES     Y  X  RY  YHAT  SMPL
+LOCAL  VECT[LAB]  LOBSER
+LOCAL  VECT[INT]  SERLIST
+LOCAL  VECT       R(7)
+LOCAL  SYMM       BETA
+
+ENTER(VARYING,ENTRIES=NVAR) SERLIST
+INQUIRE(REG) TBEG>>TBEGP TEND>>TENDP
+# SERLIST
+
+DIM LOBSER(TEND-TBEG+1) YEAR(NVAR) BETA(NVAR-1,NVAR-1)
+IF %DEFINED(LOBSERL)
+   COM LOBSER    = LOBSERL
+ELSE
+   EWI LOBSER(I) = %STRING(I)
+
+IF %DEFINED(YEARL)
+   COM YEAR = YEARL
+ELSE
+   EWI YEAR(I) = I
+
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL<>0,1,0)
+ELSE
+   SET SMPL TBEG TEND =  1
+
+@MISSING(NOPRINT,VALUE=0) SMPL TBEG TEND J
+DIS 'Convergence regressions:   Observations' TEND-TBEG+1-J  @+5  '(' TEND-TBEG+1 'Total -' J 'Skipped)'
+IF J>0
+   {
+   DIS 'The following observations have been dropped from the regressions';   DIS
+   DO I = TBEG,TEND
+      IF SMPL(I)==0
+         DIS 'Entry' ###### I @+5 'Observation' @+2 LOBSER(I-TBEG+1)
+   END DO I
+   DIS
+   }
+
+DO I = 1,NVAR-1
+   DIS 'From time' YEAR(I)
+   DIS ' To     Beta                     S.E.       t-Stat  Sig. Level   R**2   Het. Test'
+   DO J = I+1,NVAR
+      SET(SMPL=SMPL) Y TBEG TEND = LOG([series]SERLIST(J)/[series]SERLIST(I))/(YEAR(J) - YEAR(I))
+      SET(SMPL=SMPL) X TBEG TEND =                        [series]SERLIST(I)
+      IF TASA
+         SET(SMPL=SMPL) Y TBEG TEND = EXP(Y) - 1
+      IF LOGS
+         SET(SMPL=SMPL) X TBEG TEND = LOG(X)
+      LIN(SMPL=SMPL,PRINT=PRINT,ROBUST=ROBUST)  Y  TBEG TEND  RY
+      # CONSTANT X
+      PRJ YHAT TBEG TEND
+      COM R(1) = BETA(J-1,I) = %BETA(2), R(2) = %STDERRS(2), R(3) = %TSTATS(2), R(4) = %IF(ROBUST==1,%ZTEST(R(3)),%TTEST(R(3),%NDF))
+      COM R(5) = %RSQUARED             , R(7) = (1 + (YEAR(J) - YEAR(I))*%BETA(2))**(1./FLOAT(YEAR(J) - YEAR(I)))
+      IF GRAPH
+         {
+         DIS(STORE=HEAD) 'Beta-Convergence: Series' %L([series]SERLIST(I)) '&' %L([series]SERLIST(J))
+         SCA(HEADE=HEAD,HLABEL='Initial Level',VLABEL='Growth Rate',STYLE=SYMBOLS,OVERLINE=LINE,OVSAME,SMPL=SMPL) 2
+         # X Y    TBEG TEND 7
+         # X YHAT TBEG TEND 1
+         }
+      *   Heteroscedasticity test
+      SET(SMPL=SMPL) RY    TBEG TEND = RY**2
+      SET(SMPL=SMPL) YHAT  TBEG TEND = YHAT**2
+      LIN(SMPL=SMPL,NOPRI) RY
+      # CONSTANT           YHAT
+      COM R(6) = %TTEST(%TSTATS(2),%NDF)
+      IF LOGS==1.AND.TASA==0
+         DIS #### YEAR(J) @6  ##.###### R(1)  @16 '(' @-1 ##.##   R(7) @-1 '/' @-1 ##.## -LOG(R(7))*100 @-1 '%)'  $
+                          @31 ##.###### R(2)  @44 ##.#### R(3)  @55 #.#### R(4)  @65 #.#### R(5)  @75 #.#### R(6)
+      ELSE
+         DIS #### YEAR(J) @6  ##.###### R(1)  @16 '(--.--/--.--%)'                                                $
+                          @34 ##.###### R(2)  @44 ##.#### R(3)  @55 #.#### R(4)  @65 #.#### R(5)  @75 #.#### R(6)
+   END DO J
+   DIS
+END DO I
+
+IF %DEFINED(OUTBETA);   COM OUTBETA = BETA
+CLEAR  Y  X  RY  YHAT  SMPL
+END PROC BCONVERG

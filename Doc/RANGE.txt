@@ -1,0 +1,57 @@
+/*
+     RANGE calcula el rango y otros estadísticos extremos.
+
+     Escrito por: Paco Goerlich.                 Version: Mayo/2014 (R2)
+     Version RATS: WinRATS 8.30
+     
+
+     Sintaxis
+
+      @RANGE S COMIENZO FIN RANGO V
+
+       S        = Serie sobre la que calcular los estadísticos.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       RANGO    = Rango
+       V        = Vector 5x1 de estadisticos:
+                  V(1): Minimo.
+                  V(2): Peso asociado al valor minimo.
+                  V(3): Media.
+                  V(4): Peso asociado al valor maximo.
+                  V(5): Maximo.
+
+       Opciones:
+
+     [PRINT]/NOPRINT controla la impresion de los estadisticos.
+     SMPL    = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+               de los calculos (Ver RATS 5.2 UG) [no definido].
+     WEIGHT  = si la media debe ponderarse [no definido].
+
+
+       Variables globales:
+
+       %%RANGE = STRING, Version actual del procedimiento
+
+       %MEAN     = Sample mean            (REAL)
+       %VARIANCE = sample variance        (REAL)
+       %NOBS     = Number of observations (INTEGER)
+       %MAXIMUM  = Maximum                (REAL)
+       %MINIMUM  = Minimum                (REAL)
+       %MAXENT   = Entry for the Maximum  (INTEGER)
+       %MINENT   = Entry for the Minimum  (INTEGER)
+       
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Septiembre/2004 - Traduccion a WinRATS 6.01.
+
+   R2: Mayo/2014 - 
+   Cambio de sintaxis de @MEANVAR(NOPRINT,SMPL=SMPL,WEI=W)  Y  TBEG  TEND
+*/

@@ -1,0 +1,61 @@
+/*
+     PANELORG: Changing the organization of the data in a panel data set.
+                                                        June/99 - R1: March/2005
+*/
+COM [STRING] %%PANELORG =                     'PANELORG - Version R1: March/2005'
+
+PROC   PANELORG    TBEGP  TENDP
+*
+LOCAL  INTEGER     TBEG   TEND  I
+LOCAL  SERIES      KEY    MISS  INDIVIDUAL  YEAR
+LOCAL  VECT[INT]   YLIST
+*
+OPTION CHOICE  ORGANIZATION  1  TIME  INDIVIDUAL
+OPTION INTEGER NTIME
+OPTION INTEGER NINDI
+
+IF .NOT.(%DEFINED(NTIME).OR.%DEFINED(NINDI))
+   {
+   DIS %%PANELORG; DIS 'Sintax error: NTIME and NINDI options should be defined'
+   HALT  PANELORG
+   }
+
+ENTER(VARYING) YLIST
+DO I = 1,%ROWS(YLIST)
+   CLE MISS
+   SET MISS = %VALID([SERIES] YLIST(I))
+   EXT(NOPRINT) MISS
+   IF %MINIMUM==0
+      {
+      DIS %%PANELORG; DIS 'Sintax error: Missing values have been encountered and should be removed'
+      HALT  PANELORG
+      }
+END DO I
+
+INQUIRE(REGRESSOLIST) TBEG>>TBEGP  TEND>>TENDP
+# YLIST
+
+IF (NTIME*NINDI)!=(TEND-TBEG+1)
+   {
+   DIS %%PANELORG; DIS 'Sintax error: TIME*INDIVIDUALS is not equal to the number of observations'
+   HALT  PANELORG
+   }
+
+IF ORGANIZATION==1
+   {
+   DIS 'Changing order from time to individual'
+   SET YEAR       TBEG TEND = %IF(%INTEGER(T/FLOAT(NINDI)),FIX(T/FLOAT(NINDI)),FIX(T/FLOAT(NINDI))+1)
+   SET INDIVIDUAL TBEG TEND = T - FIX((T-1)/NINDI)*NINDI
+   SET KEY        TBEG TEND = %MAX(NINDI,NTIME)*INDIVIDUAL + YEAR
+   }
+ELSE
+   {
+   DIS 'Changing order from individual to time'
+   SET YEAR       TBEG TEND = T - FIX((T-1)/NTIME)*NTIME
+   SET INDIVIDUAL TBEG TEND = %IF(%INTEGER(T/FLOAT(NTIME)),FIX(T/FLOAT(NTIME)),FIX(T/FLOAT(NTIME))+1)
+   SET KEY        TBEG TEND = %MAX(NINDI,NTIME)*YEAR + INDIVIDUAL
+   }
+ORDER KEY      TBEG TEND   YLIST
+
+CLE KEY  MISS  INDIVIDUAL  YEAR
+END PROC PANELORG

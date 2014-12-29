@@ -1,0 +1,70 @@
+/*
+     MEANVAR calcula la media y varianza ponderada de una serie.
+
+     Escrito por:  Paco Goerlich.                   Version: Mayo/2014 (R2)
+     Version RATS: WinRATS 8.30
+
+     Sintaxis
+
+      @MEANVAR S COMIENZO FIN STA STASE
+
+       S        = Serie sobre la que calcular la media y la varianza.
+       COMIENZO = Primera observacion a considerar.
+       FIN      = Ultima  observacion a considerar.
+       STA      = Vector de estadisticos: Media, Varianza, Error Estandar y Coeficiente de Variación.
+       STASE    = Error Estandar para los estadisticos de STA.
+
+
+     Opciones:
+
+      [PRINT]/NOPRINT controla la impresion del output
+      SE/[NOSE] si se calcula el Error Estandar.
+      REPLICAS numero de replicas en el Error Estandar [100]
+      SMPL= Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+            de los calculos (Ver RATS 5.2 UG) [no definido]
+      WEIGHT = si los estadisticos deben ponderarse [no definido].
+
+   NOTA: Si COMIENZO y FIN no se especifican se toma por defecto el periodo
+         maximo para el cual S esta definida.
+
+
+     Variables globales:
+
+      %%MEANVAR = STRING, Version actual del procedimiento
+
+      %MEAN       Weighted sample mean (REAL)
+      %VARIANCE   Weighted sample variance (REAL)
+      %NOBS       Number of observations (INTEGER)
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Si W es constante se obtiene la media y varianza simple donde la varianza 
+   se obtiene dividiendo por el numero de observaciones.
+
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Marzo/2003
+       Actualizacion a WinRATS 5.03. Se añaden variables globales.
+   
+   R2: Mayo/2014 - BOOTSTRAP función especifica.
+       El procedimiento es obsoleto despues de la introducción de la opción WEIGHT en
+       STA, por lo que su utilidad es fundamentalmente la generación de errores
+       standard por BOOTSTRAP.
+       STA(WEI=...) tambien genera el error estandar de la media ponderada, pero
+       los estadisticos utilizados por Rats en STA(WEI=...) utilizan una corrección
+       por muestras finitas:
+       "I agree that there might be more uses for an estimator which isn't bias corrected,
+       but STATISTICS is designed to produce standard sample statistics, 
+       and the bias- corrected form is what we chose to have it produce for unweighted data,
+       so we did the same for the weighted data." Mail Tom Doan 23/4/2012
+       Por ello la unica finalidad es la generacion de estadisticos ponderados con las
+       ponderaciones estandar, con ponderaciones que suman 1, o sin ajustes por muestras
+       finitas en el caso de no ponderados.
+
+*/

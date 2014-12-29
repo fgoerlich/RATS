@@ -1,0 +1,53 @@
+/*
+     CALCULATING PERCENTAJES                      January/00 - R2: October/14
+*/
+COM [STRING]                              %%S% = 'S% - Version R2: October/14'
+
+
+PROC  S%      S TBEGP TENDP  NS
+TYPE  SERIES  S             *NS
+*
+LOCAL INTEGER  TBEG  TEND
+LOCAL SERIES   SMPL
+*
+OPTION SWITCH  PRINT    0
+OPTION SWITCH  NEGATIVE 0
+OPTION SERIES  SMPLL
+
+INQUIRE(SERIES=S) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF((SMPLL!=0).AND.%VALID(S),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(S)
+
+STA(SMPL=SMPL,NOPRI,MOM,FRA) S TBEG TEND
+
+IF %MINIMUM<0.AND.(.NOT.NEGATIVE)
+   {
+   DIS %%S%; DIS 'Sintax error: Negative values not allowed. Minimum is' %MINIMUM
+   HALT  S%
+   }
+
+IF NEGATIVE.AND.%MEAN<=0
+   {
+   DIS %%S%; DIS 'Sintax error: Negative allowed, but too many. Mean is' %MEAN
+   HALT  S%
+   }
+
+IF %DEFINED(NS)
+   SET NS   TBEG TEND = %IF(SMPL==0,%NA,S/(%NOBS*%MEAN))
+ELSE
+   SET  S   TBEG TEND = %IF(SMPL==0,%NA,S/(%NOBS*%MEAN))
+
+IF PRINT
+   {
+   IF %DEFINED(NS)
+      PRINT TBEG TEND S NS
+   ELSE
+      PRINT TBEG TEND S
+   }
+
+CLEAR SMPL
+END PROC S%
+
+

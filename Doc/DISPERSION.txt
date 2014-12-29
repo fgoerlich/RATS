@@ -1,0 +1,55 @@
+/*
+     DISPERSION: media y varianza con diferentes opciones de centrado.
+
+     Escrito por: Paco Goerlich.                 Version: Septiembre/2004 (R2)
+     Version RATS: WinRATS 6.01
+
+     Sintaxis
+
+      @DISPERSION S COMIENZO FIN
+
+       S        = Serie sobre la que calcular los estadísticos.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+
+
+       Opciones:
+
+     [PRINT]/NOPRINT controla la impresion de los estadisticos.
+     CENTER=[MEAN]/MIN/MAX/ZERO valor de centrado de los estadisticos de
+          dispersion.
+     SMPL    = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+               de los calculos (Ver RATS 5.2 UG) [no definido].
+     WEIGHT  = si los estadisticos deben ponderarse [no definido].
+
+
+       Variables globales:
+
+       %%DISPERSION = STRING, Version actual del procedimiento
+
+       %MEAN     = Sample mean            (REAL)
+       %VARIANCE = Sample variance        (REAL)
+       %NOBS     = Number of observations (INTEGER)
+       %MAXIMUM  = Maximum                (REAL)
+       %MINIMUM  = Minimum                (REAL)
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+
+   CENTER=ZERO produce estimaciones de momentos muestrales respecto al origen.
+
+   El coeficiente de variacion se ofrece siempre en valor absoluto. Para
+   CENTER=MEAN/ZERO la desviacion tipica se divide por la media,    para
+   CENTER=MIN/MAX   la desviacion tipica se divide por el valor minimo/maximo.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Diciembre/1997 - Diversas posibilidades de centrado.
+
+   R2: Octubre/2004 - Traducción a WinRATS 6.01.
+
+*/

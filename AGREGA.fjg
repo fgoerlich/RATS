@@ -1,0 +1,14 @@
+/*
+     BUILDING AN AGREGATIONAL OPERATOR.         April/94 - R2: October/02
+*/
+COM [STRING]                  %%AGREGA = 'AGREGA - Version R2: October/02'
+
+PROC AGREGA   V  E
+TYPE VEC      V
+TYPE REC        *E
+
+DIM E(FIX(%MAXVALUE(V)),%ROWS(V))
+
+EWI E(I,J) = %IF(I==V(J),1,0)
+
+END PROC AGREGA

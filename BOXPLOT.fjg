@@ -1,0 +1,70 @@
+/*
+     BOXPLOT                                   December/99 - R1: September/04
+*/
+COM [STR]                     %%BOXPLOT = 'BOXPLOT - Version R1: September/04'
+
+PROC  BOXPLOT  Y   TBEGP  TENDP   OUTB   OUTBDW   OUTBUP
+TYPE  SERIES   Y
+TYPE  INT          TBEGP  TENDP
+TYPE  VECT                       *OUTB  *OUTBDW  *OUTBUP
+*
+LOCAL INT  I  J  K  N  TBEG  TEND
+LOCAL SER  SMPL  S  W
+LOCAL VEC  B BDW BUP
+*
+OPTION SWITCH PRINT     1
+OPTION SWITCH INTERPOL  1
+OPTION SERIES WEIGHT
+OPTION SERIES SMPLL
+
+INQUIRE(SER=Y) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(Y),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(Y)
+
+IF %DEFINED(WEIGHT)
+   SET W TBEG TEND = WEIGHT
+ELSE
+   SET W TBEG TEND = 1.
+
+SAM(SMPL=SMPL) Y TBEG TEND S 1
+SAM(SMPL=SMPL) W TBEG TEND W 1
+INQ(SER=S)     * N
+ORDER        S 1 N W
+
+DIM B(10) BDW(1) BUP(1)
+IF .NOT.%DEFINED(WEIGHT)
+   COM B(4) = %F( S,  .25,INTERPOL), B(6) = %F( S,  .50,INTERPOL), B(7) = %F( S,  .75,INTERPOL)
+ELSE
+   COM B(4) = %FW(S,W,.25,INTERPOL), B(6) = %FW(S,W,.50,INTERPOL), B(7) = %FW(S,W,.75,INTERPOL)
+
+COM J = 1, K = N, B(5) = %M(S,W)
+
+WHILE S(J).LT.(B(4)-1.5*(B(7)-B(4)))   ;COM J = J + 1
+WHILE S(K).GT.(B(7)+1.5*(B(7)-B(4)))   ;COM K = K - 1
+
+COM B(1) = J-1., B(2) = S(1), B(3) = S(J), B(8) = S(K), B(9) = S(N), B(10) = N-K
+
+IF (J-1).GT.0   ;DIM BDW(J-1)  ;EWI BDW(I) = %IF((J-1).GT.0,S(I)    ,%NA)
+IF (N-K).GT.0   ;DIM BUP(N-K)  ;EWI BUP(I) = %IF((N-K).GT.0,S(N+1-I),%NA)
+
+IF PRINT==1
+   {
+   DIS 'Boxplot statistics for series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%L(WEIGHT),'')
+   DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   DIS '  Lower                   Lower'
+   DIS 'Outliers    Minimum       Limit        25%-ile        Mean'
+   DIS ##### B(1)  * B(2)         B(3)          B(4)          B(5)
+   DIS '  Upper                   Upper'
+   DIS 'Outliers    Maximum       Limit        75%-ile       Median'
+   DIS ##### B(10) * B(9)         B(8)          B(7)          B(6)
+   DIS;DIS
+   }
+
+IF %DEFINED(OUTB)  ;   COM OUTB   = B
+IF %DEFINED(OUTBDW);   COM OUTBDW = BDW
+IF %DEFINED(OUTBUP);   COM OUTBUP = BUP
+CLEAR  SMPL  S  W
+END PROC BOXPLOT

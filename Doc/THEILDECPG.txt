@@ -1,0 +1,71 @@
+/*
+     THEILDECPG descomposicion del indice de Theil (1967) por subgrupos de
+     poblacion.
+
+     Escrito por Paco Goerlich.                 Version: November/2014 (R7)
+     Version RATS: WinRATS 8.30
+
+     Sintaxis
+
+      @THEILDECPG S A COMIENZO FIN EXT INT
+
+       R        = Serie de rentas per capita.
+       A        = Serie de correspondencias de las agrupaciones (enteros).
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       EXT      = Componente externo del indice de Theil.
+       INT      = Componente interno del indice de Theil.
+
+
+       Opciones:
+
+     BETA parametro para el calculo del indice. [0]
+          1 ponderaciones segun % de renta.
+          0 ponderaciones segun % de poblacion.
+     [PRINT]/NOPRINT controla la impresion del indice.
+     SMPL   = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+              de los calculos (Ver RATS 5.2 UG) [no definido]
+     WEIGHT = si el indice deben ponderarse [no definido].
+     GROUP Vector de etiquetas con los nombres de las agrupaciones.
+
+
+       Variables globales:
+
+     %%THEILDECPG = STRING, Version actual del procedimiento.
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   La informacion se ha tomado de J. M. Esteban "La desigualdad interregional
+   en Europa y en España: Descripcion y analisis", Capitulo I. IAE.
+
+   El procedimiento implementa las formulas (5.1) a (5.4) en J. M. Esteban p.-54.
+
+   Para la generalizacion a valores de BETA diferentes de 1 se utilizo
+   Ruiz-Castillo (1986).
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Mayo/1996 - Correccion de un bug. La variable entera N no habia sido 
+                   declarada como LOCAL previamente.
+
+   R2: Abril/1997 - Cambio de nombre a THEILDE1.
+
+   R3: Septiembre/1997 - Generalizacion para cualquier valor de BETA.
+
+   R4: Septiembre/2004 - Cambio de nombre a THEILDECPG. Traduccion a WinRATS 6.00 y
+                         definicion en terminos de rentas per capita y ponderaciones.
+
+   R5: Marzo/2006 - Correccion de un bug. La opcion WEIGTH podia dar errores junto
+                    con la opcion SMP.
+
+   R6: Febrero/2007 - Cambio de nombre de la función de %THEIL a %THEIL_INEQ
+
+   R7: November/2011 - Se corrigio un bug que se producia cuando la serie de correspondencias
+                       tenía elementos %NA que no coincidian con los de S
+
+*/

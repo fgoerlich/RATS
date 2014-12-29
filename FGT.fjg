@@ -1,0 +1,89 @@
+/*
+     FOSTER, GREER & THORBECKE POVERTY INDEX.  April/12 - R1: May/14
+*/
+COM [STRING] %%FGT =                       'FGT - Version R1: May/14'
+
+PROC  FGT    Y  TBEGP  TENDP   OUTIND
+TYPE  SER    Y
+TYPE  INTEGER   TBEGP  TENDP
+TYPE  REAL                    *OUTIND
+*
+LOCAL INTEGER  N  TBEG   TEND
+LOCAL SERIES   S  W  P   SMPL
+LOCAL REAL     ATK
+*
+OPTION SWITCH PRINT    1
+OPTION SWICTH MEDIAN   1
+OPTION REAL   ALPHA    2.
+OPTION REAL   PL
+OPTION REAL   SHARE    .6
+OPTION SERIES WEIGHT
+OPTION SERIES SMPLL
+
+INQUIRE(SERIES=Y) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(Y),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(Y)
+
+IF %DEFINED(WEIGHT)
+   SET P TBEG TEND = WEIGHT
+ELSE
+   SET P TBEG TEND = 1
+
+SAM(SMPL=SMPL) Y  TBEG TEND S 1
+SAM(SMPL=SMPL) P  TBEG TEND W 1
+
+*   Globals
+COM %MEAN = %%POVERTYLINE = %%MEANPOOR = %%HEADCOUNT = %%INCOMEGAP = %%POVERTYGAP = %%FGT2 = %NA
+COM %%GINIPOOR = %%GINIGAP = %%CVPOOR = %%CVGAP = %NA, %NOBS = 0
+INQ(SER=S)  *    N
+DEC VEC[SER] %%POOR_S(3)
+CLE          %%POOR_S
+
+*   Poverty Line
+COM %%POVERTYLINE = %IF(%DEFINED(PL),PL,%POVERTYLINE(MEDIAN,S,W,%IF(SHARE<=0,.6,SHARE),%DEFINED(WEIGHT)))
+
+*   Poverty Line Analysis
+IF %%POVERTYLINE<%MINVALUE(S);   HALT 'Poverty Line too low.  Nobody    is poor'
+IF %%POVERTYLINE>%MAXVALUE(S);   HALT 'Poverty Line too high. Everybody is poor'
+
+*   Poor distribution series
+SET %%POOR_S(1) 1 N =     S<%%POVERTYLINE
+SET %%POOR_S(2) 1 N = %IF(S<%%POVERTYLINE,S,0)
+SET %%POOR_S(3) 1 N = %MAX((%%POVERTYLINE-S)/%%POVERTYLINE,0)
+
+*   Poverty statistics
+@MEANVAR(NOPRINT,SMPL=%%POOR_S(1),WEI=W) S 1 N;   COM %%MEANPOOR = %MEAN, %%CVPOOR = SQRT(%VARIANCE)/%MEAN
+COM %%HEADCOUNT = %HEADCOUNT(%%POOR_S(1),W), %%INCOMEGAP = 1 - %%MEANPOOR/%%POVERTYLINE, %%POVERTYGAP = %%HEADCOUNT*%%INCOMEGAP
+COM %%FGT2 = %FGT(S,W,%%POVERTYLINE,2), ATK = %FGT(S,W,%%POVERTYLINE,ALPHA)
+@GINI(NOPRINT,NOGRAPH,SMPL=%%POOR_S(1),WEI=W)  S 1 N  %%GINIPOOR
+COM %%CVGAP = ((1-%%INCOMEGAP)/%%INCOMEGAP)*%%CVPOOR, %%GINIGAP = ((1-%%INCOMEGAP)/%%INCOMEGAP)*%%GINIPOOR, %MEAN = %M(S,W), %NOBS = N
+
+IF PRINT
+   {
+   DIS;DIS 'FGT Poverty index on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   IF %DEFINED(PL)
+      DIS 'User defined Poverty Line' %%POVERTYLINE
+   ELSE
+      DIS 'Relative Poverty Line' %%POVERTYLINE '(' @-1 ###.## %IF(SHARE<=0,.6,SHARE)*100  @-1 '% of the' %STRIF(MEDIAN,'median','mean')+' = ' * %%POVERTYLINE/%IF(SHARE<=0,.6,SHARE) @-1 ')'
+   DIS 'Poverty basic statistics'
+   DIS 'Sample mean   '             %MEAN       @41  'Mean of the poor' %%MEANPOOR
+   DIS 'Head Count    ' @+5 ###.##  %%HEADCOUNT*100 @-1 '%'
+   DIS 'Income gap    '             %%INCOMEGAP @41  'Poverty gap     ' %%POVERTYGAP
+   DIS 'Inequality among the poor'
+   DIS 'Gini incomes  '             %%GINIPOOR  @41  'Gini gap        ' %%GINIGAP
+   DIS 'C.V. incomes  '             %%CVPOOR    @41  'C.V. gap        ' %%CVGAP
+   DIS 'Poverty Index '
+   DIS 'FGT-alpha  2.0'             %%FGT2
+   IF ALPHA<>2
+      DIS 'FGT-alpha'  ##.# ALPHA * ATK
+   DIS;DIS
+   }
+
+IF %DEFINED(OUTIND);     COM OUTIND   = ATK
+
+CLE SMPL W S P
+END PROC FGT

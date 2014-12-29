@@ -1,0 +1,46 @@
+/*
+   AGREGA genera un operador agregacional para agregar matrices o
+   simplemente sumar filas y/o columnas.
+
+   Escrito por Paco Goerlich.                   Versi¢n: Octubre/2002 (R2)
+   Version RATS: RAST386 5.02
+
+   Sintaxis
+
+    @AGREGA V E
+
+     V = Vector Nx1 que establece las correspondencias entre filas originales
+         y filas agregadas.
+     E = Operador agregacional, dimensiones E(max{V(i)},N).
+
+
+     Variables globales:
+
+    %%AGREGA = STRING, Version actual del procedimiento.
+
+******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   El procedimiento es la traducci¢n a RATS del correspondiente procedimiento
+   escrito para GAUSS 2.1 (AGREGA.ARC) y simplemente genera una matriz
+   elemental que postmultiplicada por otra matriz simplemente suma las filas
+   correspondientes de esta.
+
+   Originalmente est  pensado para agregar matrices Input-Output aunque puede
+   ser utilizado m s generalmente. 
+
+   Puede ser utilizado para generar una matriz que simplemente altere el orden
+   de filas de otra matriz.
+
+******************************************************************************
+
+   REVISIONES
+
+   R1: Abril/1998
+       Simplificacion de calculos mediante la funcion %XCOL(X,I).
+
+   R2: Octubre/2002
+       Actualizacion a RATS 5.02.
+
+*/

@@ -1,0 +1,253 @@
+/*
+     ANOVA.                                        May/99 - R3: March/2005
+*/
+COM [STRING] %%ANOVA =                     'ANOVA - Version R3: March/2005'
+
+PROC  ANOVA TBEGP TENDP
+
+*   FET: Time       fixed effects
+*   FEI: Individual fixed effects
+LOCAL  SERIES      Y       SMPL
+LOCAL  INTEGER     TBEG    TEND NT NI NN I J K
+LOCAL  REAL        TSS RSS ESB EST ESI CBT SBT CBI SBI CB SB CT ST CI SI CX SX CA SA
+LOCAL  LABEL       YLABEL
+LOCAL  LVECT       XLABEL  TIME     INDI
+LOCAL  VECT[INT]   YLIST   FET_ORT  FEI_ORT  XLIST
+LOCAL  VECT        LT      LN
+LOCAL  VECT[SER]   FET     FEI     X
+LOCAL  RECT        FET_ENC FEI_ENC DT DN
+*
+OPTION CHOICE ORGANIZATION  2        TIME  INDIVIDUAL
+OPTION CHOICE EFFECTS       1  BOTH  TIME  INDIVIDUAL  NONE
+OPTION SWITCH DEBUG         0
+OPTION SWITCH PRINT         1
+OPTION SWITCH ROBUST        0
+OPTION LABEL  YLABELL
+OPTION LVECT  XLABELL
+OPTION LVECT  TIMEL
+OPTION LVECT  INDIL
+OPTION SERIES SMPLL
+OPTION INTEGE RTIME         0
+OPTION INTEGE RINDI         0
+OPTION INTEGE ADDREG        0
+OPTION INTEGE XTEST         0
+
+ENTER(VARYING)  YLIST
+INQUIRE(REGRESSORLIST) TBEG>>TBEGP  TEND>>TENDP
+# YLIST
+
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0,1,0)
+ELSE
+   SET SMPL TBEG TEND = 1
+
+@VECS(SMPL=SMPL) Y  TBEG TEND
+# YLIST
+COM NT = FIX(%IF(ORGANIZATION==1,%NREG,%NOBS)), NI = FIX(%IF(ORGANIZATION==1,%NOBS,%NREG)), NN = NI*NT
+
+IF %DEFINED(YLABELL)
+   COM YLABEL = YLABELL
+ELSE
+   COM YLABEL = %LABEL([SER]YLIST(1))
+LABEL Y;  #  YLABEL
+
+*   Creating the dummies
+DIM FET(NT-1) FEI(NI-1) LT(NT) LN(NI) TIME(NT-1) INDI(NI-1) X(ADDREG) XLABEL(ADDREG)
+COM LT = %CONST(1), DN = %KRONEKER(%IDENTITY(NI),LT), LN = %CONST(1), DT = %KRONEKER(LN,%IDENTITY(NT))
+DO I = 1,NT-1
+   SET FET(I) 1 NN = DT(T,I)
+END DO I
+DO I = 1,NI-1
+   SET FEI(I) 1 NN = DN(T,I)
+END DO I
+EWI TIME(I) = %CONCAT('Time_',%STRING(I)); LABEL FET;  #  TIME
+EWI INDI(I) = %CONCAT('Indi_',%STRING(I)); LABEL FEI;  #  INDI
+
+IF ADDREG>0
+   {
+   DO I = 1,ADDREG
+      ENTER(VARYING) XLIST
+      @VECS(SMPL=SMPL) X(I) TBEG TEND
+      # XLIST
+      IF %DEFINED(XLABELL)
+         COM XLABEL(I) = XLABELL(I)
+      ELSE
+         COM XLABEL(I) = %LABEL([SER]XLIST(1))
+      LABEL  X(I);  #  XLABEL(I)
+      IF %NOBS*%NREG!=NN
+         {
+         DIS %%ANOVA; DIS 'Data Error: Number of INDIVIDUALS and/or TIME periods does not match in' XLABEL(I)
+         HALT  ANOVA
+         }
+   END DO I
+   }
+
+DIS 'Analysis of Variance for Series' %L(Y)
+DIS 'Observations' NN @+5 '(' @-1 (TEND-TBEG+1)*%NREG 'Total -' ((TEND-TBEG+1)-%NOBS)*%NREG 'Skipped/Missing)'
+DIS 'Observations organized by '+%STRIF(ORGANIZATION==1,'time','individual')
+
+IF ORGANIZATION==1
+   @PANELORG(ORG=TIME,NTIME=NT,NINDI=NI) 1 NN
+   # Y X
+
+DIS 'Number of Individuals' NI '- Number of Time periods' NT
+IF ROBUST==1;  DIS 'White-Robust inference'
+
+STA(NOPRINT,NOFRAC) Y 1 NN;  COM TSS = (%NOBS-1.)*%VARIANCE
+*   Both
+LIN(PRINT=DEBUG,ROBUSTERRORS=ROBUST) Y 1 NN
+# CONSTANT FET FEI
+EXCLUDE(PRINT=DEBUG);  #  FET        ; COM CBT = %CDSTAT, SBT = %SIGNIF, ESB = TSS - %RSS
+EXCLUDE(PRINT=DEBUG);  #  FEI        ; COM CBI = %CDSTAT, SBI = %SIGNIF
+EXCLUDE(PRINT=DEBUG);  #  FET  FEI   ; COM CB  = %CDSTAT, SB  = %SIGNIF
+*   Time
+LIN(PRINT=DEBUG,ROBUSTERRORS=ROBUST) Y 1 NN
+# CONSTANT FET
+EXCLUDE(PRINT=DEBUG);  #  FET        ; COM CT  = %CDSTAT, ST  = %SIGNIF, EST = TSS - %RSS
+*   Individual
+LIN(PRINT=DEBUG,ROBUSTERRORS=ROBUST) Y 1 NN
+# CONSTANT     FEI
+EXCLUDE(PRINT=DEBUG);  #  FEI        ; COM CI  = %CDSTAT, SI  = %SIGNIF, ESI = TSS - %RSS
+
+COM RSS =  TSS      -     %IF(EFFECTS==1,    ESB,%IF(EFFECTS==2, EST,%IF(EFFECTS==3, ESI,0))), $
+    K   = %NOBS - 1 - FIX(%IF(EFFECTS==1,NI+NT-2,%IF(EFFECTS==2,NT-1,%IF(EFFECTS==3,NI-1,0))))
+
+DIS
+DIS 'Source Sum of Squares   (%)    Degrees   Mean Square '+%STRIF(EFFECTS!=4,'    Statistic  Signif Level','')
+IF EFFECTS==1.OR.EFFECTS==3
+   DIS 'INDIV ' ESI '(' @-1 ###.## 100*ESI/TSS @-1 '%)' ####### NI-1    * ESI/(NI-1) %IF(EFFECTS==1,CBI,CI) @+3 #.######## %IF(EFFECTS==1,SBI,SI)
+IF EFFECTS==1.OR.EFFECTS==2
+   DIS 'TIME  ' EST '(' @-1 ###.## 100*EST/TSS @-1 '%)' ####### NT-1    * EST/(NT-1) %IF(EFFECTS==1,CBT,CT) @+3 #.######## %IF(EFFECTS==1,SBT,ST)
+IF EFFECTS==1
+   DIS 'JOINT ' ESB '(' @-1 ###.## 100*ESB/TSS @-1 '%)' ####### NI+NT-2 * ESB/(NI+NT-2)  CB  @+3 #.######## SB
+DIS    'ERROR ' RSS '(' @-1 ###.## 100*RSS/TSS @-1 '%)' ####### K       * RSS/K
+DIS    'TOTAL ' TSS '(' @-1 ###.## 100*TSS/TSS @-1 '%)' ####### %NOBS-1 ; DIS
+
+IF EFFECTS==1
+   {
+   DIS 'INDIVIDUAL effects are' ##.## 100*ESI/ESB @-1 '% and TIME effects are' 100*EST/ESB @-1 '% of JOINT'; DIS
+   *   Both & Regressors
+   LIN(PRINT=DEBUG,ROBUSTERRORS=ROBUST) Y 1 NN
+   # CONSTANT FET FEI X
+   EXCLUDE(PRINT=DEBUG);  #  FET        ; COM CBT = %CDSTAT, SBT = %SIGNIF
+   EXCLUDE(PRINT=DEBUG);  #  FEI        ; COM CBI = %CDSTAT, SBI = %SIGNIF
+   EXCLUDE(PRINT=DEBUG);  #  FET  FEI   ; COM CB  = %CDSTAT, SB  = %SIGNIF
+   EXCLUDE(PRINT=DEBUG);  #  FET  FEI X ; COM CA  = %CDSTAT, SA  = %SIGNIF
+   }
+ELSE IF EFFECTS==2
+   {
+   *   Time & Regressors
+   LIN(PRINT=DEBUG,ROBUSTERRORS=ROBUST) Y 1 NN
+   # CONSTANT FET     X
+   EXCLUDE(PRINT=DEBUG);  #  FET        ; COM CT  = %CDSTAT, ST  = %SIGNIF
+   EXCLUDE(PRINT=DEBUG);  #  FET      X ; COM CA  = %CDSTAT, SA  = %SIGNIF
+   }
+ELSE IF EFFECTS==3
+   {
+   *   Individual & Regressors
+   LIN(PRINT=DEBUG,ROBUSTERRORS=ROBUST) Y 1 NN
+   # CONSTANT     FEI X
+   EXCLUDE(PRINT=DEBUG);  #  FEI        ; COM CI  = %CDSTAT, SI  = %SIGNIF
+   EXCLUDE(PRINT=DEBUG);  #       FEI X ; COM CA  = %CDSTAT, SA  = %SIGNIF
+   }
+ELSE
+   {
+   *   Regressors
+   LIN(PRINT=DEBUG,ROBUSTERRORS=ROBUST) Y 1 NN
+   # CONSTANT         X
+   EXCLUDE(PRINT=DEBUG);  #           X ; COM CA  = %CDSTAT, SA  = %SIGNIF
+   }
+EXCLUDE(PRINT=DEBUG);     #           X ; COM CX  = %CDSTAT, SX  = %SIGNIF
+
+IF ADDREG>0
+   {
+   DIS 'Analysis of Covariance with series:'
+   DIS  XLABEL
+   DIS 'Source Sum of Squares   (%)    Degrees   Mean Square     Statistic  Signif Level'
+   DIS 'JOINT ' TSS-%RSS '(' @-1 ###.## 100*%RSQUARED @-1 '%)' ####### %NREG-1 * (TSS-%RSS)/(%NREG-1) CA @+3 #.######## SA
+   DIS 'ERROR '     %RSS '(' @-1 ###.## 100*%RSS/TSS  @-1 '%)' ####### %NDF    * %RSS/%NDF
+   DIS 'TOTAL ' TSS      '(' @-1 ###.## 100*TSS/TSS   @-1 '%)' ####### %NOBS-1 ; DIS
+   DIS 'Exclusion restrictions'
+   DIS 'Source     Statistic  Signif Level'
+   IF EFFECTS==1.OR.EFFECTS==3
+      DIS 'INDIV ' %IF(EFFECTS==1,CBI,CI) @+3 #.######## %IF(EFFECTS==1,SBI,SI)
+   IF EFFECTS==1.OR.EFFECTS==2
+      DIS 'TIME  ' %IF(EFFECTS==1,CBT,CT) @+3 #.######## %IF(EFFECTS==1,SBT,ST)
+   IF EFFECTS==1
+      DIS 'JOINT '                CB      @+3 #.########                SB
+   DIS    'REGRES'                CX      @+3 #.########                SX ; DIS
+   IF XTEST>0
+      {
+      DIS 'Aditional exclusion restrictions on regressors'
+      DO I = 1,XTEST
+         ENTER(VAR,ENT=K) XLIST
+         DIM YLIST(K)
+         EWI YLIST(J) = X(XLIST(J))
+         EXCLUDE(PRINT)
+         #   YLIST
+      END DO I
+      }
+   }
+
+*  Printing regression output ANOVA
+IF PRINT==1
+   {
+   DIM FET(NT) FEI(NI) FET_ENC(NT-1,NT) FEI_ENC(NI-1,NI) TIME(NT) INDI(NI)
+   DO I = 1,NT
+      SET FET(I) 1 NN = DT(T,I)
+   END DO I
+   DO I = 1,NI
+      SET FEI(I) 1 NN = DN(T,I)
+   END DO I
+   *   Encoding the restrictions
+   IF RTIME>=1.AND.RTIME<=NT
+      EWI FET_ENC(I,J) = %IF(J<RTIME,%IF(I==J,1,0),%IF(J>RTIME,%IF(I==J-1,1,0),0))
+   ELSE
+      EWI FET_ENC(I,J) = %IF(I==J,1,%IF(J==NT,-1,0))
+   IF RINDI>=1.AND.RINDI<=NI
+      EWI FEI_ENC(I,J) = %IF(J<RINDI,%IF(I==J,1,0),%IF(J>RINDI,%IF(I==J-1,1,0),0))
+   ELSE
+      EWI FEI_ENC(I,J) = %IF(I==J,1,%IF(J==NI,-1,0))
+   ENCODE(SCRATCH=FET_ORT)         FET_ENC;   #  FET
+   ENCODE(SCRATCH=FEI_ORT,NOCLEAR) FEI_ENC;   #  FEI
+   IF %DEFINED(TIMEL)
+      COM TIME = TIMEL
+   ELSE
+      EWI TIME(I) = %CONCAT('Time_',%STRING(I))
+   IF %DEFINED(INDIL)
+      COM INDI = INDIL
+   ELSE
+      EWI INDI(I) = %CONCAT('Indi_',%STRING(I))
+   LABEL FET;  #  TIME
+   LABEL FEI;  #  INDI
+   IF      EFFECTS==1
+      LIN(UNRAVEL,ROBUSTERRORS=ROBUST) Y 1 NN
+      # CONSTANT FET_ORT FEI_ORT
+   ELSE IF EFFECTS==2
+      LIN(UNRAVEL,ROBUSTERRORS=ROBUST) Y 1 NN
+      # CONSTANT FET_ORT
+   ELSE IF EFFECTS==3
+      LIN(UNRAVEL,ROBUSTERRORS=ROBUST) Y 1 NN
+      # CONSTANT         FEI_ORT
+   ELSE
+      LIN(UNRAVEL,ROBUSTERRORS=ROBUST) Y 1 NN
+      # CONSTANT
+   IF ADDREG>0
+      {
+      IF      EFFECTS==1
+         LIN(UNRAVEL,ROBUSTERRORS=ROBUST) Y 1 NN
+         # CONSTANT FET_ORT FEI_ORT X
+      ELSE IF EFFECTS==2
+         LIN(UNRAVEL,ROBUSTERRORS=ROBUST) Y 1 NN
+         # CONSTANT FET_ORT         X
+      ELSE IF EFFECTS==3
+         LIN(UNRAVEL,ROBUSTERRORS=ROBUST) Y 1 NN
+         # CONSTANT         FEI_ORT X
+      ELSE
+         LIN(UNRAVEL,ROBUSTERRORS=ROBUST) Y 1 NN
+         # CONSTANT                 X
+      }
+   }
+
+CLE Y  X FET  FEI  SMPL
+END PROC ANOVA

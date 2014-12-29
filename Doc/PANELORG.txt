@@ -1,0 +1,50 @@
+/*
+     PANELORG cambia la ordenacion de un conjunto de datos de panel de
+     organizacion TIEMPO    a organizacion INDIVIDUO, o de
+     organizacion INDIVIDUO a organizacion TIEMPO.
+
+     Escrito por Paco Goerlich.                    Version: Marzo/2005 (R1)
+     Version RATS: WinRATS 6.02
+
+     Sintaxis
+
+      @PANELORG(opciones) COMIENZO FIN
+      #<supp.card> series para realizar el cambio de ordenacion
+
+       COMIENZO = primera observacion a considerar
+       FIN      = ultima  observacion a considerar
+
+
+       Opciones:
+
+     ORGANIZATION = [TIME]/INDIVIDUAL, si las series estan organizadas por
+                    tiempo,     i.e. un periodo,   todos los individuos; o por
+                    individuos, i.e. un individuo, todos los periodos.
+     NTIME = Numero de observaciones temporales.
+     NINDI = Numero de observaciones individuales.
+
+             Es necesario especificar estas dos ultimas opciones.
+
+
+       Variables Globales:
+
+     %%PANELORG [STRING] Version actual del procedimiento.
+     
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   PANELORG utiliza el truco del Manual del TSP 4.4, UG, p.-47, que define
+   una serie KEY con la que realizar la ordenacion a partir del comando ORDER.
+
+   En dicho comando los nombres de las series de salida son los mismos que los
+   nombres de las series de entrada, que por tanto son remplazadas.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Marzo/2005 - Traduccion a WinRATS 6.02.
+
+*/

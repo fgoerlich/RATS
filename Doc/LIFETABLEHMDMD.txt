@@ -1,0 +1,107 @@
+/*
+     LIFETABLEHMDMD
+
+     Escrito por:  Paco Goerlich.                   Version: Mayo/2010 (R0)
+     Version RATS: WinRATS 7.30
+
+     Sintaxis
+
+      @LIFETABLEHMDMD
+      #<supp. card> PF1 PF2 DF1 DF2 CF1...CFn <Causas de mortalidad (no necesariamente exhaustivas)>
+      #<supp. card> PM1 PM2 DM1 DM2 CM1...CMn <Causas de mortalidad (no necesariamente exhaustivas)>
+
+       El orden es siempre: F = Female = 1, M = Male = 2 or T = Total = 3.
+
+      #<supp. card> PF1 PF2 DF1 DF2 CF1...CFn: Poblacion, defunciones y causas de muerte para las Females.
+      #<supp. card> PM1 PM2 DM1 DM2 CM1...CMn: Poblacion, defunciones y causas de muerte para los Males.
+
+      1 y 2 son el principio y el final del periodo para la población y el triangulo
+      de Lexis inferior (1) y superior (2) para las defunciones.
+
+      Las causas de muerte no han de ser necesariamente exhaustivas,
+      pero deben ser el mismo numero para females que para males.
+
+     Opciones:
+
+      [PRINT]/NOPRINT controla la impresion de los resultados.
+      HEADER  = Titulo a imprimir.
+      MDLABEL = Vector de etiquetas para las causas de decremento.
+      RADIX   = Supervivientes iniciales [100000] (INTEGER).
+      FINAL   = 65/70/75/80/85/90/95/100/101/[110] intervalo final en la tabla abreviada.
+
+
+     Variables globales:
+
+      %%LIFETABLEHMDMD = STRING, Version actual del procedimiento.
+      
+      %%Mi             = RECT[SERIES] (Causas,3) Tasas especificas por causa de mortalidad.
+      %%Qi             = RECT[SERIES] (Causas,3) Probabilidades espeficicas por causa de mortalidad.
+      %%Li             = RECT[SERIES] (Causas,3) Supervivientes que falleceran de una causa de mortalidad.
+      %%Di             = RECT[SERIES] (Causas,3) Defunciones por causa de mortalidad.
+
+      Las series son de edades simples 111 observaciones.
+      
+      %%QiABR          = RECT[SERIES] (Causas,3) Probabilidades espeficicas por causa de mortalidad. 
+      %%LiABR          = RECT[SERIES] (Causas,3) Supervivientes que falleceran de una causa de mortalidad.
+      %%DiABR          = RECT[SERIES] (Causas,3) Defunciones por causa de mortalidad.
+
+      Las series son de grupos de edades, derivados de la opción FINAL.
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Este procedimiento empieza estimando la Tabla de vida con el metodo de la HMD,
+   de hecho lo primero que hace es llamar a este PROC sin imprimir ni almacenar
+   los resultados.
+
+   El metodo de calculo es el de la versión 5 (May 31) del MP. Wilmoth (2007).
+
+   Para informacion adicional ver la documentación del proc LIFETABLEHMD.
+
+   Sólo admite poblaciones por edades simples hasta un intervalo abierto
+   final de 100 o 110 años.
+
+   Las defunciones deben estar (necesariamente) clasificadas por triangulos de
+   Lexis. Los datos son pues, periodo-edad.
+
+   El método calcula tasas de mortalidad (= Defunciones / Exposicion) por edades
+   según las formulas (47), (48) y (49) del MPv5. Para la última edad la formula (49)
+   no considera el segundo sumando debida a los triangulos de Lexis.
+
+   A partir de M se sigue la escrupulosamente la metodología del MPv5 p.-34 a 39.
+
+   Para las edades avanzadas se aplica el suavizado de las tasas de la HMD.
+
+   Las causas de muerte siguen a las defunciones clasificadas por triangulos de
+   Lexis, estas no distinguen por triángulos de Lexis, y no pueden sumar mas
+   las defunciones, es decir
+
+                          DF1 + DF2 >= CF1 + ... + CFn
+
+   Las causas deben ser las misma para females que para males, si esto no es así
+   un truco es rellenar causas con ceros, pero salvo que esto tenga sentido los
+   resultados para el agregado serán de dudosa interpretación.
+
+   Una vez la Tabla de Vida se ha calculado para cada sexo y el total se sigue
+   escrupulosamente la metodologia de Preston, Heuveline & Guillot (2001)
+   secciones 4.1 y 4.2.
+
+   La unica excepcion es que a partir de la edad a partir de la cual las tasas
+   se suavizan, entonces las tasas para cada causa se obtienen como % del total
+   de muertes de esa causa por encima de dicha edad respecto a las muertes totales.
+
+   Esto mantiene el perfil de las tasas de cada causa respecto al del global de
+   causas, pero mantiene la "contabilidad", ecuaciones pagina 72, la suma de
+   probabilidades de muerte en el intervalo final abierto es la unidad, y al final
+   el número de fallecidos es igual a la generación de partida.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: - 
+
+
+*/

@@ -1,0 +1,49 @@
+/*
+     MISSING determina el numero de %NA, valores negativos o valores concretos
+     de una serie.
+
+     Escrito por:  Paco Goerlich.                     Versi¢n: Febrero/04 (R1)
+     Version RATS: WinRATS 5.11
+
+     Sintaxis:
+
+      @MISSING(opciones) S COMIENZO FIN N
+
+       S        = Serie de interes.
+       COMIENZO = Primera observacion a considerar.
+       FIN      = Ultima  observacion a considerar.
+       N        = Informacion requerida.
+
+     Opciones:
+
+    [PRINT]/NOPRINT       controla la impresion de la informacion.
+    NEGATIVE/[NONEGATIVE] informacion sobre valores negativos.
+    VALUE =               Valores en S igual a VALUE.
+    SMPL  = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+            de los calculos (Ver RATS 5.2 UG) [no definido]
+ 
+   NOTA: Si COMIENZO y FIN no se especifican se toma por defecto el periodo
+         maximo para el cual S esta definida.
+
+
+     Variables globales:
+
+      %%MISSING = STRING, Version actual del procedimiento
+
+      %NOBS       Number of observations analysed (INTEGER)
+
+*****************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   NEGATIVE/[NONEGATIVE] and VALUE son opciones excluyentes, si ninguna se
+   especifica el procedimiento devuelve el n£mero de %NA.
+
+*****************************************************************************
+
+   REVISIONES
+
+   R1: Febrero/2004
+       Actualizacion a WinRATS 5.11. Se a¤aden variables globales.
+
+*/

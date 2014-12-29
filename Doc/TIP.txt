@@ -1,0 +1,67 @@
+/*
+     TIP: (relative) TIP curves de Jenkins & Lambert (1998).
+
+     Escrito por Paco Goerlich.                    Version: Abril/2012 (R0)
+     Version RATS: WinRATS 8.10
+
+     Sintaxis
+
+      @TIP R COMIENZO FIN LX LY
+
+       R        = Serie de rentas per capita.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       LX       = Abcisa   de la curva TIP en los puntos estimados.
+       LY       = Ordenada de la curva TIP en los puntos estimados.
+            
+
+       Opciones:
+
+     [PRINT]/NOPRINT controla la impresion del indice.
+     [GRAPH]/NOGRAPH     controla la visualizacion de la curvas de Lorenz.
+     SAMPLE/[NOSAMPLE]   calcula la curva de Lorenz en los puntos muestrales
+                         en lugar de en determinados percentiles.
+     SMPL     = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+                de los calculos (Ver RATS 5.2 UG) [no definido]
+     WEIGHT   = si el indice deben ponderarse [no definido].
+     QUANTIL = vector con los quantiles a calcular.
+               Por defecto los percentiles calculados son los siguientes,
+                         T < 200  -   Se aborta el procedure
+                  200 <= T        -   1%-quantiles (percentiles)
+		  Siempre se añaden los extremos, 0% y 100%.
+     PL       = linea de pobreza absoluta o definida por el usuario.
+     [MEDIAN]/NOMEDIAN medida de posicion para el calculo de la linea
+                       de pobreza relativa.
+                       Si no se utiliza la MEDIANA se utiliza la MEDIA.
+     SHARE    = proporcion de la MEDIANA/MEDIA para el calculo de la linea
+                de pobreza relativa (>0). [.6]
+
+     NOTA: Por defecto se utiliza como linea de pobreza el 60% de la mediana.
+
+
+       Variables globales:
+
+       %%TIP = STRING, Version actual del procedimiento
+
+       %MEAN = Sample mean (REAL)
+       %NOBS = Number of observations (INTEGER)
+
+       %%POVERTYLINE - Linea de pobreza
+       %%HEADCOUNT   - Head Count ratio (% de pobres)
+       %%INCOMEGAP   - Income Gap ratio (% de la media de los pobres respecto a la linea de pobreza)
+       %%POVERTYGAP  - Poverty Gap ratio (Head Count ratio * Income Gap ratio)
+       %%FGT2        - FGT(2)
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Jenkins & Lambert (1997), Oxford Economic Papers, 49, 317-327.
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: / - .
+
+*/

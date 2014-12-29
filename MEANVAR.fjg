@@ -1,0 +1,61 @@
+/*
+     Weighted MEAN & VARIANCE                    December/99 - R2: May/14
+*/
+COM [STRING]                    %%MEANVAR = 'MEANVAR - Version R2: May/14'
+
+PROC  MEANVAR  Y  TBEGP  TENDP   OUTMV   OUTMVSE
+TYPE  SERIES   Y
+TYPE  VECTOR                    *OUTMV  *OUTMVSE
+*
+LOCAL SERIES   S  W  P  SMPL
+LOCAL INTEGER  TBEG  TEND
+LOCAL VECTOR   MVSE
+
+*
+OPTION SWITCH PRINT 1
+OPTION SERIES SMPLL
+OPTION SERIES WEIGHT
+OPTION SWITCH SE    0
+OPTION INTEGE REPLICAS 100
+
+INQUIRE(SERIES=Y) TBEG>>TBEGP TEND>>TENDP
+IF %DEFINED(SMPLL)
+   SET SMPL TBEG TEND = %IF(SMPLL!=0.AND.%VALID(Y),1,0)
+ELSE
+   SET SMPL TBEG TEND = %VALID(Y)
+
+IF %DEFINED(WEIGHT)
+   SET P TBEG TEND = WEIGHT
+ELSE
+   SET P TBEG TEND = 1
+
+SAM(SMPL=SMPL) Y  TBEG TEND S 1
+SAM(SMPL=SMPL) P  TBEG TEND W 1
+IF SE;   COM MVSE = %MEANVAR_BOOTSE(S,W,REPLICAS)
+
+*   Globals
+COM %MEAN = %NA, %VARIANCE = %NA, %NOBS = 0
+INQ(SER=S)  *    %NOBS
+
+COM %MEAN = %M(S,W), %VARIANCE= %V(S,W)
+
+IF PRINT
+   {
+   DIS 'Sample mean and variance on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
+   DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
+   IF SE;   DIS 'Bootstrap Standard Errors in brackets:' REPLICAS 'replications'
+   DIS 'Sample mean    '      %MEAN      @41 'Variance           '          %VARIANCE
+   IF SE
+      DIS @16    '(' @-1 MVSE(1) @-1 ')' @+29                   '(' @-1 MVSE(2) @-1 ')'
+   DIS 'Standard Error ' SQRT(%VARIANCE) @41 'Coeff. of Variation' ABS(SQRT(%VARIANCE)/%MEAN)
+   IF SE
+      DIS @16    '(' @-1 MVSE(3) @-1 ')' @+29                   '(' @-1 MVSE(4) @-1 ')'
+   DIS
+   }
+
+IF %DEFINED(OUTMV);     COM OUTMV   = || %MEAN,   %VARIANCE, SQRT(%VARIANCE), ABS(SQRT(%VARIANCE)/%MEAN) ||
+IF %DEFINED(OUTMVSE);   COM OUTMVSE = ||  MVSE(1), MVSE(2),  MVSE(3),         MVSE(4) ||
+
+CLEAR S W SMPL
+END PROC MEANVAR

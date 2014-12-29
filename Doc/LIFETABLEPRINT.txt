@@ -1,0 +1,51 @@
+/*
+     LIFETABLEPRINT
+
+     Escrito por:  Paco Goerlich.                   Version: Junio/2008 (R1)
+     Version RATS: WinRATS 7.00
+
+     Sintaxis
+
+      @LIFETABLEPRINT P D LT M
+
+       P  = Poblacion/Exposición por edades simples o grupos: 0-85+, 0-100+ o 0-110+.
+       D  = Defunciones          por edades simples o grupos, 0-85+, 0-100+ o 0-110+.
+       LT = Matriz de Tabla de Vida, (Edades)x7.
+       M  = Tasa de mortalidad (P/D) (output del procedimiento).
+
+
+     Opciones:
+
+      [PRINT]/NOPRINT controla la impresion de la tabla de vida.
+      HEADER = Titulo a imprimir.
+      SMOOTH = Serie de tasas D/P suavizadas (si se incluye esta opcion las tasas
+               impresas son las suavizadas en lugar de las calculadas)
+
+
+     Variables globales:
+
+      %%LIFETABLEPRINT = STRING, Version actual del procedimiento
+
+
+*******************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   El procedimiento imprime una tabla de vida (no realiza ningun calculo), 
+   junto con la poblacion o exposicion al riesgo, defunciones (ambos en
+   valores absolutos y estructura porcentual) y tasa de mortalidad (calculada
+   como D/P). Aunque puede imprimirse una tasa suavizada calculada externamente.
+
+   Es posible imprimir solo la poblacion/defunciones o solo la tabla de vida,
+   o alternativamente utilizarse para el calculo de las tasas observadas.
+
+   La tabla de vida debe tener las 7 colmunas de la HMD: AGE, Q, L, D, LL, TT & EV
+
+*******************************************************************************
+
+   REVISIONES
+
+   R1: Junio/2008 - Se modifico para evitar la impresion de exposiciones negativas,
+                    Lo que generaba un error con %S.
+		    Se añadio la opcion SMOOTH para impresion de tasas suavizadas.
+*/

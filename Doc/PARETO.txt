@@ -1,0 +1,92 @@
+/*
+     PARETO: Estadisticos, estimacion de parametros y contrastes 
+             relacionados con la distribución de Pareto.
+     
+     Escrito por:  Paco Goerlich.                 Version: Febrero/2009 (R4)
+     Version RATS: WinRATS 7.10
+
+     Sintaxis:
+
+      @PARETO S COMIENZO FIN  X  Y  THMLE  THMLEVAR
+
+       S        = Serie.
+       COMIENZO = primera observacion a considerar.
+       FIN      = ultima  observacion a considerar.
+       X        = Abscisas  en la densidad de Pareto estimada.
+       Y        = Ordenadas en la densidad de Pareto estimada.
+       THMLE    = MLE estimation of Theta.
+       THMLEVAR = Variance of the MLE estimation of Theta.
+
+
+       Opciones:
+
+     [PRINT]/NOPRINT   controla la impresion de los estadisticos.
+     [GRAPH]/NOGRAPH   controla la visualizacion de la densidad estimada.
+     SMPL    = Serie con valores cero entre COMIENZO y FIN que desean eliminarse
+               de los calculos (Ver RATS 5.2 UG) [no definido].
+     MAX     = Maximum value to consider in the Graph [MAX(S)].
+               (In calculations all valid and not excluded values are included).
+     MIN     = Minimum value to consider = Level parameter = Mu [MINIMUM(S)].
+               If MIN > MINIMUM(S) then the initial observations are discarged.
+     GRID    = Numero de puntos en los que se estima la densidad [1000].
+               Para GRID = 1 se estima en los valores muestrales.
+     [BURR]/NOBURR estimation of the Burr density and Wald, LR and LM nested tests
+                   for the Pareto distribution based on the Burr (1942) density.
+
+
+       Variables globales:
+
+       %%PARETO = STRING, Version actual del procedimiento
+
+       Todas las variables internas de RATS procedentes de la instruccion
+       STATISTICS para la serie: S (Ver RATS 6.3 RM, p.-406)
+
+       %%PMEAN      = Mean          of the estimated Pareto distribution.
+       %%PMEDIAN    = Median        of the estimated Pareto distribution.
+       %%PMODE      = Mode          of the estimated Pareto distribution.
+       %%PVARIANCE  = Variance      of the estimated Pareto distribution.
+       %%PCV        = Coef. of Var. of the estimated Pareto distribution.
+       %%PGINI      = Gini index    of the estimated Pareto distribution.
+
+       %%ZIPFMLESTAT    = Estadistico de Zipf (Basado en la estimacion MLE de Pareto).
+       %%ZIPFMLESIGNIF  = Nivel de significacion del Estadistico de Zipf
+                         (Normal, 2 colas).
+
+       %%WPARETOSTAT    = Estadistico de Wald de Pareto basado en la densidad de Burr.
+       %%WPARETOSIGNIF  = Nivel de significacion (Chi-Squared (1)).
+       %%LRPARETOSTAT   = Estadistico LR      de Pareto basado en la densidad de Burr.
+       %%LRPARETOSIGNIF = Nivel de significacion (Chi-Squared (1)).
+       %%LMPARETOSTAT   = Estadistico LM      de Pareto basado en la densidad de Burr.
+       %%LMPARETOSIGNIF = Nivel de significacion (Chi-Squared (1)).
+
+
+*****************************************************************************
+
+   INFORMACION COMPUTACIONAL
+
+   Cowell (1995), Spanos (1986)
+
+*****************************************************************************
+
+   INFORMACION ADICIONAL
+
+   R1: Abril/2008
+       SMPL y ZEROS series no estaban definidas como locales.
+
+   R2: Diciembre/2008
+       Change in the MIN option.
+       The function %PARETOMLE() was changed so the divisor is %NOBS-1 if
+       X0 = MINIMUM(Effective S(i))
+       Estimation of the Burr density (Urzua (2000), EL), and associated
+       tests.
+
+   R3: Enero/2009
+       Se cambio la codificación de la Log-Likelihood de Burr.
+       Ahora no se utiliza la funcion %LOGBURRDENSITY, por velocidad
+       de computacion.
+
+   R4: Febrero/2009
+       Se cambio las observaciones de LR y LM a MLE(3), para evitar problemas
+       con LR y por consistencia con W.
+
+*/
