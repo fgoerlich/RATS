@@ -69,7 +69,7 @@ ELSE              ;   COM TI = %MORDER(TH(3),TH(4),1-EPSILON)
 
 IF PRINT==1
    {
-   DIS 'Atkinson Equality Index decomposition by population subgroups on' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%L(WEIGHT),'')
+   DIS 'Atkinson Equality Index decomposition by population subgroups on' %L(Y) %IF(%DEFINED(WEIGHT),'weighted by '+%L(WEIGHT),'')
    IF EXTENDED
       DIS 'Extended family'
    DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'

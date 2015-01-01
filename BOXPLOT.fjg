@@ -51,7 +51,7 @@ IF (N-K).GT.0   ;DIM BUP(N-K)  ;EWI BUP(I) = %IF((N-K).GT.0,S(N+1-I),%NA)
 
 IF PRINT==1
    {
-   DIS 'Boxplot statistics for series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%L(WEIGHT),'')
+   DIS 'Boxplot statistics for series' %L(Y) %IF(%DEFINED(WEIGHT),'weighted by '+%L(WEIGHT),'')
    DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
    DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
    DIS '  Lower                   Lower'

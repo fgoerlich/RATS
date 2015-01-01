@@ -38,7 +38,7 @@ EXT(NOPRINT,SMPL=SMPL)             Y  TBEG  TEND;   COM V(1) = %MINIMUM, V(2) = 
 
 IF PRINT==1
    {
-   DIS 'Extreme statistics on' %L(Y) %STRIF(%DEFINED(WEIGHT),'with weights defined by '+%L(WEIGHT),'')
+   DIS 'Extreme statistics on' %L(Y) %IF(%DEFINED(WEIGHT),'with weights defined by '+%L(WEIGHT),'')
    DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
    DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
    DIS 'Sample mean' V(3)

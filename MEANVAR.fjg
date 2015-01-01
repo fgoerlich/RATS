@@ -41,7 +41,7 @@ COM %MEAN = %M(S,W), %VARIANCE= %V(S,W)
 
 IF PRINT
    {
-   DIS 'Sample mean and variance on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Sample mean and variance on Series' %L(Y) %IF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
    DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
    DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
    IF SE;   DIS 'Bootstrap Standard Errors in brackets:' REPLICAS 'replications'

@@ -45,7 +45,7 @@ COM ATK = %IF(EXTENDED,%ATKINSONEXT(S,W,EPSILON),%ATKINSON(S,W,EPSILON)), %MEAN 
 
 IF PRINT
    {
-   DIS 'Atkinson Inequality index on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Atkinson Inequality index on Series' %L(Y) %IF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
    IF EXTENDED;   DIS 'Extended family'
    DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
    DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)

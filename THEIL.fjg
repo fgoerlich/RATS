@@ -43,7 +43,7 @@ COM ATK = %THEIL_INEQ(S,W,BETA), %MEAN = %M(S,W)
 
 IF PRINT
    {
-   DIS 'Theil Inequality index on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Theil Inequality index on Series' %L(Y) %IF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
    DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
    DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
    DIS 'Inequality parameter' ###.## BETA         

@@ -157,15 +157,17 @@ END %CPUTIMEHMS
 ********************************************************************************
 
 *   %STRIF - Same as %IF(X,Y,Z) but with Y & Z type STRING
+*            This is a built in function in WinRATS 9.00
+*            For %IF(X,Y,Z) to work we only need Y & Z to be of matching types
 
-FUNCTION  %STRIF  X  Y  Z
-TYPE STR  %STRIF     Y  Z
-TYPE INT          X
+*FUNCTION  %STRIF  X  Y  Z
+*TYPE STR  %STRIF     Y  Z
+*TYPE INT          X
 
-IF    X!=0;   COM %STRIF = Y
-ELSE      ;   COM %STRIF = Z
+*IF    X!=0;   COM %STRIF = Y
+*ELSE      ;   COM %STRIF = Z
 
-END       %STRIF
+*END       %STRIF
 
 ********************************************************************************
 
@@ -520,7 +522,7 @@ COM %IPROPORTIONAL = %ROUNDV(%IPROPORTIONAL,0)   , A = FIX(%ROUND(S,0)-%SUM(%IPR
 
 IF      A>0
    EWI F(I) = %IF(F(I)>0,.5,-F(I))
-ELSE IF A<0   
+ELSE IF A<0
    EWI F(I) = %IF(F(I)<0,.5, F(I))
 
 IF A!=0
@@ -530,7 +532,7 @@ IF A!=0
       EWI F(I) = %IF(%MININDEX(F)==I,.5,F(I))
    END DO I
    }
-   
+
 END       %IPROPORTIONAL
 
 ********************************************************************************
@@ -696,7 +698,7 @@ END    %PROV2CA
 *   %COMPRESSV     - Same as %COMPRESS(A,V) but with A type VEC[LAB]
 *   %STRCOMPRESSV  - Same as %COMPRESSV(A,V) but with A type VEC[STR]
 *   %CPUTIMEHMS    - Same as %CPUTIME() but in h:mm:ss format
-*   %STRIF         - Same as %IF(X,Y,Z) but with Y & Z type STRING
+*   %STRIF         - Same as %IF(X,Y,Z) but with Y & Z type STRING (built in 9.00)
 *   %INV           - Inverse of a Real Number.
 *   %NAN           - Number of NA in a Series.
 *   %NEGATIVE      - Number of Negative Values in a Series.

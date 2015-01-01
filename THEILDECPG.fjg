@@ -63,7 +63,7 @@ COM TG = %THEIL_INEQ(S,W,BETA), TE = %THEIL_INEQ(TH(1),TH(2),BETA), TI = %DOT(TH
 IF PRINT
    {
    DIS 'Theil Inequality Index decomposition by population subgroups' %L(Y)   $
-        %STRIF(%DEFINED(WEIGHT),'weigthed by '+%LABEL(WEIGHT),'')
+        %IF(%DEFINED(WEIGHT),'weigthed by '+%LABEL(WEIGHT),'')
    DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
    DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
    DIS 'Inequality parameter' ###.## BETA

@@ -133,9 +133,9 @@ IF MD
             SET MSER(I) 1 N = ([series]LIST2(I+1) - [series]LIST1(I+1))/([series]LIST2(1) - [series]LIST1(1))
       END DO I
       IF %DEFINED(MDLABELL)
-         EWI MDLABEL(I) = %STRIF(I==%ROWS(LIST1),'Rest',MDLABELL(I))
+         EWI MDLABEL(I) = %IF(I==%ROWS(LIST1),'Rest',MDLABELL(I))
       ELSE
-         EWI MDLABEL(I) = %STRIF(I==%ROWS(LIST1),'Rest','Cause '+%STRING(I))
+         EWI MDLABEL(I) = %IF(I==%ROWS(LIST1),'Rest','Cause '+%STRING(I))
       }
 
    DO I = 1,%ROWS(MSER)

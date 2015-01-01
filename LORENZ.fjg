@@ -106,14 +106,14 @@ SET P  1 J+2 = (LY - LX)*%MEAN
 
 IF PRINT
    {
-   DIS 'Lorenz curve on Series' %L(Y) 'estimated at '+STR %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Lorenz curve on Series' %L(Y) 'estimated at '+STR %IF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
    DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
    DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
    IF SE==1.AND.SAMPLE==0.AND.REVERSE==0;   DIS 'Bootstrap Standard Errors in brackets:' REPLICAS 'replications'
    DIS 'Gini index      '  G    @41 'Welfare Gini index' %MEAN*(1-G)
    DIS 'Sample mean     ' %MEAN
    DIS
-   DIS '  Abcisa (%)   Ordinate (%)' %STRIF(SE==1.AND.SAMPLE==0.AND.REVERSE==0,'Standard Error','') ' Generalized' @+8 'Absoluta'
+   DIS '  Abcisa (%)   Ordinate (%)' %IF(SE==1.AND.SAMPLE==0.AND.REVERSE==0,'Standard Error','') ' Generalized' @+8 'Absoluta'
    DO I = 1,J+2
       IF SE==1.AND.SAMPLE==0.AND.REVERSE==0
          DIS @3 ###.## LX(I)*100 @+9 LY(I)*100 @+8 '(' @-1 TP(I)*100 @-1 ')' @+3 * TY(I) @+3 P(I)

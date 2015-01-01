@@ -80,7 +80,7 @@ END DO I
 
 IF PRINT
    {
-   DIS 'Histogram for series' %L(SERIE) %STRIF(%DEFINED(WEIGHT),'weighted with series '+%L(WEIGHT),'')
+   DIS 'Histogram for series' %L(SERIE) %IF(%DEFINED(WEIGHT),'weighted with series '+%L(WEIGHT),'')
    DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
    DIS 'Mean       '  M            @30 'Standar deviation'  V
    DIS 'Minimum    '  MIS          @30 'Maximum          '  MAS
@@ -92,9 +92,9 @@ IF PRINT
    DIS '       Lower         Upper      ###   Weight    |     Midpoint        Density'
    DO I = 1,NI
       IF LEFT==1
-         DIS '[' @-1 X1(I) @-1 ',' @-1 X1(I+1) @-1 %STRIF(I==NI,']',')') ##### Y1(I) @+2 ###.## W(I)*100 @-1 '%' @+4 '|' * X(I) Y(I)
+         DIS '[' @-1 X1(I) @-1 ',' @-1 X1(I+1) @-1 %IF(I==NI,']',')') ##### Y1(I) @+2 ###.## W(I)*100 @-1 '%' @+4 '|' * X(I) Y(I)
       ELSE
-         DIS %STRIF(I==1,'[','(') @-1 X1(I) @-1 ',' @-1 X1(I+1) @-1 ']'  ##### Y1(I) @+2 ###.## W(I)*100 @-1 '%' @+4 '|' * X(I) Y(I)
+         DIS %IF(I==1,'[','(') @-1 X1(I) @-1 ',' @-1 X1(I+1) @-1 ']'  ##### Y1(I) @+2 ###.## W(I)*100 @-1 '%' @+4 '|' * X(I) Y(I)
    END DO I
    DIS
    }
@@ -117,7 +117,7 @@ IF GRAPH
    COM X2(3*NI+1) = MA
    SET X1 1 100 = MI + (MA-MI)*(T-1)/99
    SET Y1 1 100 = %NORMALDENSITY(X1,M,V**2)
-   DIS(STOR=HEAD) %STRIF(%DEFINED(WEIGHT),%L(WEIGHT)+' weighted','') 'HISTOGRAM'
+   DIS(STOR=HEAD) %IF(%DEFINED(WEIGHT),%L(WEIGHT)+' weighted','') 'HISTOGRAM'
    SCA(HEAD=HEAD,SUB=%CONCAT(%L(SERIE),' vs Normal'),VLAB='Density',VTIC=5,VMIN=0,HMIN=MI,HMAX=MA,STYLE=BAR,OVE=LINE,OVS) 2
    # X2 Y2 / 5
    # X1 Y1

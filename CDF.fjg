@@ -47,7 +47,7 @@ ACC(SCALE) W 1 %NOBS
 
 IF PRINT
    {
-   DIS 'ECDF for series' %L(SERIE) %STRIF(%DEFINED(WEIGHT),'weighted by '+%L(WEIGHT),'')
+   DIS 'ECDF for series' %L(SERIE) %IF(%DEFINED(WEIGHT),'weighted by '+%L(WEIGHT),'')
    DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
    DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
    DIS 'Sample mean    '      %MEAN      @41 'Variance           '          %VARIANCE
@@ -66,7 +66,7 @@ IF GRAPH
    {
    SET XZ 1 100 = S(1) + (S(%NOBS)-S(1))*(T-1)/99
    SET YZ 1 100 = %CDF((XZ-%MEAN)/SQRT(%VARIANCE))
-   DIS(STORE=HEAD) %STRIF(%DEFINED(WEIGHT),%L(WEIGHT)+' weighted','') 'Empirical CDF'
+   DIS(STORE=HEAD) %IF(%DEFINED(WEIGHT),%L(WEIGHT)+' weighted','') 'Empirical CDF'
    SCA(HEAD=HEAD,SUB=%CONCAT(%L(SERIE),' vs Normal'),VMAX=1,VMIN=0,VTIC=10,EXT=HOR,STYLE=POLY,OVE=LINE,OVS) 2
    # S  W  1 %NOBS 5
    # XZ YZ 1 100   1

@@ -61,7 +61,7 @@ END DO I
 
 IF PRINT==1
    {
-   DIS 'Quantile statistics on series' %L(SERIE) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Quantile statistics on series' %L(SERIE) %IF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
    DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
    DIS 'Normal values based on a normal distribution with mean' @-1 M
    DIS '                                    and standard error' @-1 STD

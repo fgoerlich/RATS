@@ -47,7 +47,7 @@ IF %CONVERGED.AND.(.NOT.INTEGER)
    {
    DIS %%RAS; DIS 'Convergence achieved at iteration' %ITERS
    IF PRINT
-      DIS 'Adjusted matrix: ' %STRIF(%DEFINED(E),%LABEL(E),'') D
+      DIS 'Adjusted matrix: ' %IF(%DEFINED(E),%LABEL(E),'') D
    }
 
 IF INTEGER
@@ -72,7 +72,7 @@ IF INTEGER
       DIS %%RAS; DIS 'Convergence achieved at integer iteration' %%ITERS 'after initial' I 'real iterations'
       COM %ITERS = I
       IF PRINT
-         DIS 'Adjusted matrix: ' %STRIF(%DEFINED(E),%LABEL(E),'') D
+         DIS 'Adjusted matrix: ' %IF(%DEFINED(E),%LABEL(E),'') D
       }
    }
 

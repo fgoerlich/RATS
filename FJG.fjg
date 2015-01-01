@@ -1,4 +1,4 @@
-ENV  NOECHO
+ENV NOECHO
 /*
    FJG.FJG                                                      Version 9.00
    This file makes accesible FJG procedures & functions.
@@ -81,13 +81,15 @@ SOURCE VECICLUSTER.FJG      ;*  52
 *OURCE VECS.FJG             ;*  53
 SOURCE ZIPF.FJG             ;*  54
 
+*   Hash tables and related functions
+SOURCE NUTS.FJG             ;*   1
+
 
 DIS 'WinRATS' #.## %RATSVERSION() 'Run on' %DATEANDTIME()
 DIS 'Paco´s procs loaded correctly!'
 DIS @32 'COPYRIGHT PACO GOERLICH!!!'
-DIS @37      'Last update: 27/12/14'
+DIS @37      'Last update: 01/01/15'
 DIS
-
 
 /*
    Warning: These procedures use GLOBAL variables.
@@ -187,5 +189,4 @@ DIS
     %%UNMAKE         STRING             UNMAKE
     %%VECS           STRING             VECS
     %%VECICLUSTER    STRING             VECICLUSTER
-
 */

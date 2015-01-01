@@ -41,7 +41,7 @@ IF      CENTER!=1;   COM %VARIANCE = %MPOWER(S,W,2)
 
 IF PRINT==1
    {
-   DIS 'Sample mean and variance on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%L(WEIGHT),'')
+   DIS 'Sample mean and variance on Series' %L(Y) %IF(%DEFINED(WEIGHT),'weighted by '+%L(WEIGHT),'')
    IF      CENTER==1;   DIS 'Dispersion centered at MEAN value'
    ELSE IF CENTER==2;   DIS 'Dispersion centered at MINIMUM value'
    ELSE IF CENTER==3;   DIS 'Dispersion centered at MAXIMUM value'

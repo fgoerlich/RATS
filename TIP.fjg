@@ -94,13 +94,13 @@ ELSE
 
 IF PRINT
    {
-   DIS;DIS 'Poverty indices and TIP curve on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS;DIS 'Poverty indices and TIP curve on Series' %L(Y) %IF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
    DIS 'Observations' %NOBS @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-%NOBS 'Skipped/Missing)'
    DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
    IF %DEFINED(PL)
       DIS 'User defined Poverty Line' %%POVERTYLINE
    ELSE
-      DIS 'Relative Poverty Line' %%POVERTYLINE '(' @-1 ###.## %IF(SHARE<=0,.6,SHARE)*100  @-1 '% of the' %STRIF(MEDIAN,'median','mean')+' = ' * %%POVERTYLINE/%IF(SHARE<=0,.6,SHARE) @-1 ')'
+      DIS 'Relative Poverty Line' %%POVERTYLINE '(' @-1 ###.## %IF(SHARE<=0,.6,SHARE)*100  @-1 '% of the' %IF(MEDIAN,'median','mean')+' = ' * %%POVERTYLINE/%IF(SHARE<=0,.6,SHARE) @-1 ')'
    DIS 'Poverty basic statistics'
    DIS 'Sample mean   '             %MEAN
    DIS 'Head Count    ' @+5 ###.##  %%HEADCOUNT*100 @-1 '%'

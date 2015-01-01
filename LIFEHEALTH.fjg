@@ -52,8 +52,8 @@ IF %DEFINED(SAMPLE)
 IF PRINT
    {
    DIS HEADER
-   DIS '           Standard      Disable     Disability Free' %STRIF(%DEFINED(SAMPLE),'  Standard','')
-   DIS '  Age         e(x)     Population      e(x)     %   ' %STRIF(%DEFINED(SAMPLE),'    Error ','')
+   DIS '           Standard      Disable     Disability Free' %IF(%DEFINED(SAMPLE),'  Standard','')
+   DIS '  Age         e(x)     Population      e(x)     %   ' %IF(%DEFINED(SAMPLE),'    Error ','')
    DO I = 1,N
       IF .NOT.%DEFINED(SAMPLE)
          DIS ED(I) @@>11 ####.## LT(I,7) @+6 100*PRE(I) @-1 '%' @+4 DFLE(I) 100*DFLE(I)/LT(I,7) @-1 '%'

@@ -84,7 +84,7 @@ IF ADDREG>0
 
 DIS 'Analysis of Variance for Series' %L(Y)
 DIS 'Observations' NN @+5 '(' @-1 (TEND-TBEG+1)*%NREG 'Total -' ((TEND-TBEG+1)-%NOBS)*%NREG 'Skipped/Missing)'
-DIS 'Observations organized by '+%STRIF(ORGANIZATION==1,'time','individual')
+DIS 'Observations organized by '+%IF(ORGANIZATION==1,'time','individual')
 
 IF ORGANIZATION==1
    @PANELORG(ORG=TIME,NTIME=NT,NINDI=NI) 1 NN
@@ -113,7 +113,7 @@ COM RSS =  TSS      -     %IF(EFFECTS==1,    ESB,%IF(EFFECTS==2, EST,%IF(EFFECTS
     K   = %NOBS - 1 - FIX(%IF(EFFECTS==1,NI+NT-2,%IF(EFFECTS==2,NT-1,%IF(EFFECTS==3,NI-1,0))))
 
 DIS
-DIS 'Source Sum of Squares   (%)    Degrees   Mean Square '+%STRIF(EFFECTS!=4,'    Statistic  Signif Level','')
+DIS 'Source Sum of Squares   (%)    Degrees   Mean Square '+%IF(EFFECTS!=4,'    Statistic  Signif Level','')
 IF EFFECTS==1.OR.EFFECTS==3
    DIS 'INDIV ' ESI '(' @-1 ###.## 100*ESI/TSS @-1 '%)' ####### NI-1    * ESI/(NI-1) %IF(EFFECTS==1,CBI,CI) @+3 #.######## %IF(EFFECTS==1,SBI,SI)
 IF EFFECTS==1.OR.EFFECTS==2

@@ -62,12 +62,12 @@ ELSE
 
 IF PRINT
    {
-   DIS 'Quantile statistics on series' %L(SERIE) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Quantile statistics on series' %L(SERIE) %IF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
    DIS 'Observations' N @+5 '(' @-1 TEND-TBEG+1 'Total -' (TEND-TBEG+1)-N 'Skipped/Missing)'
    DIS 'Sample period: From' %DATELABEL(TBEG) 'to' %DATELABEL(TEND)
    IF SE;   DIS 'Bootstrap Standard Errors in brackets:' REPLICAS 'replications'
    DIS '            Quantil'
-   DIS '   %         Value' @+7 %STRIF(SE,'Standard Errors','')
+   DIS '   %         Value' @+7 %IF(SE,'Standard Errors','')
    DO I = 1,%ROWS(Q)
       IF .NOT.SE
          DIS ###.## Q(I)*100 *.* F(I)

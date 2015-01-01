@@ -52,7 +52,7 @@ COM %%MOMENTR = %MEAN
 
 IF PRINT
    {
-   DIS 'Sample moment of order' #.* ORDER 'on Series' %L(Y) %STRIF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
+   DIS 'Sample moment of order' #.* ORDER 'on Series' %L(Y) %IF(%DEFINED(WEIGHT),'weighted by '+%LABEL(WEIGHT),'')
    IF ABSOLUTE
       DIS 'Absolute moment'
    IF CENTER
