@@ -75,6 +75,9 @@ END %GINI
 ********************************************************************************
 
 *   %GININUMINT - Gini Inequality index by numerical integration of Lorenz curve
+*                 %itrapezoid(x,y) can give negative areas, so the total area
+*                 under (x, y=f(x)) is the 'net' area, substracting the negatives
+*                 parts, if they exist.
 
 FUNCTION   %GININUMINT  X  Y
 TYPE REAL  %GININUMINT
@@ -182,7 +185,7 @@ DO I = 1,%ROWS(Q)
       WHILE Q(I)>P(K)
          COM K = K + 1
       COM %WLORENZ(I) = %IF(K==1,%GPLININT(0,0,P(1),Z(1),Q(I)),%GPLININT(P(K-1),Z(K-1),P(K),Z(K),Q(I)))
-      }            
+      }
 END DO I
 
 CLE  Z  P
@@ -220,7 +223,7 @@ DO I = 1,%ROWS(Q)
       WHILE Q(I)>Z(K)
          COM K = K + 1
       COM %RWLORENZ(I) = %IF(K==1,%GPLININT(0,0,Z(1),P(1),Q(I)),%GPLININT(Z(K-1),P(K-1),Z(K),P(K),Q(I)))
-      }            
+      }
 END DO I
 
 CLE  Z  P
