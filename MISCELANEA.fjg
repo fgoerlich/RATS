@@ -1,6 +1,6 @@
 *   This file contains Rats FUNCTIONs for various things (MISCELANEA)
 *   WinRATS 9.00
-*   Paco Goerlich   27/12/2014
+*   Paco Goerlich   02/03/2015
 
 ********************************************************************************
 
@@ -17,57 +17,6 @@ INQ(SER=X) * N
 COM  A = %SUMS = 0, %DO(I,1,N,A = A + X(I)), %SUMS = A
 
 END      %SUMS
-
-********************************************************************************
-
-*   %SUMC - Sum the columns of a matrix
-*           This is a built in function in WinRATS 7.20
-
-*FUNCTION  %SUMC  A
-*TYPE VEC  %SUMC
-*TYPE REC         A
-
-*DIM %SUMC(%COLS(A))
-*EWI %SUMC(J) = %SUM(%XCOL(A,J))
-
-*END %SUMC
-
-********************************************************************************
-
-*   %SUMR - Sum the rows of a matrix
-*           This is a built in function in WinRATS 7.20
-
-*FUNCTION  %SUMR  A
-*TYPE VEC  %SUMR
-*TYPE REC         A
-
-*DIM %SUMR(%ROWS(A))
-*EWI %SUMR(J) = %SUM(%XROW(A,J))
-
-*END %SUMR
-
-********************************************************************************
-
-*   %BLOCKDIAG - Block diagonal matrix from a vector of rectangulars
-*                This is a built in function in WinRATS 6.02
-
-*FUNCTION      %BLOCKDIAG  A
-*TYPE     REC  %BLOCKDIAG
-*TYPE VEC[REC]             A
-
-*LOCA REC[REC]  B
-*LOCA INT       I J
-
-*DIM           B(%ROWS(A),%ROWS(A))
-*DO I = 1,%ROWS(B)
-*   DO J = 1,%COLS(B)
-*      COM B(I,J) = %ZEROS(%ROWS(A(I)),%COLS(A(J)))
-*   END DO J
-*   COM B(I,I) = A(I)
-*END DO I
-*COM  %BLOCKDIAG = %BLOCKGLUE(B)
-
-*END  %BLOCKDIAG
 
 ********************************************************************************
 
@@ -153,21 +102,6 @@ TYPE INT              N
 COM %CPUTIMEHMS = %STRING(N/3600) + ' h  ' + %STRING(%MOD(N,3600)/60) + ' min  ' + %STRING(%MOD(%MOD(N,3600),60)) + ' sec'
 
 END %CPUTIMEHMS
-
-********************************************************************************
-
-*   %STRIF - Same as %IF(X,Y,Z) but with Y & Z type STRING
-*            This is a built in function in WinRATS 9.00
-*            For %IF(X,Y,Z) to work we only need Y & Z to be of matching types
-
-*FUNCTION  %STRIF  X  Y  Z
-*TYPE STR  %STRIF     Y  Z
-*TYPE INT          X
-
-*IF    X!=0;   COM %STRIF = Y
-*ELSE      ;   COM %STRIF = Z
-
-*END       %STRIF
 
 ********************************************************************************
 
@@ -342,13 +276,72 @@ END       %NGE
 
 ********************************************************************************
 
+*   %NEQV - Number of identical elements in a vector.
+
+FUNCTION  %NEQV  X  V
+TYPE INT  %NEQV
+TYPE VEC         X
+TYPE REA            V
+
+LOCA VEC  Z
+
+DIM Z(%ROWS(X))
+EWI Z(I) = %IF(X(I)==V,1,0)
+COM %NEQV = fix(%SUM(Z))
+
+END %NEQV
+
+********************************************************************************
+
+*   %maxindexv - Returns a vector(integer) with the positions of the maximum value of a vector.
+*                If the maximum value is unique then this is equivalent to %maxindex, type vector
+*                of dimension 1, otherwise returns a vector of dimension %NEQV(V,%maxvalue(V))
+
+function      %maxindexv  v
+type vec[int] %maxindexv  v
+type vec                  v
+
+local int i j
+
+dim %maxindexv(%neqv(v,%maxvalue(v)))
+com j = 1
+do i = 1,%rows(v)
+   if v(i)==%maxvalue(v)
+      com %maxindexv(j) = i, j += 1
+end do i
+
+end %maxindexv
+
+********************************************************************************
+
+*   %minindexv - Returns a vector(integer) with the positions of the minimum value of a vector.
+*                If the minimum value is unique then this is equivalent to %minindex, type vector
+*                of dimension 1, otherwise returns a vector of dimension %NEQV(V,%minvalue(V))
+
+function      %minindexv  v
+type vec[int] %minindexv  v
+type vec                  v
+
+local int i j
+
+dim %minindexv(%neqv(v,%minvalue(v)))
+com j = 1
+do i = 1,%rows(v)
+   if v(i)==%minvalue(v)
+      com %minindexv(j) = i, j += 1
+end do i
+
+end %minindexv
+
+********************************************************************************
+
 *   %INTEGER - If a REAL is an INTEGER, 1, or NOT, 0.
 
 FUNCTION  %INTEGER  X
 TYPE INT  %INTEGER
 TYPE REAL           X
 
-COM       %INTEGER = FIX(%IF(%FRAC(X)==0,1,0))
+COM       %INTEGER = %IF(%FRAC(X)==0,1,0)
 
 END       %INTEGER
 
@@ -359,7 +352,7 @@ END       %INTEGER
 FUNCTION  %IEVEN  X
 TYPE INT  %IEVEN  X
 
-COM       %IEVEN = FIX(%IF(%FRAC(X/2.)==0,1,0))
+COM       %IEVEN = %IF(%mod(X,2)==0,1,0)
 
 END       %IEVEN
 
@@ -422,6 +415,32 @@ END       %FRACM
 
 ********************************************************************************
 
+*   %FIXV - FIX for vectors.
+*           In fact, it does a TRUNCATION, because returned type is VEC[REAL]
+
+FUNCTION  %FIXV  V
+TYPE VEC  %FIXV  V
+
+DIM %FIXV(%ROWS(V))
+EWI %FIXV(I) = FIX(V(I))
+
+END       %FIXV
+
+********************************************************************************
+
+*   %FIXM - %FIX for matrices (rectangular).
+*           In fact, it does a TRUNCATION, because returned type is VEC[REAL]
+
+FUNCTION  %FIXM  V
+TYPE REC  %FIXM  V
+
+DIM %FIXM(%ROWS(V),%COLS(V))
+EWI %FIXM(I,J) = FIX(V(I,J))
+
+END       %FIXM
+
+********************************************************************************
+
 *   %ROUNDV - %ROUND for vectors.
 
 FUNCTION  %ROUNDV  V  S
@@ -479,20 +498,6 @@ END       %ANY
 
 ********************************************************************************
 
-*   %ONES - Creates and m x n matrix with all elements equal to one.
-*           Same as %CONST(1) without dimensioning the matrix.
-*           This is a built in function in WinRATS 9.00
-
-*FUNCTION  %ONES  M N
-*TYPE REC  %ONES
-*TYPE INT         M N
-
-*COM %ONES = %ANY(M,N,1)
-
-*END       %ONES
-
-********************************************************************************
-
 *   %PROPORTIONAL - Adjust proportionally a vector V to a given quantity, S.
 
 FUNCTION  %PROPORTIONAL  V  S
@@ -506,34 +511,83 @@ END       %PROPORTIONAL
 ********************************************************************************
 
 *   %IPROPORTIONAL - Integer version of %PROPORTIONAL.
-*                    Rule for integer asigment after rounding to the nearest integer:
-*                    If we have to ADD:      ADD      1 to the value whose fractional part is closest to 0.5 from below.
-*                    If we have to SUBSTRAC: SUBSTRAC 1 to the value whose fractional part is closest to 0.5 from above.
+*                    Rule for integer asiggment 'controled rounding' of Cox (1982-JASA), as implemented in
+*                    Balinski & Rachev (1997-MS,p.-5).
+*                    This is essentially the 'method of greatest remainders'
+*                    After %proportional() adjustment with standard rounding, truncate the vector to integers
+*                    and add 1 at a time to the max fractional of the remaining part.
+*                    In case of max fractional is NOT unique we signal this as a multiple solution, and a
+*                    random choice in made between the max elements. In this case different results for
+*                    the same input is possible, and a global variable, %%Multiple, is set to >= 1.
 
 FUNCTION  %IPROPORTIONAL  V  S
 TYPE VEC  %IPROPORTIONAL  V
 TYPE REAL                    S
 
-LOCA INT A I
-LOCA VEC F
+loca int i
+loca vec Real
 
-COM %IPROPORTIONAL = %PROPORTIONAL(V,%ROUND(S,0)), F = %FRACV(%IPROPORTIONAL)-%ANY(%ROWS(V),1,.5)
-COM %IPROPORTIONAL = %ROUNDV(%IPROPORTIONAL,0)   , A = FIX(%ROUND(S,0)-%SUM(%IPROPORTIONAL))
+* If S in not integer it is rounded to integer using standard rounding.
+* Proportional adjustment (Real) and truncation
+com Real = %PROPORTIONAL(V,%round(S,0)), %IPROPORTIONAL = %fixv(Real), %%Multiple = 0
 
-IF      A>0
-   EWI F(I) = %IF(F(I)>0,.5,-F(I))
-ELSE IF A<0
-   EWI F(I) = %IF(F(I)<0,.5, F(I))
-
-IF A!=0
+* If the sum of integers is < S then iterate until = S
+while %sum(%IPROPORTIONAL)<%round(S,0)
    {
-   DO I = 1,%IABS(A)
-      COM %IPROPORTIONAL = %IPROPORTIONAL + %IF(A<0,-1,1)*%UNITV(%ROWS(V),%MININDEX(F))
-      EWI F(I) = %IF(%MININDEX(F)==I,.5,F(I))
-   END DO I
+   if %neqv(Real-%IPROPORTIONAL,%maxvalue(Real-%IPROPORTIONAL))==1
+      com %IPROPORTIONAL(%maxindex(Real-%IPROPORTIONAL)) += 1
+   else
+      com i = %raninteger(1,%rows(%maxindexv(Real-%IPROPORTIONAL))),                       $
+                   %IPROPORTIONAL(%maxindexv(Real-%IPROPORTIONAL)(i)) += 1, %%Multiple = 1
    }
+end       %IPROPORTIONAL
 
-END       %IPROPORTIONAL
+********************************************************************************
+
+*   %DivBaseProp - Integer version of %PROPORTIONAL using divisor based methods.
+*                  It implements the algorithm in Dorfleiter & Tomas (1999-SP) Section 3,
+*                  with standard rounding.
+*                  After %proportional() adjustment with standard rounding, we enter the discrepancy
+*                  loop and eventually we handle ties (multiple solutions).
+*                  If multiple solutions exist a global variable, %%Multiple, is set to 1.
+*                  The algorithm returns in %DivBaseProp a given solution, which depends on the order of the
+*                  elements in the vector, %%z is the vector of signs to obtain the full set of solutions
+*                  and %%zstr is the short hand for such set. See Dorfleiter & Tomas (1999-SP) Section 4.
+
+function  %DivBaseProp  v  s
+type vec  %DivBaseProp  v
+type real                  s
+
+loca real discrepancy max min
+loca int  i
+loca vec  Lower Upper
+
+* Globals
+dec vec[int] %%z
+dec vec[str] %%zstr
+dim Lower(%rows(v)) Upper(%rows(v)) %%z(%rows(v)) %%zstr(%rows(v))
+
+* MULTIPLIER STEP: Standard rounding on %proportional()
+* If S in not integer it is rounded to integer using standard rounding.
+com %DivBaseProp = %roundv(%proportional(v,%round(s,0)),0)
+
+* DISCREPANCY LOOP
+com discrepancy = %sum(%DivBaseProp) - %round(s,0)
+if      discrepancy < 0
+   com %do(i,1,%rows(v),Upper(i) = (%DivBaseProp(i)+0.5)/v(i)), %DivBaseProp(%minindex(Upper)) += 1
+else if discrepancy > 0
+   com %do(i,1,%rows(v),Lower(i) = (%DivBaseProp(i)-0.5)/v(i)), %DivBaseProp(%maxindex(Lower)) -= 1
+
+* MULTIPLE SOLUTIONS STEP
+ewi Lower(i) = (%DivBaseProp(i)-0.5)/v(i); com max = %maxvalue(Lower)
+ewi Upper(i) = (%DivBaseProp(i)+0.5)/v(i); com min = %minvalue(Upper)
+ewi %%z(i)   = 0
+if max==min
+   ewi %%z(i) = %if(Upper(i)==min,1,%if(Lower(i)==max,-1,0))
+com %%Multiple = %if(max==min,1,0)
+ewi %%zstr(i)  = %string(fix(%DivBaseProp(i)))+%if(%%z(i)==1,'+',%if(%%z(i)==-1,'-',''))
+
+end       %DivBaseProp
 
 ********************************************************************************
 
@@ -637,7 +691,7 @@ END %PADDING
 
 ********************************************************************************
 
-*   %PROV2CA - Returns the CCAA code from a PROVINCIA code
+*   %PROV2CA - Returns, as INTEGER, the CCAA code from a PROVINCIA code
 *              It is assumed that the order is the one in the EPF's
 
 FUNCTION  %PROV2CA  P
@@ -689,16 +743,12 @@ END    %PROV2CA
 *   List of functions
 
 *   %SUMS          - Sum the elements of a series
-*   %SUMC          - Sum the columns of a matrix (built in 7.20)
-*   %SUMR          - Sum the rows    of a matrix (built in 7.20)
-*   %BLOCKDIAG     - Block diagonal matrix from a vector of rectangulars (built in 6.02)
 *   %BLOCKDIAGSYM  - Block diagonal symmetric matrix from a vector of symmetrics
 *   %AGREGA        - Convert this PROC into a FUNCTION (pending)
 *   %DUPLICA       - Operator to duplicate rows of a matrix.
 *   %COMPRESSV     - Same as %COMPRESS(A,V) but with A type VEC[LAB]
 *   %STRCOMPRESSV  - Same as %COMPRESSV(A,V) but with A type VEC[STR]
 *   %CPUTIMEHMS    - Same as %CPUTIME() but in h:mm:ss format
-*   %STRIF         - Same as %IF(X,Y,Z) but with Y & Z type STRING (built in 9.00)
 *   %INV           - Inverse of a Real Number.
 *   %NAN           - Number of NA in a Series.
 *   %NEGATIVE      - Number of Negative Values in a Series.
@@ -710,6 +760,9 @@ END    %PROV2CA
 *   %NLE           - Number of Values in a Series LOWER OR EQUAL THAN to VALUE.
 *   %NGT           - Number of Values in a Series GREATER THAN to VALUE.
 *   %NGE           - Number of Values in a Series GREATER OR EQUAL THAN to VALUE.
+*   %NEQV          - Number of identical elements in a vector.
+*   %maxindexv     - Vector(integer) with the positions of the maximum value of a vector
+*   %minindexv     - Vector(integer) with the positions of the minimum value of a vector
 *   %INTEGER       - If a REAL is an INTEGER, 1, or NOT, 0.
 *   %IEVEN         - If an INTEGER is EVEN, 1, or NOT, 0.
 *   %IODD          - If an INTEGER is ODD, 1, or NOT, 0.
@@ -717,15 +770,16 @@ END    %PROV2CA
 *   %ODD           - If a REAL is an ODD INTEGER, 1, or NOT, 0.
 *   %FRACV         - %FRAC for vectors.
 *   %FRACM         - %FRAC for matrices (rectangular).
+*   %FIXV          -  FIX  for vectors.
+*   %FIXM          -  FIX  for matrices (rectangular).
 *   %ROUNDV        - %ROUND for vectors.
 *   %ROUNDM        - %ROUND for matrices (rectangular).
 *   %UNITM         - %UNITV for matrices (rectangular).
 *   %ANY           - Creates and m x n matrix with all elements equal to a given real, A.
 *                    Same as %CONST(A) without dimensioning the matrix.
-*   %ONES          - Creates and m x n matrix with all elements equal to one.
-*                    Same as %CONST(1) without dimensioning the matrix. (built in 9.00)
 *   %PROPORTIONAL  - Adjust proportionally a vector V to a given quantity, S.
-*   %IPROPORTIONAL - Integer version of %PROPORTIONAL.
+*   %IPROPORTIONAL - Integer version of %PROPORTIONAL: 'control rounding'
+*   %DivBaseProp   - Integer version of %PROPORTIONAL: 'divisor based methods'
 *   %MAXINDEXROW   - %MAXINDEX row for a rectangular matrix.
 *   %MININDEXROW   - %MININDEX row for a rectangular matrix.
 *   %MAXINDEXCOL   - %MAXINDEX column for a rectangular matrix.

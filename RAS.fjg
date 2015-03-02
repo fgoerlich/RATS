@@ -1,20 +1,23 @@
 /*
-     RAS                                      December/97 - R5: February/13
+     RAS                                      December/97 - R6: March/15
 */
-COM [STRING]                       %%RAS   = 'RAS - Version R5: February/13'
+COM [STRING]                       %%RAS   = 'RAS - Version R6: March/15'
 
 PROC RAS  A  B  C  E
 TYPE RECT A       *E
 TYPE VECT    B  C
 
 LOCAL  RECT     D
-LOCAL  INT      I
+LOCAL  INT      I  J
 
 OPTION REAL    CVCRIT        1E-15
 OPTION INTEGER ITERATIONS  100
 OPTION INTEGER IITERATIONS 100
 OPTION SWITCH  PRINT         0
 OPTION SWITCH  INTEGER       0
+OPTION SWITCH  PREPROCESING  0
+OPTION CHOICE  METHOD        1  ASCR  ASDB  OLD
+
 
 IF %ROWS(B)<>%ROWS(A).OR.%ROWS(C)<>%COLS(A)
    {
@@ -32,49 +35,59 @@ IF ABS(%SUM(B)-%SUM(C))>CVCRIT
    HALT  RAS
    }
 
-COM D =  %RAS(A,B,C,CVCRIT,ITERATIONS), I = %ITERS
-
-*   Iteration limit
-IF %CONVERGED==0
+if .not.integer
    {
-   DIS %%RAS; DIS 'Convergence NOT achieved after' %ITERS 'iterations'
-   IF INTEGER
-      DIS 'INTEGER adjustment is not attempted'
-   RETURN
-   }
-
-IF %CONVERGED.AND.(.NOT.INTEGER)
-   {
-   DIS %%RAS; DIS 'Convergence achieved at iteration' %ITERS
-   IF PRINT
-      DIS 'Adjusted matrix: ' %IF(%DEFINED(E),%LABEL(E),'') D
-   }
-
-IF INTEGER
-   {
-   COM D = %IRAS(D,B,C,CVCRIT,ITERATIONS,IITERATIONS)
-   IF %CONVERGED==0.OR.%%CONVERGED==0
-      COM D = %IRAS2(A,B,C,CVCRIT,ITERATIONS,IITERATIONS)
-
-   *   Iteration limit
-   IF %CONVERGED==0
+   COM D =  %RAS(A,B,C,CVCRIT,ITERATIONS)
+   IF .not.%CONVERGED
       {
-      DIS %%RAS; DIS 'Real convergence NOT achieved after' %ITERS 'real and' %%ITERS 'integer iterations'
+      DIS %%RAS; DIS 'Convergence NOT achieved after' %ITERS 'iterations'
       RETURN
       }
-   ELSE IF %%CONVERGED==0
+   else
       {
-      DIS %%RAS; DIS 'Integer convergence NOT achieved after' %%ITERS 'integer iterations'
-      RETURN
-      } 
-   ELSE
-      {
-      DIS %%RAS; DIS 'Convergence achieved at integer iteration' %%ITERS 'after initial' I 'real iterations'
-      COM %ITERS = I
-      IF PRINT
-         DIS 'Adjusted matrix: ' %IF(%DEFINED(E),%LABEL(E),'') D
+      DIS %%RAS; DIS 'Convergence achieved at iteration' %ITERS
       }
    }
+
+else if integer
+   {
+   if method==1
+      {
+      if preprocesing
+         COM D = %RAS(A,B,C,CVCRIT,ITERATIONS),   I     = %ITERS,               J         = %CONVERGED,              $
+             D = %AS(D,B,C,IITERATIONS),        %%ITERS = %ITERS, %ITERS = I, %%CONVERGED = %CONVERGED, %CONVERGED = J
+      else
+         COM D = %AS(A,B,C,IITERATIONS),        %%ITERS = %ITERS, %%CONVERGED = %CONVERGED, %ITERS = 0, %CONVERGED = 0
+      }
+   else if method==2
+      {
+      if preprocesing
+         COM D = %RAS(A,B,C,CVCRIT,ITERATIONS),   I     = %ITERS,               J         = %CONVERGED,              $
+             D = %ASDivBase(D,B,C,IITERATIONS), %%ITERS = %ITERS, %ITERS = I, %%CONVERGED = %CONVERGED, %CONVERGED = J
+      else
+         COM D = %ASDivBase(A,B,C,IITERATIONS), %%ITERS = %ITERS, %%CONVERGED = %CONVERGED, %ITERS = 0, %CONVERGED = 0
+      }
+   else
+      {
+      COM D = %IRAS(A,B,C,CVCRIT,ITERATIONS,IITERATIONS)
+      IF %CONVERGED==0.OR.%%CONVERGED==0
+         COM D = %IRAS2(A,B,C,CVCRIT,ITERATIONS,IITERATIONS)
+      }
+   if .not.%%converged
+      {
+      DIS %%RAS; DIS 'Interger convergence NOT achieved after' %%ITERS 'integer iterations and' %ITERS 'real iterations'
+                 DIS 'Method: '+%if(Method==1,'Alternate Scaling - control rounding',%if(Method==2,'Alternate Scaling - divisor based methods','Old ad-hoc method'))
+      RETURN
+      }
+   else
+      {
+      DIS %%RAS; DIS 'Convergence achieved at integer iteration' %%ITERS 'after' %ITERS 'real iterations'
+                 DIS 'Method: '+%if(Method==1,'Alternate Scaling - control rounding',%if(Method==2,'Alternate Scaling - divisor based methods','Old ad-hoc method'))
+      }
+   }
+
+IF PRINT
+   DIS 'Adjusted matrix: ' %IF(%DEFINED(E),%LABEL(E),'') D
 
 IF %DEFINED(E);   COM E = D
 

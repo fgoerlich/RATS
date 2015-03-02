@@ -8278,7 +8278,7 @@ END   %INstr
 ********************************************************************************
 
 *   %CodMUNI - Convert an integer into a 5 digit LAU 2 string code
-*               If integer is not a valid code returns an empty string
+*              If integer is not a valid code returns an empty string
 
 FUNCTION  %CodMUNI I
 TYPE STR  %CodMUNI
@@ -8295,7 +8295,7 @@ END       %CodMUNI
 *   CCAALabel  - Vector of labels (3 digits) of CCAA
 *   PROV       - Hash table for names of PROVinces ('00' = 'Spain')
 *   PROVLabel  - Vector of labels (3 digits) of PROVinces
-*   Municipio  - Hash table fir names of Municipios
+*   Municipio  - Hash table for names of Municipios
 
 *   List of functions
 

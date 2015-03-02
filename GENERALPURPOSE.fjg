@@ -1,6 +1,6 @@
 *   This file contains Rats FUNCTIONs for GENERAL PURPOSE calculations
-*   WinRATS 8.30
-*   Paco Goerlich   21/12/2014
+*   WinRATS 9.00
+*   Paco Goerlich   02/03/2015
 
 ********************************************************************************
 
@@ -25,6 +25,7 @@ COM  %AREABASE = %IF(X2<X1.OR.%MIN(Y1,Y2)<B,%NA,(X2 - X1)*((Y1 - B) + (Y2 - Y1)/
 END  %AREABASE
 
 ********************************************************************************
+
 *   %GPLININT - LINear INTerpolation inside and extrapolation outside
 *               Regla del determinante: Keyfitz (1979, Cap.-10)
 
@@ -42,27 +43,6 @@ EWI B(I,J) = A(I+1,J)
 COM  %GPLININT = %IF(%DET(B)==0,%NA,%DET(A)/%DET(B))
 
 END  %GPLININT
-
-********************************************************************************
-
-*   %GPNUMINT - General Purpose NUMerical INTegration (by linear interpolation)
-*               This is a built in function in WinRATS 8.30
-
-*FUNCTION   %GPNUMINT  X  Y
-*TYPE REAL  %GPNUMINT
-*TYPE SER              X  Y
-
-*LOCAL INT  N I
-
-*INQ(REG) * N
-*# X Y
-
-*COM  %GPNUMINT = 0
-*DO I=2,N
-*   COM %GPNUMINT = %GPNUMINT + %AREA(X(I-1),Y(I-1),X(I),Y(I))
-*END DO I
-
-*END  %GPNUMINT
 
 ********************************************************************************
 
@@ -93,7 +73,7 @@ LOOP
    *   Convergence criterion
    IF %CVCRIT<CVC
       {
-      COM %CONVERGED = 1 
+      COM %CONVERGED = 1
       BREAK
       }
 
@@ -104,6 +84,102 @@ LOOP
 END LOOP
 
 END %RAS
+
+********************************************************************************
+
+*   %AS - Biproportional adjustment of rectangular matrices to INTEGER.
+*         Alternating Scaling (AS) algorithm: Discrete version of IPF (RAS).
+*         Uses %IPROPORTIONAL ('control rounding')
+*         The global %%ASMultiple is inherited from %%Multiple in %IPROPORTIONAL
+*         There is no guarantee of convergence!!
+
+function %AS  a  b  c  ite
+type rec %AS  a
+type vec         b  c
+type int               ite
+
+loca vec r s
+loca int i j
+
+*   Globals
+com %iters = 0, %converged = 0, %%ASMultiple = 0
+com %AS = a
+
+*  Integer RAS adjustment
+loop
+   *   Adjusting rows
+   do i = 1,%rows(a)
+      com r = %iproportional(%xrow(%AS,i),b(i)), %do(j,1,%cols(%AS),%AS(i,j) = r(j)),  $
+              %%ASMultiple += %%Multiple
+   end do i
+   *   Adjusting columns
+   do j = 1,%cols(a)
+      com s = %iproportional(%xcol(%AS,j),c(j)), %do(i,1,%rows(%AS),%AS(i,j) = s(i)),  $
+              %%ASMultiple += %%Multiple
+   end do j
+   com %iters += 1
+
+   *   Convergence criterion
+   if %max(%testdiff(b,%sumr(%AS)),%testdiff(c,%sumc(%AS)))==0
+      {
+      com %converged = 1
+      break
+      }
+
+   *   Iteration limit
+   if %iters==ite
+      break
+end loop
+
+end %AS
+
+*******************************************************************************
+
+*   %ASDivBase - Biproportional adjustment of rectangular matrices to INTEGER.
+*                Alternating Scaling (AS) algorithm: Discrete version of IPF (RAS).
+*                Uses %DivBaseProp ('Divisor Base Proportional Rounding')
+*                The global %%ASMultiple is inherited from %%Multiple in %DivBaseProp
+*                There is no guarantee of convergence!!
+
+function %ASDivBase  a  b  c  ite
+type rec %ASDivBase  a
+type vec                b  c
+type int                      ite
+
+loca vec r s
+loca int i j
+
+*   Globals
+com %iters = 0, %converged = 0, %%ASMultiple = 0
+com %ASDivBase = a
+
+*  Integer RAS adjustment
+loop
+   *   Adjusting rows
+   do i = 1,%rows(a)
+      com r = %DivBaseProp(%xrow(%ASDivBase,i),b(i)), %do(j,1,%cols(%ASDivBase),%ASDivBase(i,j) = r(j)),  $
+              %%ASMultiple += %%Multiple
+   end do i
+   *   Adjusting columns
+   do j = 1,%cols(a)
+      com s = %DivBaseProp(%xcol(%ASDivBase,j),c(j)), %do(i,1,%rows(%ASDivBase),%ASDivBase(i,j) = s(i)),  $
+              %%ASMultiple += %%Multiple
+   end do j
+   com %iters += 1
+
+   *   Convergence criterion
+   if %max(%testdiff(b,%sumr(%ASDivBase)),%testdiff(c,%sumc(%ASDivBase)))==0
+      {
+      com %converged = 1
+      break
+      }
+
+   *   Iteration limit
+   if %iters==ite
+      break
+end loop
+
+end %ASDivBase
 
 ********************************************************************************
 
@@ -215,7 +291,7 @@ ELSE
       EWI S(J)    = %SUM(%XCOL(G,J))
       COM %CVCRIT = %MAX(%TESTDIFF(R1,R),%TESTDIFF(S1,S)), %%ITERS = %%ITERS + 1
       IF %CONVERGED==0
-         RETURN     
+         RETURN
       IF %CVCRIT==0
          {
          COM %%CONVERGED = 1
@@ -234,12 +310,15 @@ END %IRAS
 
 *   List of functions
 
-*   %AREA     - Area between line X = 0 and two points
-*   %AREABASE - Area between line X = B and two points
-*   %GPLININT - LINear INTerpolation inside and extrapolation outside
-*   %GPNUMINT - General Purpose NUMerical INTegration (by linear interpolation) (built in 8.30)
-*   %RAS      - Biproportional adjustment of rectangular matrices
-*   %IRAS2    - Integer version of RAS: Initial version
-*   %IRAS     - Integer version of RAS
+*   %AREA      - Area between line X = 0 and two points
+*   %AREABASE  - Area between line X = B and two points
+*   %GPLININT  - LINear INTerpolation inside and extrapolation outside
+*   %RAS       - Biproportional adjustment of rectangular matrices
+*   %AS        - Integer version of %RAS using the Alternating Scaling algorithm
+*                It uses %IPROPORTIONAL ('control rounding')
+*   %ASDivBase - Integer version of %RAS using the Alternating Scaling algorithm
+*                It uses %DivBaseProp ('divisor based mathods')
+*   %IRAS2     - Integer version of %RAS (Initial version)
+*   %IRAS      - Integer version of %RAS
 
 ********************************************************************************

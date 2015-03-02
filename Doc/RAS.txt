@@ -1,8 +1,8 @@
 /*
    RAS: Ajuste biproporcional de filas y columnas de una matriz.
 
-   Escrito por Paco Goerlich.                   Versi¢n: Febrero/2013 (R5)
-   Version RATS: WinRATS 8.10
+   Escrito por Paco Goerlich.                   Version: Marzo/2015 (R6)
+   Version RATS: WinRATS 9.00
 
    Sintaxis
 
@@ -16,10 +16,16 @@
      Opciones:
 
    PRINT/[NOPRINT] Imprime la matriz D.
-   CVCRIT     = Criterio de convergencia en el ajuste [1E-15].
-   ITERATIONS = Numero maximo de iteraciones a efectuar [100].
-   ITERATIONS = Numero maximo de iteraciones enteras a efectuar [100].
+   CVCRIT      = Criterio de convergencia en el ajuste [1E-15].
+   ITERATIONS  = Numero maximo de iteraciones a efectuar [100].
+   IITERATIONS = Numero maximo de iteraciones enteras a efectuar [100].
    INTEGER/[NOINTEGER], si el ajuste es a enteros.
+   METHOD = [ASCR]/ASDB/Old. Método a utilizar:
+                   ASCR Alternate Scaling using Control Rounding
+                   ASDB Alternate Scaling using Divisor Based Methods
+                   Old 'rudimentary' method (deprecated)
+   PREPROCESING/[NOPREPROCESING] si cuando INTEGER se hace un RAS a reales
+                   inicial antes del ajuste a enteros
 
 
      Variables globales:
@@ -27,12 +33,12 @@
     %%RAS   = STRING, Version actual del procedimiento.
     Con la opcion INTEGER podemos saber las iteraciones ENTERAS:
     %%ITERS       Iterations taken.
-    %%CONVERGED   = 1 o 0. Set to 1 if the process converged, 0 if not.
+    %%CONVERGED   = 1 o 0. Set to 1 if the process converged (INTEGER), 0 if not.
 
 
      Variables definidas por RAS:
 
-    %ITERS       Iterations taken (if INTEGER these are the initial iterations).
+    %ITERS       Iterations taken (if INTEGER & PREPROCESING = initial iterations).
     %CONVERGED   = 1 o 0. Set to 1 if the process converged, 0 if not.
     %CVCRIT      Final convergence criterion (REAL).
 
@@ -88,5 +94,12 @@
        Se cambió la funcion que hacía el ajuste a ENTEROS, y ademas se
        estableción un contador de interaciones enteras y una variable global
        que da la convergencia del proceso de ajuste a enteros.
+
+   R6: Marzo/2015
+       Se cambiaron las opciones de enteros. Se introduce el método de Alternate
+       Scaling, utilizando 'Control Rounding' or 'Divisor Based Methods'.
+       Faltan por introducir el 'Control Rounding' de Cox (1987-JASA), y el
+       método de Tier & Transfer de Balinsky y Rachev (1997).
+       El metodo IRAS/IRAS2 se mantiene pero está obsoleto, y no se recomienda.
 
 */
