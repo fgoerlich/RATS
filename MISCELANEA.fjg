@@ -545,14 +545,14 @@ end       %IPROPORTIONAL
 ********************************************************************************
 
 *   %DivBaseProp - Integer version of %PROPORTIONAL using divisor based methods.
-*                  It implements the algorithm in Dorfleiter & Tomas (1999-SP) Section 3,
+*                  It implements the algorithm in Dorfleiter & Klein (1999-SP) Section 3,
 *                  with standard rounding.
 *                  After %proportional() adjustment with standard rounding, we enter the discrepancy
 *                  loop and eventually we handle ties (multiple solutions).
 *                  If multiple solutions exist a global variable, %%Multiple, is set to 1.
 *                  The algorithm returns in %DivBaseProp a given solution, which depends on the order of the
 *                  elements in the vector, %%z is the vector of signs to obtain the full set of solutions
-*                  and %%zstr is the short hand for such set. See Dorfleiter & Tomas (1999-SP) Section 4.
+*                  and %%zstr is the short hand for such set. See Dorfleiter & Klein (1999-SP) Section 4.
 
 function  %DivBaseProp  v  s
 type vec  %DivBaseProp  v
